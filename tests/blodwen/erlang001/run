@@ -1,0 +1,2 @@
+$1 --no-prelude --codegen erlang IOtest.blod < input
+rm -rf build

@@ -1,0 +1,2 @@
+$1 --cg erlang Main.blod < input
+rm -rf build temp.txt
