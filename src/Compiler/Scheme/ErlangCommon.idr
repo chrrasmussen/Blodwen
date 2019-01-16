@@ -127,7 +127,7 @@ schOp (Cast IntType CharType) [x] = op "blodwen_int_to_char" [x]
 schOp (Cast from to) [x] = "throw(\"Invalid cast " ++ show from ++ "->" ++ show to ++ "\")"
 
 public export
-data ExtPrim = CCall | SchemeCall | PutStr | GetStr 
+data ExtPrim = CCall | ErlangCall | PutStr | GetStr
              | FileOpen | FileClose | FileReadLine | FileWriteLine | FileEOF
              | NewIORef | ReadIORef | WriteIORef
              | Unknown Name
@@ -135,7 +135,7 @@ data ExtPrim = CCall | SchemeCall | PutStr | GetStr
 export
 Show ExtPrim where
   show CCall = "CCall"
-  show SchemeCall = "SchemeCall"
+  show ErlangCall = "ErlangCall"
   show PutStr = "PutStr"
   show GetStr = "GetStr"
   show FileOpen = "FileOpen"
@@ -150,7 +150,7 @@ Show ExtPrim where
 
 toPrim : Name -> ExtPrim
 toPrim pn@(NS _ n) 
-    = cond [(n == UN "prim__schemeCall", SchemeCall),
+    = cond [(n == UN "prim__erlangCall", ErlangCall),
             (n == UN "prim__cCall", CCall),
             (n == UN "prim__putStr", PutStr),
             (n == UN "prim__getStr", GetStr),
@@ -251,22 +251,23 @@ parameters (schExtPrim : {vars : _} -> SVars vars -> ExtPrim -> List (CExp vars)
     schExp vs CErased = pure "{}"
     schExp vs (CCrash msg) = pure $ "throw(\"" ++ msg ++ "\")"
 
-  -- FIXME: Implement readArgs, fileOp, schExtCommon
-  -- Need to convert the argument (a list of scheme arguments that may
-  -- have been constructed at run time) to a scheme list to be passed to apply
-  readArgs : SVars vars -> CExp vars -> Core annot String
-  readArgs vs tm = pure $ "(blodwen-read-args " ++ !(schExp vs tm) ++ ")"
+  -- Evaluate the outer `FArgList` list to figure out the arity of the function call.
+  -- Then let the runtime figure out the value of each parameter.
+  -- TODO: Evaluate all parameters before giving them to the foreign function.
+  readArgs : SVars vars -> CExp vars -> Core annot (List String)
+  readArgs vs (CCon (NS _ (UN "Nil")) _ []) = pure []
+  readArgs vs (CCon (NS _ (UN "::")) _ [_, arg, xs]) = pure $ ("blodwen_eval_arg(" ++ !(schExp vs arg) ++ ")") :: !(readArgs vs xs)
+  readArgs vs tm = throw (InternalError ("Unknown argument to foreign call: " ++ show tm))
 
   -- External primitives which are common to the scheme codegens (they can be
   -- overridden)
   export
   schExtCommon : SVars vars -> ExtPrim -> List (CExp vars) -> Core annot String
-  schExtCommon vs SchemeCall [ret, CPrimVal (Str fn), args, world]
-     = pure $ mkWorld ("(apply " ++ fn ++" "
-                  ++ !(readArgs vs args) ++ ")")
-  schExtCommon vs SchemeCall [ret, fn, args, world]
-       = pure $ mkWorld ("(apply (eval (string->symbol " ++ !(schExp vs fn) ++")) "
-                    ++ !(readArgs vs args) ++ ")")
+  schExtCommon vs ErlangCall [ret, CPrimVal (Str fn), args, world]
+     = do parameterList <- readArgs vs args
+          pure $ mkWorld $ "(" ++ fn ++ "(" ++ showSep ", " parameterList ++ "))"
+  schExtCommon vs ErlangCall [ret, fn, args, world] -- TODO: Implement?
+      = do pure $ mkWorld "false"
   schExtCommon vs PutStr [arg, world] 
       = pure $ "(fun() -> io_unicode_put_str(" ++ !(schExp vs arg) ++ "), " ++ mkWorld (schConstructor 0 []) ++ " end())" -- code for MkUnit
   schExtCommon vs GetStr [world] 

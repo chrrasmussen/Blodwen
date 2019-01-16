@@ -39,6 +39,8 @@ data FArgList : Type where
                       (1 x : %World) -> IORes ret
 %extern prim__schemeCall : (ret : Type) -> String -> (1 args : FArgList) -> 
                            (1 x : %World) -> IORes ret
+%extern prim__erlangCall : (ret : Type) -> String -> FArgList ->
+                           (1 x : %World) -> IORes ret
 
 export %inline
 primIO : (1 fn : (1 x : %World) -> IORes a) -> IO a
@@ -47,7 +49,11 @@ primIO op = MkIO op
 export %inline
 schemeCall : (ret : Type) -> String -> (1 args : FArgList) -> IO ret
 schemeCall ret fn args = primIO (prim__schemeCall ret fn args)
- 
+
+export %inline
+erlangCall : (ret : Type) -> String -> FArgList -> IO ret
+erlangCall ret fn args = primIO (prim__erlangCall ret fn args)
+
 export %inline
 cCall : (ret : Type) -> String -> FArgList -> IO ret
 cCall ret fn args = primIO (prim__cCall ret fn args)

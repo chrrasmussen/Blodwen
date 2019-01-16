@@ -18,6 +18,14 @@ blodwen_normalize_value(X) when is_list(X) -> list_to_binary(X);
 blodwen_normalize_value(X) -> X.
 
 
+
+% NOTE: This function will try to evaluate the some value into proper Erlang value.
+% At the moment it only supports evaluating list arguments.
+blodwen_eval_arg({0, {}}) -> [];
+blodwen_eval_arg({1, {}, Hd, Tl}) -> [Hd | blodwen_eval_arg(Tl)];
+blodwen_eval_arg(X) -> X.
+
+
 % Unit
 
 -define(UNIT, {0}).
