@@ -1,5 +1,6 @@
--module(main).
--export([main/1]).
+% -module(main).
+% -export([main/1]).
+-compile([nowarn_unused_function, nowarn_unused_vars]).
 
 
 % Debugging
@@ -83,7 +84,7 @@ unicode_string_gt(X, Y) -> blodwen_bool_to_int(iolist_to_binary(X) > iolist_to_b
 
 % Strings
 
--type idr_char() :: integer().
+% -type idr_char() :: integer(). % TODO: Use for anything?
 
 
 % NOTE: Must be total
