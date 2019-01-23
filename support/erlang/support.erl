@@ -58,6 +58,15 @@ either_left(X) -> {0, false, false, X}.
 either_right(X) -> {1, false, false, X}.
 
 
+% List
+
+-type idr_list(A) :: {0, {}} | {1, {}, A, idr_list(A)}.
+
+-spec list_to_idr_list(list(any())) -> idr_list(any()).
+list_to_idr_list([]) -> {0, {}};
+list_to_idr_list([Hd | Tl]) -> {1, {}, Hd, list_to_idr_list(Tl)}.
+
+
 % Arithmetic
 
 -spec int_pow(integer(), integer()) -> integer().
@@ -124,22 +133,41 @@ unicode_string_substr(Start, Len, Str) -> string:substr(Str, Start, Len).
 
 blodwen_int_to_string(Int) -> integer_to_binary(Int).
 blodwen_integer_to_string(Integer) -> integer_to_binary(Integer).
-blodwen_double_to_string(Double) -> float_to_binary(Double).
+blodwen_double_to_string(Double) -> float_to_binary(Double, [{decimals, 10}, compact]).
 blodwen_char_to_string(Char) -> [Char].
 
 blodwen_int_to_integer(Int) -> Int.
 blodwen_double_to_integer(Double) -> floor(Double). % NOTE: Solved similar to Chez
 blodwen_char_to_integer(Char) -> Char. % NOTE: Char is already an integer
-blodwen_string_to_integer(Str) -> binary_to_integer(iolist_to_binary(Str)). % TODO: Will crash if string contains other characters than digits. Do I need to consider special prefixes like `0x`, `0b`, `0` or similar?
+blodwen_string_to_integer(Str) ->
+  case string:to_integer(Str) of
+    {error, no_integer} ->
+      0;
+    {Num, StrRest} ->
+      case string:next_grapheme(StrRest) of
+        [] -> Num;
+        _ -> 0
+      end
+  end.
 
 blodwen_integer_to_int(Integer) -> Integer.
 blodwen_double_to_int(Double) -> floor(Double).
 blodwen_char_to_int(Char) -> Char. % NOTE: Char is already an integer
-blodwen_string_to_int(Str) -> binary_to_integer(iolist_to_binary(Str)). % TODO: Will crash if string contains other characters than digits. Do I need to consider special prefixes like `0x`, `0b`, `0` or similar?
+blodwen_string_to_int(Str) -> blodwen_string_to_integer(Str). % TODO: Should `Int` be capped at a certain precision?
 
 blodwen_int_to_double(Int) -> float(Int).
 blodwen_integer_to_double(Integer) -> float(Integer).
-blodwen_string_to_double(Str) -> binary_to_float(iolist_to_binary(Str)). % TODO: Will crash if string contains other characters than digits. Must also include a dot to be a valid double number.
+blodwen_string_to_double(Str) ->
+  case string:to_float(Str) of
+    {error, no_float} ->
+      Integer = blodwen_string_to_integer(Str),
+      float(Integer);
+    {Num, StrRest} ->
+      case string:next_grapheme(StrRest) of
+        [] -> Num;
+        _ -> 0.0
+      end
+  end.
 
 blodwen_int_to_char(Char) -> Char. % NOTE: Char is an integer
 
@@ -159,10 +187,18 @@ io_unicode_get_str(Prompt) ->
 -type handle() :: file:io_device() | undefined.
 -type error_code() :: integer().
 
+% NOTE: Available for foreign function calls
+-spec blodwen_read_file(file:name_all()) -> binary().
+blodwen_read_file(File) ->
+  case file:read_file(File) of
+    {ok, Contents} -> Contents;
+    _ -> throw("I haven't worked that one out yet, sorry...")
+  end.
+
 % TODO: Return error number instead (in all cases)?
--spec blodwen_open(binary(), binary(), idr_bool()) -> idr_either(error_code(), handle()).
+-spec blodwen_open(file:name_all(), iolist(), idr_bool()) -> idr_either(error_code(), handle()).
 blodwen_open(File, Mode, Bin) ->
-  Flags = case Mode of
+  Flags = case iolist_to_binary(Mode) of
     <<"r">> -> [read];
     <<"w">> -> [write];
     _ -> throw("I haven't worked that one out yet, sorry...")
