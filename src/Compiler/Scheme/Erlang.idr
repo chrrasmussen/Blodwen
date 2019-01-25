@@ -11,6 +11,7 @@ import Core.Directory
 import Core.Name
 import Core.TT
 
+import Data.CMap
 import Data.List
 import Data.Vect
 import System
@@ -30,19 +31,19 @@ findEscript : IO String
 findEscript = pure "/usr/bin/env escript"
 
 mutual
-  racketPrim : SVars vars -> ExtPrim -> List (CExp vars) -> Core annot String
-  racketPrim vs CCall [ret, fn, args, world]
+  racketPrim : Int -> SVars vars -> ExtPrim -> List (CExp vars) -> Core annot String
+  racketPrim i vs CCall [ret, fn, args, world]
       = throw (InternalError ("Can't compile C FFI calls to Erlang yet"))
-  racketPrim vs prim args 
-      = schExtCommon racketPrim vs prim args
+  racketPrim i vs prim args 
+      = schExtCommon racketPrim i vs prim args
 
 compileToErlang : Opts -> Ref Ctxt Defs -> ClosedTerm -> (outfile : String) -> Core annot ()
 compileToErlang (MkOpts moduleName) c tm outfile
-    = do ns <- findUsedNames tm
+    = do (ns, tags) <- findUsedNames tm
          defs <- get Ctxt
          compdefs <- traverse (getScheme racketPrim defs) ns
          let code = concat compdefs
-         main <- schExp racketPrim [] !(compileExp tm)
+         main <- schExp racketPrim 0 [] !(compileExp tags tm)
          support <- readDataFile "erlang/support.erl"
          let scm = header ++ support ++ code ++ "main(Args) -> " ++ main ++ ".\n"
          Right () <- coreLift $ writeFile outfile scm
