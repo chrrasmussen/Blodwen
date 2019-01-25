@@ -191,19 +191,36 @@ schCaseDef (Just tm) = ["(_) -> " ++ tm]
 parameters (schExtPrim : {vars : _} -> Int -> SVars vars -> ExtPrim -> List (CExp vars) -> Core annot String)
   mutual
     schConAlt : Int -> SVars vars -> CConAlt vars -> Core annot String
-    schConAlt {vars} i vs (MkConAlt n tag args sc)
-        = let vs' = extendSVars args vs in
-              pure $ "({" ++ show tag
-                          ++ bindArgs 1 args vs' !(schExp i vs' sc)
+    schConAlt i vs (MkConAlt (NS ["Prelude"] (UN "Nil")) tag args sc) = do
+        let vs' = extendSVars args vs
+        pure $ "([]) -> " ++ !(schExp i vs' sc)
+    schConAlt {vars} i vs (MkConAlt (NS ["Prelude"] (UN "::")) tag args sc) = do
+        let vs' = extendSVars args vs
+        body <- schExp i vs' sc
+        -- The first argument of `args` is the type of the `List a`; drop it
+        pure $ "([" ++ showSep " | " (drop 1 $ bindArgs 1 args vs') ++ "]) -> " ++ body
       where
-        bindArgs : Int -> (ns : List Name) -> SVars (ns ++ vars) -> String -> String
-        bindArgs i [] vs body = "}) -> " ++ body
-        bindArgs i (n :: ns) (v :: vs) body
-            = ", " ++ v ++ bindArgs (i + 1) ns vs body
+        bindArgs : Int -> (ns : List Name) -> SVars (ns ++ vars) -> List String
+        bindArgs i [] vs = []
+        bindArgs i (n :: ns) (v :: vs) = v :: bindArgs (i + 1) ns vs
+    schConAlt {vars} i vs (MkConAlt n tag args sc) = do
+        let vs' = extendSVars args vs
+        body <- schExp i vs' sc
+        pure $ "({" ++ showSep ", " (show tag :: bindArgs 1 args vs') ++ "}) -> " ++ body
+      where
+        bindArgs : Int -> (ns : List Name) -> SVars (ns ++ vars) -> List String
+        bindArgs i [] vs = []
+        bindArgs i (n :: ns) (v :: vs) = v :: bindArgs (i + 1) ns vs
 
     schConstAlt : Int -> SVars vars -> CConstAlt vars -> Core annot String
     schConstAlt i vs (MkConstAlt c exp)
         = pure $ "(" ++ schConstant c ++ ") -> " ++ !(schExp i vs exp)
+
+    schCon : Int -> SVars vars -> CExp vars -> Core annot String
+    schCon i vs (CCon (NS ["Prelude"] (UN "Nil")) _ _) = pure "[]"
+    schCon i vs (CCon (NS ["Prelude"] (UN "::")) _ [_, x, xs]) = pure $ "[" ++ !(schExp i vs x) ++ " | " ++ !(schExp i vs xs) ++ "]"
+    schCon i vs (CCon x tag args) = pure $ schConstructor tag !(traverse (schExp i vs) args)
+    schCon i vs tm = throw (InternalError ("Invalid constructor: " ++ show tm))
       
     -- oops, no traverse for Vect in Core
     schArgs : Int -> SVars vars -> Vect n (CExp vars) -> Core annot (Vect n String)
@@ -225,8 +242,8 @@ parameters (schExtPrim : {vars : _} -> Int -> SVars vars -> ExtPrim -> List (CEx
             pure $ "(fun(" ++ lookupSVar Here vs' ++ ") -> " ++ sc' ++ " end(" ++ val' ++ "))"
     schExp i vs (CApp x args) 
         = pure $ "(" ++ !(schExp i vs x) ++ "(" ++ showSep ", " !(traverse (schExp i vs) args) ++ "))"
-    schExp i vs (CCon x tag args) 
-        = pure $ schConstructor tag !(traverse (schExp i vs) args)
+    schExp i vs con@(CCon x tag args)
+        = schCon i vs con
     schExp i vs (COp op args) 
         = pure $ schOp op !(schArgs i vs args)
     schExp i vs (CExtPrim p args) 
@@ -251,12 +268,10 @@ parameters (schExtPrim : {vars : _} -> Int -> SVars vars -> ExtPrim -> List (CEx
     schExp i vs CErased = pure "{}"
     schExp i vs (CCrash msg) = pure $ "throw(\"" ++ msg ++ "\")"
 
-  -- Evaluate the outer `FArgList` list to figure out the arity of the function call.
-  -- Then let the runtime figure out the value of each parameter.
-  -- TODO: Evaluate all parameters before giving them to the foreign function.
+  -- Evaluate the outer `FArgList` list to figure out the arity of the function call
   readArgs : Int -> SVars vars -> CExp vars -> Core annot (List String)
-  readArgs i vs (CCon (NS _ (UN "Nil")) _ []) = pure []
-  readArgs i vs (CCon (NS _ (UN "::")) _ [_, arg, xs]) = pure $ ("blodwen_eval_arg(" ++ !(schExp i vs arg) ++ ")") :: !(readArgs i vs xs)
+  readArgs i vs (CCon (NS ["PrimIO"] (UN "Nil")) _ []) = pure []
+  readArgs i vs (CCon (NS ["PrimIO"] (UN "::")) _ [_, x, xs]) = pure $ !(schExp i vs x) :: !(readArgs i vs xs)
   readArgs i vs tm = throw (InternalError ("Unknown argument to foreign call: " ++ show tm))
 
   -- External primitives which are common to the scheme codegens (they can be
