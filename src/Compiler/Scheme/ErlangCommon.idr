@@ -190,6 +190,16 @@ schCaseDef (Just tm) = ["(_) -> " ++ tm]
 
 parameters (schExtPrim : {vars : _} -> Int -> SVars vars -> ExtPrim -> List (CExp vars) -> Core annot String)
   mutual
+    schConTupleAlt : (arity : Nat) -> Int -> SVars vars -> (args : List Name) -> CExp (args ++ vars) -> Core annot String
+    schConTupleAlt {vars} arity i vs args sc = do
+        let vs' = extendSVars args vs
+        body <- schExp i vs' sc
+        pure $ "({" ++ showSep ", " (drop (S arity) $ bindArgs 1 args vs') ++ "}) -> " ++ body
+      where
+        bindArgs : Int -> (ns : List Name) -> SVars (ns ++ vars) -> List String
+        bindArgs i [] vs = []
+        bindArgs i (n :: ns) (v :: vs) = v :: bindArgs (i + 1) ns vs
+
     schConAlt : Int -> SVars vars -> CConAlt vars -> Core annot String
     schConAlt i vs (MkConAlt (NS ["Prelude"] (UN "Nil")) tag args sc) = do
         let vs' = extendSVars args vs
@@ -203,6 +213,12 @@ parameters (schExtPrim : {vars : _} -> Int -> SVars vars -> ExtPrim -> List (CEx
         bindArgs : Int -> (ns : List Name) -> SVars (ns ++ vars) -> List String
         bindArgs i [] vs = []
         bindArgs i (n :: ns) (v :: vs) = v :: bindArgs (i + 1) ns vs
+    schConAlt i vs (MkConAlt (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple0")) tag args sc) = schConTupleAlt 0 i vs args sc
+    schConAlt i vs (MkConAlt (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple1")) tag args sc) = schConTupleAlt 1 i vs args sc
+    schConAlt i vs (MkConAlt (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple2")) tag args sc) = schConTupleAlt 2 i vs args sc
+    schConAlt i vs (MkConAlt (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple3")) tag args sc) = schConTupleAlt 3 i vs args sc
+    schConAlt i vs (MkConAlt (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple4")) tag args sc) = schConTupleAlt 4 i vs args sc
+    schConAlt i vs (MkConAlt (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple5")) tag args sc) = schConTupleAlt 5 i vs args sc
     schConAlt {vars} i vs (MkConAlt n tag args sc) = do
         let vs' = extendSVars args vs
         body <- schExp i vs' sc
@@ -216,9 +232,21 @@ parameters (schExtPrim : {vars : _} -> Int -> SVars vars -> ExtPrim -> List (CEx
     schConstAlt i vs (MkConstAlt c exp)
         = pure $ "(" ++ schConstant c ++ ") -> " ++ !(schExp i vs exp)
 
+    schConTuple : Int -> SVars vars -> List (CExp vars) -> Core annot String
+    schConTuple i vs args = pure $ "{" ++ showSep ", " !(traverse (schExp i vs) args) ++ "}"
+
     schCon : Int -> SVars vars -> CExp vars -> Core annot String
     schCon i vs (CCon (NS ["Prelude"] (UN "Nil")) _ _) = pure "[]"
     schCon i vs (CCon (NS ["Prelude"] (UN "::")) _ [_, x, xs]) = pure $ "[" ++ !(schExp i vs x) ++ " | " ++ !(schExp i vs xs) ++ "]"
+    schCon i vs (CCon (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple0")) _ []) = schConTuple i vs []
+    schCon i vs (CCon (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple1")) _ args) = schConTuple i vs (drop 2 args)
+    schCon i vs (CCon (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple2")) _ args) = schConTuple i vs (drop 3 args)
+    schCon i vs (CCon (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple3")) _ args) = schConTuple i vs (drop 4 args)
+    schCon i vs (CCon (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple4")) _ args) = schConTuple i vs (drop 5 args)
+    schCon i vs (CCon (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple5")) _ args) = schConTuple i vs (drop 6 args)
+    schCon i vs (CCon (NS ["Maps", "ErlangPrelude"] (UN "MkKeyValue")) _ [_, _, key, _, value, _]) = pure $ "#{" ++ !(schExp i vs key) ++ " => " ++ !(schExp i vs value) ++ "}"
+    schCon i vs (CCon (NS ["Maps", "ErlangPrelude"] (UN "ErlMapNil")) _ _) = pure "#{}"
+    schCon i vs (CCon (NS ["Maps", "ErlangPrelude"] (UN "ErlMapCons")) _ [x, xs]) = pure $ "maps:merge(" ++ !(schExp i vs xs) ++ ", " ++ !(schExp i vs x) ++ ")"
     schCon i vs (CCon x tag args) = pure $ schConstructor tag !(traverse (schExp i vs) args)
     schCon i vs tm = throw (InternalError ("Invalid constructor: " ++ show tm))
       

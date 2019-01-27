@@ -1,0 +1,82 @@
+module ErlangPrelude
+
+mutual
+  public export
+  data ErlType : Type -> Type where
+    ETInt       : ErlType Int
+    ETInteger   : ErlType Integer
+    ETString    : ErlType String
+    ETChar      : ErlType Char
+    ETDouble    : ErlType Double
+    ETList      : {auto prf : ErlType a} -> ErlType (List a)
+
+    -- Data types that bridge to Native Erlang data types.
+    -- These are checked for valid types on construction.
+    ETErlTuple0 : ErlType ErlTuple0
+    ETErlTuple1 : ErlType (ErlTuple1 a)
+    ETErlTuple2 : ErlType (ErlTuple2 a b)
+    ETErlTuple3 : ErlType (ErlTuple3 a b c)
+    ETErlTuple4 : ErlType (ErlTuple4 a b c d)
+    ETErlTuple5 : ErlType (ErlTuple5 a b c d e)
+    ETErlMap    : ErlType ErlMap
+
+
+  namespace Tuples
+    public export
+    data ErlTuple0 : Type where
+      MkErlTuple0 : ErlTuple0
+
+    public export
+    data ErlTuple1 : Type -> Type where
+      MkErlTuple1 : (ErlType a) =>
+                    a -> ErlTuple1 a
+
+    public export
+    data ErlTuple2 : Type -> Type -> Type where
+      MkErlTuple2 : (ErlType a, ErlType b) =>
+                    a -> b -> ErlTuple2 a b
+
+    public export
+    data ErlTuple3 : Type -> Type -> Type -> Type where
+      MkErlTuple3 : (ErlType a, ErlType b, ErlType c) =>
+                    a -> b -> c ->  ErlTuple3 a b c
+
+    public export
+    data ErlTuple4 : Type -> Type -> Type -> Type -> Type where
+      MkErlTuple4 : (ErlType a, ErlType b, ErlType c, ErlType d) =>
+                    a -> b -> c -> d -> ErlTuple4 a b c d
+
+    public export
+    data ErlTuple5 : Type -> Type -> Type -> Type -> Type -> Type where
+      MkErlTuple5 : (ErlType a, ErlType b, ErlType c, ErlType d, ErlType e) =>
+                    a -> b -> c -> d -> e -> ErlTuple5 a b c d e
+
+
+  namespace Maps
+    export
+    data ErlMapKeyValue : Type where
+      MkKeyValue : key -> {auto prf : ErlType key} -> value -> {auto prf : ErlType value} -> ErlMapKeyValue
+
+    -- TODO: Which priority?
+    infix 3 :=
+
+    export
+    (:=) : key -> {auto prf : ErlType key} -> value -> {auto prf : ErlType value} -> ErlMapKeyValue
+    (:=) = MkKeyValue
+
+    export
+    data ErlMap : Type where
+      ErlMapNil : ErlMap
+      ErlMapCons : ErlMapKeyValue -> ErlMap -> ErlMap
+
+    export
+    Nil : ErlMap
+    Nil = ErlMapNil
+
+    export
+    (::) : ErlMapKeyValue -> ErlMap -> ErlMap
+    (::) = ErlMapCons
+
+    export
+    unsafeGet : (ret : Type) -> {auto prf : ErlType ret} -> key -> {auto prf : ErlType key} -> ErlMap -> IO ret
+    unsafeGet ret key m = erlangCall ret "maps:get" [key, m]
