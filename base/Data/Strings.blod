@@ -6,11 +6,11 @@ import Data.List
 -- enough room in advance so there's only one allocation, rather than lots!
 export
 fastAppend : List String -> String
-fastAppend xs = unsafePerformIO (schemeCall String "string-append" (toFArgs xs))
-  where
-    toFArgs : List String -> FArgList
-    toFArgs [] = []
-    toFArgs (x :: xs) = x :: toFArgs xs
+fastAppend xs = foldl prim__strAppend "" xs -- TODO: Revert to original version
+--  where
+--    toFArgs : List String -> FArgList
+--    toFArgs [] = []
+--    toFArgs (x :: xs) = x :: toFArgs xs
 
 words' : List Char -> List (List Char)
 words' s = case dropWhile isSpace s of

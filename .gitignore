@@ -18,3 +18,5 @@ tramp
 /tests/**/output
 /*/build/
 /Notes/*.pdf
+
+build/

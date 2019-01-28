@@ -1345,7 +1345,7 @@ command
          opt <- setOption False
          pure (SetOpt opt)
   <|> do symbol ":"; replCmd ["c", "compile"]
-         n <- unqualifiedName
+         n <- unqualifiedName <|> strLit
          tm <- expr EqOK "(interactive)" init
          pure (Compile tm n)
   <|> do symbol ":"; exactIdent "exec"

@@ -73,13 +73,18 @@ runTest dir prog test
          chdir "../.."
          pure (out == exp)
 
+
+erlangTests : List String
+erlangTests =
+  ["erlang001", "erlang002", "erlang003", "erlang004", "erlang005", "erlang006", "erlang007", "erlang008", "erlang009"]
+
 main : IO ()
 main
     = do [_, ttimp, blodwen] <- getArgs
               | _ => do putStrLn "Usage: runtests [ttimp path] [blodwen path]"
-         ttimps <- traverse (runTest "ttimp" ttimp) ttimpTests
-         blods <- traverse (runTest "blodwen" blodwen) blodwenTests
-         if (any not (ttimps ++ blods))
+         --ttimps <- traverse (runTest "ttimp" ttimp) ttimpTests
+         blods <- traverse (runTest "blodwen" blodwen) erlangTests
+         if (any not (blods))
             then exitWith (ExitFailure 1)
             else exitWith ExitSuccess
 

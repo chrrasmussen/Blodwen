@@ -1,0 +1,7 @@
+{
+    "files.exclude": {
+        "**/*.ibc": true,
+    },
+    "editor.detectIndentation": false,
+    "editor.tabSize": 2
+}

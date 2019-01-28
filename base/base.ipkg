@@ -10,5 +10,8 @@ modules = Control.WellFounded,
 
           System,
           System.Concurrency.Raw,
-          System.File
+          System.File,
+
+          ErlangPrelude,
+          ErlangPrelude.Debug
 
