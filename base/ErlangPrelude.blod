@@ -1,5 +1,11 @@
 module ErlangPrelude
 
+public export
+data Raw a = MkRaw a
+
+public export
+data ErlTerm : Type where
+
 mutual
   public export
   data ErlType : Type -> Type where
@@ -8,7 +14,10 @@ mutual
     ETString    : ErlType String
     ETChar      : ErlType Char
     ETDouble    : ErlType Double
-    ETList      : {auto prf : ErlType a} -> ErlType (List a)
+    ETList      : ErlType a => ErlType (List a)
+
+    ETRaw       : ErlType (Raw a)     -- Can contain any Idris value
+    ETErlTerm   : ErlType ErlTerm     -- Can contain any Erlang term
 
     -- Data types that bridge to native Erlang data types.
     -- These are checked for valid types on construction.
