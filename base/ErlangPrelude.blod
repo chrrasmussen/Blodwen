@@ -1,19 +1,22 @@
 module ErlangPrelude
 
-public export
-data Raw a = MkRaw a
+namespace Idris
+  public export
+  data Raw a = MkRaw a
 
-public export
-data ErlTerm : Type where
 
-public export
-data ErlPid : Type where
+namespace Opaque
+  public export
+  data ErlTerm : Type where
 
-public export
-data ErlRef : Type where
+  public export
+  data ErlPid : Type where
 
-public export
-data ErlPort : Type where
+  public export
+  data ErlRef : Type where
+
+  public export
+  data ErlPort : Type where
 
 
 mutual
