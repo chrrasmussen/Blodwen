@@ -238,6 +238,8 @@ parameters (schExtPrim : {vars : _} -> Int -> SVars vars -> ExtPrim -> List (CEx
     schCon : Int -> SVars vars -> CExp vars -> Core annot String
     schCon i vs (CCon (NS ["Prelude"] (UN "Nil")) _ _) = pure "[]"
     schCon i vs (CCon (NS ["Prelude"] (UN "::")) _ [_, x, xs]) = pure $ "[" ++ !(schExp i vs x) ++ " | " ++ !(schExp i vs xs) ++ "]"
+    schCon i vs (CCon (NS ["Lists", "ErlangPrelude"] (UN "Nil")) _ []) = pure "[]"
+    schCon i vs (CCon (NS ["Lists", "ErlangPrelude"] (UN "::")) _ [_, _, _, x, xs]) = pure $ "[" ++ !(schExp i vs x) ++ " | " ++ !(schExp i vs xs) ++ "]"
     schCon i vs (CCon (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple0")) _ []) = schConTuple i vs []
     schCon i vs (CCon (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple1")) _ args) = schConTuple i vs (drop 2 args)
     schCon i vs (CCon (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple2")) _ args) = schConTuple i vs (drop 3 args)
@@ -296,20 +298,20 @@ parameters (schExtPrim : {vars : _} -> Int -> SVars vars -> ExtPrim -> List (CEx
     schExp i vs CErased = pure "{}"
     schExp i vs (CCrash msg) = pure $ "throw(\"" ++ msg ++ "\")"
 
-  -- Evaluate the outer `FArgList` list to figure out the arity of the function call
+  -- Evaluate the outer `ErlList` to figure out the arity of the function call
   readArgs : Int -> SVars vars -> CExp vars -> Core annot (List String)
-  readArgs i vs (CCon (NS ["PrimIO"] (UN "Nil")) _ []) = pure []
-  readArgs i vs (CCon (NS ["PrimIO"] (UN "::")) _ [_, x, xs]) = pure $ !(schExp i vs x) :: !(readArgs i vs xs)
+  readArgs i vs (CCon (NS ["Lists", "ErlangPrelude"] (UN "Nil")) _ []) = pure []
+  readArgs i vs (CCon (NS ["Lists", "ErlangPrelude"] (UN "::")) _ [_, _, _, x, xs]) = pure $ !(schExp i vs x) :: !(readArgs i vs xs)
   readArgs i vs tm = throw (InternalError ("Unknown argument to foreign call: " ++ show tm))
 
   -- External primitives which are common to the scheme codegens (they can be
   -- overridden)
   export
   schExtCommon : Int -> SVars vars -> ExtPrim -> List (CExp vars) -> Core annot String
-  schExtCommon i vs ErlangCall [ret, CPrimVal (Str fn), args, world]
+  schExtCommon i vs ErlangCall [_, ret, CPrimVal (Str fn), args, world]
      = do parameterList <- readArgs i vs args
           pure $ mkWorld $ "(" ++ fn ++ "(" ++ showSep ", " parameterList ++ "))"
-  schExtCommon i vs ErlangCall [ret, fn, args, world] -- TODO: Implement?
+  schExtCommon i vs ErlangCall [_, ret, fn, args, world] -- TODO: Implement?
       = do pure $ mkWorld "false"
   schExtCommon i vs PutStr [arg, world] 
       = pure $ "(fun() -> io_unicode_put_str(" ++ !(schExp i vs arg) ++ "), " ++ mkWorld (schConstructor 0 []) ++ " end())" -- code for MkUnit

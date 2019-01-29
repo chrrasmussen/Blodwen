@@ -10,8 +10,9 @@ mutual
     ETDouble    : ErlType Double
     ETList      : {auto prf : ErlType a} -> ErlType (List a)
 
-    -- Data types that bridge to Native Erlang data types.
+    -- Data types that bridge to native Erlang data types.
     -- These are checked for valid types on construction.
+    ETErlList   : ErlType (ErlList xs)
     ETErlTuple0 : ErlType ErlTuple0
     ETErlTuple1 : ErlType (ErlTuple1 a)
     ETErlTuple2 : ErlType (ErlTuple2 a b)
@@ -19,6 +20,13 @@ mutual
     ETErlTuple4 : ErlType (ErlTuple4 a b c d)
     ETErlTuple5 : ErlType (ErlTuple5 a b c d e)
     ETErlMap    : ErlType ErlMap
+
+
+  namespace Lists
+    public export
+    data ErlList : List Type -> Type where
+      Nil : ErlList []
+      (::) : ErlType x => x -> ErlList xs -> ErlList (x :: xs)
 
 
   namespace Tuples
@@ -80,3 +88,11 @@ mutual
     export
     unsafeGet : (ret : Type) -> {auto prf : ErlType ret} -> key -> {auto prf : ErlType key} -> ErlMap -> IO ret
     unsafeGet ret key m = erlangCall ret "maps:get" [key, m]
+
+
+  namespace IO
+    %extern prim__erlangCall : (ret : Type) -> String -> ErlList xs -> (1 x : %World) -> IORes ret
+
+    export %inline
+    erlangCall : (ret : Type) -> {auto prf : ErlType ret} -> String -> ErlList xs -> IO ret
+    erlangCall ret fn args = primIO (prim__erlangCall ret fn args)
