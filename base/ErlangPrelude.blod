@@ -105,3 +105,63 @@ mutual
     export %inline
     erlangCall : (ret : Type) -> {auto prf : ErlType ret} -> String -> ErlList xs -> IO ret
     erlangCall ret fn args = primIO (prim__erlangCall ret fn args)
+
+
+----------
+-- CAST --
+----------
+
+-- TODO: Is `believe_me x` a better solution?
+toErlTerm : ErlType a => a -> ErlTerm
+toErlTerm x = unsafePerformIO $ erlangCall ErlTerm "blodwen_id" [x]
+
+-- Allow all supported Erlang types to be type erased
+ErlType a => Cast a ErlTerm where
+  cast x = toErlTerm x
+
+
+----------
+-- SHOW --
+----------
+
+showSep : String -> List String -> String
+showSep sep [] = ""
+showSep sep [x] = x
+showSep sep (x :: xs) = x ++ sep ++ showSep sep xs
+
+
+Show ErlTerm where
+  -- Idris should not know about its content
+  show _ = "<Erlang term>"
+
+Show (ErlList []) where
+  show [] = "[]"
+
+(Show x, Show (ErlList xs)) => Show (ErlList (x :: xs)) where
+  show (x :: xs) = "[" ++ show x ++ " | " ++ show xs ++ "]"
+
+Show ErlTuple0 where
+  show MkErlTuple0 = "{}"
+
+Show a => Show (ErlTuple1 a) where
+  show (MkErlTuple1 x1) =
+    "{" ++ showSep ", " [show x1] ++ "}"
+
+(Show a, Show b) => Show (ErlTuple2 a b) where
+  show (MkErlTuple2 x1 x2) =
+    "{" ++ showSep ", " [show x1, show x2] ++ "}"
+
+(Show a, Show b, Show c) => Show (ErlTuple3 a b c) where
+  show (MkErlTuple3 x1 x2 x3) =
+    "{" ++ showSep ", " [show x1, show x2, show x3] ++ "}"
+
+(Show a, Show b, Show c, Show d) => Show (ErlTuple4 a b c d) where
+  show (MkErlTuple4 x1 x2 x3 x4) =
+    "{" ++ showSep ", " [show x1, show x2, show x3, show x4] ++ "}"
+
+(Show a, Show b, Show c, Show d, Show e) => Show (ErlTuple5 a b c d e) where
+  show (MkErlTuple5 x1 x2 x3 x4 x5) =
+    "{" ++ showSep ", " [show x1, show x2, show x3, show x4, show x5] ++ "}"
+
+Show ErlMap where
+  show _ = "<Erlang map>" -- TODO: Implement

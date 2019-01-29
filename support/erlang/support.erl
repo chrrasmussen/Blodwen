@@ -19,6 +19,11 @@ blodwen_normalize_value(X) when is_list(X) -> list_to_binary(X);
 blodwen_normalize_value(X) -> X.
 
 
+% NOTE: This is used to circumvent the type checker since
+% `erlangCall` is allowed to return any type
+blodwen_id(X) -> X.
+
+
 % Unit
 
 -define(UNIT, {0}).
