@@ -6,6 +6,16 @@ data Raw a = MkRaw a
 public export
 data ErlTerm : Type where
 
+public export
+data ErlPid : Type where
+
+public export
+data ErlRef : Type where
+
+public export
+data ErlPort : Type where
+
+
 mutual
   public export
   data ErlType : Type -> Type where
@@ -29,6 +39,9 @@ mutual
     ETErlTuple4 : ErlType (ErlTuple4 a b c d)
     ETErlTuple5 : ErlType (ErlTuple5 a b c d e)
     ETErlMap    : ErlType ErlMap
+    ETErlPid    : ErlType ErlPid
+    ETErlRef    : ErlType ErlRef
+    ETErlPort   : ErlType ErlPort
 
 
   namespace Lists
@@ -130,9 +143,23 @@ showSep sep [x] = x
 showSep sep (x :: xs) = x ++ sep ++ showSep sep xs
 
 
+-- OPAQUE ERLANG TYPES
+-- (Idris should not know its content)
+
 Show ErlTerm where
-  -- Idris should not know about its content
-  show _ = "<Erlang term>"
+  show _ = "<Erlang Term>"
+
+Show ErlPid where
+  show _ = "<Erlang Pid>"
+
+Show ErlRef where
+  show _ = "<Erlang Ref>"
+
+Show ErlPort where
+  show _ = "<Erlang Port>"
+
+
+-- NORMAL ERLANG TYPES
 
 Show (ErlList []) where
   show [] = "[]"
@@ -164,4 +191,4 @@ Show a => Show (ErlTuple1 a) where
     "{" ++ showSep ", " [show x1, show x2, show x3, show x4, show x5] ++ "}"
 
 Show ErlMap where
-  show _ = "<Erlang map>" -- TODO: Implement
+  show _ = "<Erlang Map>" -- TODO: Implement
