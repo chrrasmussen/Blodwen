@@ -144,6 +144,13 @@ Cast ErlTuple0 () where
   cast MkErlTuple0 = MkUnit
 
 
+ErlType a => Cast (List a) (ErlList []) where
+  cast [] = []
+
+(ErlType a, Cast (List a) (ErlList as)) => Cast (List a) (ErlList (a :: as)) where
+  cast (x :: xs) = (x :: cast xs)
+
+
 ----------
 -- SHOW --
 ----------
