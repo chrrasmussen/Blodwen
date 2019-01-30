@@ -201,6 +201,9 @@ parameters (schExtPrim : {vars : _} -> Int -> SVars vars -> ExtPrim -> List (CEx
         bindArgs i (n :: ns) (v :: vs) = v :: bindArgs (i + 1) ns vs
 
     schConAlt : Int -> SVars vars -> CConAlt vars -> Core annot String
+    schConAlt i vs (MkConAlt (NS ["Builtin"] (UN "MkUnit")) tag args sc) = do
+        let vs' = extendSVars args vs
+        pure $ "({}) -> " ++ !(schExp i vs' sc)
     schConAlt i vs (MkConAlt (NS ["Prelude"] (UN "Nil")) tag args sc) = do
         let vs' = extendSVars args vs
         pure $ "([]) -> " ++ !(schExp i vs' sc)
@@ -236,6 +239,7 @@ parameters (schExtPrim : {vars : _} -> Int -> SVars vars -> ExtPrim -> List (CEx
     schConTuple i vs args = pure $ "{" ++ showSep ", " !(traverse (schExp i vs) args) ++ "}"
 
     schCon : Int -> SVars vars -> CExp vars -> Core annot String
+    schCon i vs (CCon (NS ["Builtin"] (UN "MkUnit")) _ _) = pure "{}"
     schCon i vs (CCon (NS ["Prelude"] (UN "Nil")) _ _) = pure "[]"
     schCon i vs (CCon (NS ["Prelude"] (UN "::")) _ [_, x, xs]) = pure $ "[" ++ !(schExp i vs x) ++ " | " ++ !(schExp i vs xs) ++ "]"
     schCon i vs (CCon (NS ["Lists", "ErlangPrelude"] (UN "Nil")) _ []) = pure "[]"

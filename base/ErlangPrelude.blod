@@ -27,6 +27,7 @@ mutual
     ETString    : ErlType String
     ETChar      : ErlType Char
     ETDouble    : ErlType Double
+    ETUnit      : ErlType ()
     ETList      : ErlType a => ErlType (List a)
 
     ETRaw       : ErlType (Raw a)     -- Can contain any Idris value
@@ -134,6 +135,13 @@ toErlTerm x = unsafePerformIO $ erlangCall ErlTerm "blodwen_id" [x]
 -- Allow all supported Erlang types to be type erased
 ErlType a => Cast a ErlTerm where
   cast x = toErlTerm x
+
+
+Cast () ErlTuple0 where
+  cast MkUnit = MkErlTuple0
+
+Cast ErlTuple0 () where
+  cast MkErlTuple0 = MkUnit
 
 
 ----------
