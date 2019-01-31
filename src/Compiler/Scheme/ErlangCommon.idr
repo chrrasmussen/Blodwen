@@ -166,6 +166,10 @@ toPrim pn@(NS _ n)
            (Unknown pn)
 toPrim pn = Unknown pn
 
+
+mkUnit : String
+mkUnit = "{}"
+
 export
 mkWorld : String -> String
 mkWorld res = schConstructor 0 ["false", res, "false"] -- PrimIO.MkIORes : {0 a : Type} -> a -> (1 x : %World) -> IORes a -- TODO: Is the `false`s necessary?
@@ -203,7 +207,7 @@ parameters (schExtPrim : {vars : _} -> Int -> SVars vars -> ExtPrim -> List (CEx
     schConAlt : Int -> SVars vars -> CConAlt vars -> Core annot String
     schConAlt i vs (MkConAlt (NS ["Builtin"] (UN "MkUnit")) tag args sc) = do
         let vs' = extendSVars args vs
-        pure $ "({}) -> " ++ !(schExp i vs' sc)
+        pure $ "(" ++ mkUnit ++ ") -> " ++ !(schExp i vs' sc)
     schConAlt i vs (MkConAlt (NS ["Prelude"] (UN "Nil")) tag args sc) = do
         let vs' = extendSVars args vs
         pure $ "([]) -> " ++ !(schExp i vs' sc)
@@ -239,7 +243,7 @@ parameters (schExtPrim : {vars : _} -> Int -> SVars vars -> ExtPrim -> List (CEx
     schConTuple i vs args = pure $ "{" ++ showSep ", " !(traverse (schExp i vs) args) ++ "}"
 
     schCon : Int -> SVars vars -> CExp vars -> Core annot String
-    schCon i vs (CCon (NS ["Builtin"] (UN "MkUnit")) _ _) = pure "{}"
+    schCon i vs (CCon (NS ["Builtin"] (UN "MkUnit")) _ _) = pure mkUnit
     schCon i vs (CCon (NS ["Prelude"] (UN "Nil")) _ _) = pure "[]"
     schCon i vs (CCon (NS ["Prelude"] (UN "::")) _ [_, x, xs]) = pure $ "[" ++ !(schExp i vs x) ++ " | " ++ !(schExp i vs xs) ++ "]"
     schCon i vs (CCon (NS ["Lists", "ErlangPrelude"] (UN "Nil")) _ []) = pure "[]"
@@ -318,7 +322,7 @@ parameters (schExtPrim : {vars : _} -> Int -> SVars vars -> ExtPrim -> List (CEx
   schExtCommon i vs ErlangCall [_, ret, fn, args, world] -- TODO: Implement?
       = do pure $ mkWorld "false"
   schExtCommon i vs PutStr [arg, world] 
-      = pure $ "(fun() -> io_unicode_put_str(" ++ !(schExp i vs arg) ++ "), " ++ mkWorld (schConstructor 0 []) ++ " end())" -- code for MkUnit
+      = pure $ "(fun() -> io_unicode_put_str(" ++ !(schExp i vs arg) ++ "), " ++ mkWorld mkUnit ++ " end())"
   schExtCommon i vs GetStr [world] 
       = pure $ mkWorld "io_unicode_get_str(\"\")"
   schExtCommon i vs FileOpen [file, mode, bin, world]
@@ -327,7 +331,7 @@ parameters (schExtPrim : {vars : _} -> Int -> SVars vars -> ExtPrim -> List (CEx
                                       ++ !(schExp i vs mode) ++ ", "
                                       ++ !(schExp i vs bin) ++ ")"
   schExtCommon i vs FileClose [file, world]
-      = pure $ "(fun() -> blodwen_close(" ++ !(schExp i vs file) ++ "), " ++ mkWorld (schConstructor 0 []) ++ " end())"
+      = pure $ "(fun() -> blodwen_close(" ++ !(schExp i vs file) ++ "), " ++ mkWorld mkUnit ++ " end())"
   schExtCommon i vs FileReadLine [file, world]
       = pure $ mkWorld $ "blodwen_read_line(" ++ !(schExp i vs file) ++ ")"
   schExtCommon i vs FileWriteLine [file, str, world]

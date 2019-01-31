@@ -26,7 +26,7 @@ blodwen_id(X) -> X.
 
 % Unit
 
--define(UNIT, {0}).
+-define(UNIT, {}).
 
 -type idr_unit() :: ?UNIT.
 
