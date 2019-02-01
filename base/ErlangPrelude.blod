@@ -81,30 +81,30 @@ namespace Opaque
 
 public export
 data ErlType : Type -> Type where
-  ETInt       : ErlType Int
-  ETInteger   : ErlType Integer
-  ETString    : ErlType String
-  ETChar      : ErlType Char
-  ETDouble    : ErlType Double
-  ETUnit      : ErlType ()
-  ETList      : ErlType a => ErlType (List a)
+  ETInt           : ErlType Int
+  ETInteger       : ErlType Integer
+  ETString        : ErlType String
+  ETChar          : ErlType Char
+  ETDouble        : ErlType Double
+  ETUnit          : ErlType ()
+  ETList          : ErlType a => ErlType (List a)
 
-  ETRaw       : ErlType (Raw a)     -- Can contain any Idris value
-  ETErlTerm   : ErlType ErlTerm     -- Can contain any Erlang term
+  ETRaw           : ErlType (Raw a)     -- Can contain any Idris value
+  ETErlTerm       : ErlType ErlTerm     -- Can contain any Erlang term
 
   -- Data types that bridge to native Erlang data types
-  ETErlListNil  : ErlType (ErlList [])
-  ETErlListCons : (ErlType x, ErlType (ErlList xs)) => ErlType (ErlList (x :: xs))
-  ETErlTuple0 : ErlType ErlTuple0
-  ETErlTuple1 : ErlType a => ErlType (ErlTuple1 a)
-  ETErlTuple2 : (ErlType a, ErlType b) => ErlType (ErlTuple2 a b)
-  ETErlTuple3 : (ErlType a, ErlType b, ErlType c) => ErlType (ErlTuple3 a b c)
-  ETErlTuple4 : (ErlType a, ErlType b, ErlType c, ErlType d) => ErlType (ErlTuple4 a b c d)
-  ETErlTuple5 : (ErlType a, ErlType b, ErlType c, ErlType d, ErlType e) => ErlType (ErlTuple5 a b c d e)
-  ETErlMap    : ErlType ErlMap
-  ETErlPid    : ErlType ErlPid
-  ETErlRef    : ErlType ErlRef
-  ETErlPort   : ErlType ErlPort
+  ETErlListNil    : ErlType (ErlList [])
+  ETErlListCons   : (ErlType x, ErlType (ErlList xs)) => ErlType (ErlList (x :: xs))
+  ETErlTuple0     : ErlType ErlTuple0
+  ETErlTuple1     : ErlType a => ErlType (ErlTuple1 a)
+  ETErlTuple2     : (ErlType a, ErlType b) => ErlType (ErlTuple2 a b)
+  ETErlTuple3     : (ErlType a, ErlType b, ErlType c) => ErlType (ErlTuple3 a b c)
+  ETErlTuple4     : (ErlType a, ErlType b, ErlType c, ErlType d) => ErlType (ErlTuple4 a b c d)
+  ETErlTuple5     : (ErlType a, ErlType b, ErlType c, ErlType d, ErlType e) => ErlType (ErlTuple5 a b c d e)
+  ETErlMap        : ErlType ErlMap
+  ETErlPid        : ErlType ErlPid
+  ETErlRef        : ErlType ErlRef
+  ETErlPort       : ErlType ErlPort
 
 
 namespace IO
