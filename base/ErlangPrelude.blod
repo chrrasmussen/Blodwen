@@ -79,32 +79,37 @@ namespace Opaque
   data ErlPort : Type where
 
 
-public export
-data ErlType : Type -> Type where
-  ETInt           : ErlType Int
-  ETInteger       : ErlType Integer
-  ETString        : ErlType String
-  ETChar          : ErlType Char
-  ETDouble        : ErlType Double
-  ETUnit          : ErlType ()
-  ETList          : ErlType a => ErlType (List a)
+mutual
+  public export
+  data ErlType : Type -> Type where
+    ETInt           : ErlType Int
+    ETInteger       : ErlType Integer
+    ETString        : ErlType String
+    ETChar          : ErlType Char
+    ETDouble        : ErlType Double
+    ETUnit          : ErlType ()
+    ETList          : ErlType a => ErlType (List a)
 
-  ETRaw           : ErlType (Raw a)     -- Can contain any Idris value
-  ETErlTerm       : ErlType ErlTerm     -- Can contain any Erlang term
+    ETRaw           : ErlType (Raw a)     -- Can contain any Idris value
+    ETErlTerm       : ErlType ErlTerm     -- Can contain any Erlang term
 
-  -- Data types that bridge to native Erlang data types
-  ETErlListNil    : ErlType (ErlList [])
-  ETErlListCons   : (ErlType x, ErlType (ErlList xs)) => ErlType (ErlList (x :: xs))
-  ETErlTuple0     : ErlType ErlTuple0
-  ETErlTuple1     : ErlType a => ErlType (ErlTuple1 a)
-  ETErlTuple2     : (ErlType a, ErlType b) => ErlType (ErlTuple2 a b)
-  ETErlTuple3     : (ErlType a, ErlType b, ErlType c) => ErlType (ErlTuple3 a b c)
-  ETErlTuple4     : (ErlType a, ErlType b, ErlType c, ErlType d) => ErlType (ErlTuple4 a b c d)
-  ETErlTuple5     : (ErlType a, ErlType b, ErlType c, ErlType d, ErlType e) => ErlType (ErlTuple5 a b c d e)
-  ETErlMap        : ErlType ErlMap
-  ETErlPid        : ErlType ErlPid
-  ETErlRef        : ErlType ErlRef
-  ETErlPort       : ErlType ErlPort
+    -- Data types that bridge to native Erlang data types
+    ETErlList       : ErlTypes xs => ErlType (ErlList xs)
+    ETErlTuple0     : ErlType ErlTuple0
+    ETErlTuple1     : ErlType a => ErlType (ErlTuple1 a)
+    ETErlTuple2     : ErlTypes [a, b] => ErlType (ErlTuple2 a b)
+    ETErlTuple3     : ErlTypes [a, b, c] => ErlType (ErlTuple3 a b c)
+    ETErlTuple4     : ErlTypes [a, b, c, d] => ErlType (ErlTuple4 a b c d)
+    ETErlTuple5     : ErlTypes [a, b, c, d, e] => ErlType (ErlTuple5 a b c d e)
+    ETErlMap        : ErlType ErlMap
+    ETErlPid        : ErlType ErlPid
+    ETErlRef        : ErlType ErlRef
+    ETErlPort       : ErlType ErlPort
+
+  public export
+  data ErlTypes : List Type -> Type where
+    ETErlTypesNil   : ErlTypes []
+    ETErlTypesCons  : (ErlType x, ErlTypes xs) => ErlTypes (x :: xs)
 
 
 namespace IO
@@ -113,7 +118,7 @@ namespace IO
   export %inline
   erlangCall : (ret : Type) -> {auto ret_prf : ErlType ret} ->
                String ->
-               ErlList (x :: xs) -> {auto inp_prf : (ErlType x, ErlType (ErlList xs))} ->
+               ErlList xs -> {auto inp_prf : ErlTypes xs} ->
                IO ret
   erlangCall ret fn args = primIO (prim__erlangCall ret fn args)
 
