@@ -194,50 +194,37 @@ schCaseDef (Just tm) = ["(_) -> " ++ tm]
 
 parameters (schExtPrim : {vars : _} -> Int -> SVars vars -> ExtPrim -> List (CExp vars) -> Core annot String)
   mutual
-    schConTupleAlt : (arity : Nat) -> Int -> SVars vars -> (args : List Name) -> CExp (args ++ vars) -> Core annot String
-    schConTupleAlt {vars} arity i vs args sc = do
-        let vs' = extendSVars args vs
-        body <- schExp i vs' sc
-        pure $ "({" ++ showSep ", " (drop arity $ bindArgs 1 args vs') ++ "}) -> " ++ body
-      where
-        bindArgs : Int -> (ns : List Name) -> SVars (ns ++ vars) -> List String
-        bindArgs i [] vs = []
-        bindArgs i (n :: ns) (v :: vs) = v :: bindArgs (i + 1) ns vs
+    bindArgs : Int -> (ns : List Name) -> SVars (ns ++ vars) -> List String
+    bindArgs i [] vs = []
+    bindArgs i (n :: ns) (v :: vs) = v :: bindArgs (i + 1) ns vs
+
+    schConAltTuple : (arity : Nat) -> Int -> SVars vars -> (args : List Name) -> CExp (args ++ vars) -> Core annot String
+    schConAltTuple arity i vs args sc = do
+      let vs' = extendSVars args vs
+      pure $ "({" ++ showSep ", " (drop arity $ bindArgs 1 args vs') ++ "}) -> " ++ !(schExp i vs' sc)
 
     schConAlt : Int -> SVars vars -> CConAlt vars -> Core annot String
     schConAlt i vs (MkConAlt (NS ["Builtin"] (UN "MkUnit")) tag args sc) = do
-        let vs' = extendSVars args vs
-        pure $ "(" ++ mkUnit ++ ") -> " ++ !(schExp i vs' sc)
+      let vs' = extendSVars args vs
+      pure $ "(" ++ mkUnit ++ ") -> " ++ !(schExp i vs' sc)
     schConAlt i vs (MkConAlt (NS ["Prelude"] (UN "Nil")) tag args sc) = do
-        let vs' = extendSVars args vs
-        pure $ "([]) -> " ++ !(schExp i vs' sc)
-    schConAlt {vars} i vs (MkConAlt (NS ["Prelude"] (UN "::")) tag args sc) = do
-        let vs' = extendSVars args vs
-        body <- schExp i vs' sc
-        -- The first argument of `args` is the type of the `List a`; drop it
-        pure $ "([" ++ showSep " | " (drop 1 $ bindArgs 1 args vs') ++ "]) -> " ++ body
-      where
-        bindArgs : Int -> (ns : List Name) -> SVars (ns ++ vars) -> List String
-        bindArgs i [] vs = []
-        bindArgs i (n :: ns) (v :: vs) = v :: bindArgs (i + 1) ns vs
-    schConAlt i vs (MkConAlt (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple0")) tag args sc) = schConTupleAlt 0 i vs args sc
-    schConAlt i vs (MkConAlt (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple1")) tag args sc) = schConTupleAlt 1 i vs args sc
-    schConAlt i vs (MkConAlt (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple2")) tag args sc) = schConTupleAlt 2 i vs args sc
-    schConAlt i vs (MkConAlt (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple3")) tag args sc) = schConTupleAlt 3 i vs args sc
-    schConAlt i vs (MkConAlt (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple4")) tag args sc) = schConTupleAlt 4 i vs args sc
-    schConAlt i vs (MkConAlt (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple5")) tag args sc) = schConTupleAlt 5 i vs args sc
-    schConAlt {vars} i vs (MkConAlt n tag args sc) = do
-        let vs' = extendSVars args vs
-        body <- schExp i vs' sc
-        pure $ "({" ++ showSep ", " (show tag :: bindArgs 1 args vs') ++ "}) -> " ++ body
-      where
-        bindArgs : Int -> (ns : List Name) -> SVars (ns ++ vars) -> List String
-        bindArgs i [] vs = []
-        bindArgs i (n :: ns) (v :: vs) = v :: bindArgs (i + 1) ns vs
+      let vs' = extendSVars args vs
+      pure $ "([]) -> " ++ !(schExp i vs' sc)
+    schConAlt i vs (MkConAlt (NS ["Prelude"] (UN "::")) tag args sc) = do
+      let vs' = extendSVars args vs
+      pure $ "([" ++ showSep " | " (drop 1 $ bindArgs 1 args vs') ++ "]) -> " ++ !(schExp i vs' sc)
+    schConAlt i vs (MkConAlt (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple0")) tag args sc) = schConAltTuple 0 i vs args sc
+    schConAlt i vs (MkConAlt (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple1")) tag args sc) = schConAltTuple 1 i vs args sc
+    schConAlt i vs (MkConAlt (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple2")) tag args sc) = schConAltTuple 2 i vs args sc
+    schConAlt i vs (MkConAlt (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple3")) tag args sc) = schConAltTuple 3 i vs args sc
+    schConAlt i vs (MkConAlt (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple4")) tag args sc) = schConAltTuple 4 i vs args sc
+    schConAlt i vs (MkConAlt (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple5")) tag args sc) = schConAltTuple 5 i vs args sc
+    schConAlt i vs (MkConAlt n tag args sc) = do
+      let vs' = extendSVars args vs
+      pure $ "({" ++ showSep ", " (show tag :: bindArgs 1 args vs') ++ "}) -> " ++ !(schExp i vs' sc)
 
     schConstAlt : Int -> SVars vars -> CConstAlt vars -> Core annot String
-    schConstAlt i vs (MkConstAlt c exp)
-        = pure $ "(" ++ schConstant c ++ ") -> " ++ !(schExp i vs exp)
+    schConstAlt i vs (MkConstAlt c exp) = pure $ "(" ++ schConstant c ++ ") -> " ++ !(schExp i vs exp)
 
     schConTuple : Int -> SVars vars -> List (CExp vars) -> Core annot String
     schConTuple i vs args = pure $ "{" ++ showSep ", " !(traverse (schExp i vs) args) ++ "}"
