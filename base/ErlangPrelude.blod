@@ -1,5 +1,65 @@
 module ErlangPrelude
 
+
+namespace Lists
+  public export
+  data ErlList : List Type -> Type where
+    Nil : ErlList []
+    (::) : x -> ErlList xs -> ErlList (x :: xs)
+
+
+namespace Tuples
+  public export
+  data ErlTuple0 : Type where
+    MkErlTuple0 : ErlTuple0
+
+  public export
+  data ErlTuple1 : Type -> Type where
+    MkErlTuple1 : a -> ErlTuple1 a
+
+  public export
+  data ErlTuple2 : Type -> Type -> Type where
+    MkErlTuple2 : a -> b -> ErlTuple2 a b
+
+  public export
+  data ErlTuple3 : Type -> Type -> Type -> Type where
+    MkErlTuple3 : a -> b -> c ->  ErlTuple3 a b c
+
+  public export
+  data ErlTuple4 : Type -> Type -> Type -> Type -> Type where
+    MkErlTuple4 : a -> b -> c -> d -> ErlTuple4 a b c d
+
+  public export
+  data ErlTuple5 : Type -> Type -> Type -> Type -> Type -> Type where
+    MkErlTuple5 : a -> b -> c -> d -> e -> ErlTuple5 a b c d e
+
+
+namespace Maps
+  export
+  data ErlMapKeyValue : Type where
+    MkKeyValue : key -> value -> ErlMapKeyValue
+
+  -- TODO: Which priority?
+  infix 3 :=
+
+  export
+  (:=) : key -> value -> ErlMapKeyValue
+  (:=) = MkKeyValue
+
+  export
+  data ErlMap : Type where
+    ErlMapNil : ErlMap
+    ErlMapCons : ErlMapKeyValue -> ErlMap -> ErlMap
+
+  export
+  Nil : ErlMap
+  Nil = ErlMapNil
+
+  export
+  (::) : ErlMapKeyValue -> ErlMap -> ErlMap
+  (::) = ErlMapCons
+
+
 namespace Idris
   public export
   data Raw a = MkRaw a
@@ -19,103 +79,48 @@ namespace Opaque
   data ErlPort : Type where
 
 
-mutual
-  public export
-  data ErlType : Type -> Type where
-    ETInt       : ErlType Int
-    ETInteger   : ErlType Integer
-    ETString    : ErlType String
-    ETChar      : ErlType Char
-    ETDouble    : ErlType Double
-    ETUnit      : ErlType ()
-    ETList      : ErlType a => ErlType (List a)
+public export
+data ErlType : Type -> Type where
+  ETInt       : ErlType Int
+  ETInteger   : ErlType Integer
+  ETString    : ErlType String
+  ETChar      : ErlType Char
+  ETDouble    : ErlType Double
+  ETUnit      : ErlType ()
+  ETList      : ErlType a => ErlType (List a)
 
-    ETRaw       : ErlType (Raw a)     -- Can contain any Idris value
-    ETErlTerm   : ErlType ErlTerm     -- Can contain any Erlang term
+  ETRaw       : ErlType (Raw a)     -- Can contain any Idris value
+  ETErlTerm   : ErlType ErlTerm     -- Can contain any Erlang term
 
-    -- Data types that bridge to native Erlang data types
-    ETErlList   : (ErlType x, ErlType (ErlList xs)) => ErlType (ErlList (x :: xs))
-    ETErlTuple0 : ErlType ErlTuple0
-    ETErlTuple1 : ErlType a => ErlType (ErlTuple1 a)
-    ETErlTuple2 : (ErlType a, ErlType b) => ErlType (ErlTuple2 a b)
-    ETErlTuple3 : (ErlType a, ErlType b, ErlType c) => ErlType (ErlTuple3 a b c)
-    ETErlTuple4 : (ErlType a, ErlType b, ErlType c, ErlType d) => ErlType (ErlTuple4 a b c d)
-    ETErlTuple5 : (ErlType a, ErlType b, ErlType c, ErlType d, ErlType e) => ErlType (ErlTuple5 a b c d e)
-    ETErlMap    : ErlType ErlMap
-    ETErlPid    : ErlType ErlPid
-    ETErlRef    : ErlType ErlRef
-    ETErlPort   : ErlType ErlPort
-
-
-  namespace Lists
-    public export
-    data ErlList : List Type -> Type where
-      Nil : ErlList []
-      (::) : x -> ErlList xs -> ErlList (x :: xs)
+  -- Data types that bridge to native Erlang data types
+  ETErlList   : (ErlType x, ErlType (ErlList xs)) => ErlType (ErlList (x :: xs))
+  ETErlTuple0 : ErlType ErlTuple0
+  ETErlTuple1 : ErlType a => ErlType (ErlTuple1 a)
+  ETErlTuple2 : (ErlType a, ErlType b) => ErlType (ErlTuple2 a b)
+  ETErlTuple3 : (ErlType a, ErlType b, ErlType c) => ErlType (ErlTuple3 a b c)
+  ETErlTuple4 : (ErlType a, ErlType b, ErlType c, ErlType d) => ErlType (ErlTuple4 a b c d)
+  ETErlTuple5 : (ErlType a, ErlType b, ErlType c, ErlType d, ErlType e) => ErlType (ErlTuple5 a b c d e)
+  ETErlMap    : ErlType ErlMap
+  ETErlPid    : ErlType ErlPid
+  ETErlRef    : ErlType ErlRef
+  ETErlPort   : ErlType ErlPort
 
 
-  namespace Tuples
-    public export
-    data ErlTuple0 : Type where
-      MkErlTuple0 : ErlTuple0
+namespace IO
+  %extern prim__erlangCall : (ret : Type) -> String -> ErlList xs -> (1 x : %World) -> IORes ret
 
-    public export
-    data ErlTuple1 : Type -> Type where
-      MkErlTuple1 : a -> ErlTuple1 a
-
-    public export
-    data ErlTuple2 : Type -> Type -> Type where
-      MkErlTuple2 : a -> b -> ErlTuple2 a b
-
-    public export
-    data ErlTuple3 : Type -> Type -> Type -> Type where
-      MkErlTuple3 : a -> b -> c ->  ErlTuple3 a b c
-
-    public export
-    data ErlTuple4 : Type -> Type -> Type -> Type -> Type where
-      MkErlTuple4 : a -> b -> c -> d -> ErlTuple4 a b c d
-
-    public export
-    data ErlTuple5 : Type -> Type -> Type -> Type -> Type -> Type where
-      MkErlTuple5 : a -> b -> c -> d -> e -> ErlTuple5 a b c d e
+  export %inline
+  erlangCall : (ret : Type) -> {auto prf : ErlType ret} -> String -> ErlList xs -> IO ret
+  erlangCall ret fn args = primIO (prim__erlangCall ret fn args)
 
 
-  namespace Maps
-    export
-    data ErlMapKeyValue : Type where
-      MkKeyValue : key -> value -> ErlMapKeyValue
+-------------------
+-- MAP FUNCTIONS --
+-------------------
 
-    -- TODO: Which priority?
-    infix 3 :=
-
-    export
-    (:=) : key -> value -> ErlMapKeyValue
-    (:=) = MkKeyValue
-
-    export
-    data ErlMap : Type where
-      ErlMapNil : ErlMap
-      ErlMapCons : ErlMapKeyValue -> ErlMap -> ErlMap
-
-    export
-    Nil : ErlMap
-    Nil = ErlMapNil
-
-    export
-    (::) : ErlMapKeyValue -> ErlMap -> ErlMap
-    (::) = ErlMapCons
-
-    export
-    unsafeGet : (ret : Type) -> {auto prf : ErlType ret} -> key -> ErlMap -> IO ret
-    unsafeGet ret key m = erlangCall ret "maps:get" [key, m]
-
-
-  namespace IO
-    %extern prim__erlangCall : (ret : Type) -> String -> ErlList xs -> (1 x : %World) -> IORes ret
-
-    export %inline
-    erlangCall : (ret : Type) -> {auto prf : ErlType ret} -> String -> ErlList xs -> IO ret
-    erlangCall ret fn args = primIO (prim__erlangCall ret fn args)
+export
+unsafeGet : (ret : Type) -> {auto prf : ErlType ret} -> key -> ErlMap -> IO ret
+unsafeGet ret key m = erlangCall ret "maps:get" [key, m]
 
 
 ----------
