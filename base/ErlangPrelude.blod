@@ -34,6 +34,56 @@ namespace Tuples
     MkErlTuple5 : a -> b -> c -> d -> e -> ErlTuple5 a b c d e
 
 
+namespace Functions
+  public export
+  data ErlFun0 : Type -> Type where
+    MkErlFun0 : ret -> ErlFun0 ret
+
+  public export
+  data ErlFun1 : Type -> Type -> Type where
+    MkErlFun1 : (a -> ret) -> ErlFun1 a ret
+
+  public export
+  data ErlFun2 : Type -> Type -> Type -> Type where
+    MkErlFun2 : (a -> b -> ret) -> ErlFun2 a b ret
+
+  public export
+  data ErlFun3 : Type -> Type -> Type -> Type -> Type where
+    MkErlFun3 : (a -> b -> c -> ret) -> ErlFun3 a b c ret
+
+  public export
+  data ErlFun4 : Type -> Type -> Type -> Type -> Type -> Type where
+    MkErlFun4 : (a -> b -> c -> d -> ret) -> ErlFun4 a b c d ret
+
+  public export
+  data ErlFun5 : Type -> Type -> Type -> Type -> Type -> Type -> Type where
+    MkErlFun5 : (a -> b -> c -> d -> e -> ret) -> ErlFun5 a b c d e ret
+
+  public export
+  data ErlIO0 : Type -> Type where
+    MkErlIO0  : IO ret -> ErlIO0 ret
+
+  public export
+  data ErlIO1 : Type -> Type -> Type where
+    MkErlIO1  : (a -> IO ret) -> ErlIO1 a ret
+
+  public export
+  data ErlIO2 : Type -> Type -> Type -> Type where
+    MkErlIO2  : (a -> b -> IO ret) -> ErlIO2 a b ret
+
+  public export
+  data ErlIO3 : Type -> Type -> Type -> Type -> Type where
+    MkErlIO3  : (a -> b -> c -> IO ret) -> ErlIO3 a b c ret
+
+  public export
+  data ErlIO4 : Type -> Type -> Type -> Type -> Type -> Type where
+    MkErlIO4  : (a -> b -> c -> d -> IO ret) -> ErlIO4 a b c d ret
+
+  public export
+  data ErlIO5 : Type -> Type -> Type -> Type -> Type -> Type -> Type where
+    MkErlIO5  : (a -> b -> c -> d -> e -> IO ret) -> ErlIO5 a b c d e ret
+
+
 namespace Maps
   export
   data ErlMapKeyValue : Type where
@@ -87,8 +137,10 @@ mutual
     ETString        : ErlType String
     ETChar          : ErlType Char
     ETDouble        : ErlType Double
+
     ETUnit          : ErlType ()
     ETList          : ErlType a => ErlType (List a)
+    ETFun           : (ErlType a, ErlType b) => ErlType (a -> b) -- NOTE: These functions are curried in Erlang as well
 
     ETRaw           : ErlType (Raw a)     -- Can contain any Idris value
     ETErlTerm       : ErlType ErlTerm     -- Can contain any Erlang term
@@ -96,11 +148,23 @@ mutual
     -- Data types that bridge to native Erlang data types
     ETErlList       : ErlTypes xs => ErlType (ErlList xs)
     ETErlTuple0     : ErlType ErlTuple0
-    ETErlTuple1     : ErlType a => ErlType (ErlTuple1 a)
+    ETErlTuple1     : ErlTypes [a] => ErlType (ErlTuple1 a)
     ETErlTuple2     : ErlTypes [a, b] => ErlType (ErlTuple2 a b)
     ETErlTuple3     : ErlTypes [a, b, c] => ErlType (ErlTuple3 a b c)
     ETErlTuple4     : ErlTypes [a, b, c, d] => ErlType (ErlTuple4 a b c d)
     ETErlTuple5     : ErlTypes [a, b, c, d, e] => ErlType (ErlTuple5 a b c d e)
+    ETErlFun0       : ErlTypes [ret] => ErlType (ErlFun0 ret)
+    ETErlFun1       : ErlTypes [a, ret] => ErlType (ErlFun1 a ret)
+    ETErlFun2       : ErlTypes [a, b, ret] => ErlType (ErlFun2 a b ret)
+    ETErlFun3       : ErlTypes [a, b, c, ret] => ErlType (ErlFun3 a b c ret)
+    ETErlFun4       : ErlTypes [a, b, c, d, ret] => ErlType (ErlFun4 a b c d ret)
+    ETErlFun5       : ErlTypes [a, b, c, d, e, ret] => ErlType (ErlFun5 a b c d e ret)
+    ETErlIO0        : ErlTypes [ret] => ErlType (ErlIO0 ret)
+    ETErlIO1        : ErlTypes [a, ret] => ErlType (ErlIO1 a ret)
+    ETErlIO2        : ErlTypes [a, b, ret] => ErlType (ErlIO2 a b ret)
+    ETErlIO3        : ErlTypes [a, b, c, ret] => ErlType (ErlIO3 a b c ret)
+    ETErlIO4        : ErlTypes [a, b, c, d, ret] => ErlType (ErlIO4 a b c d ret)
+    ETErlIO5        : ErlTypes [a, b, c, d, e, ret] => ErlType (ErlIO5 a b c d e ret)
     ETErlMap        : ErlType ErlMap
     ETErlPid        : ErlType ErlPid
     ETErlRef        : ErlType ErlRef

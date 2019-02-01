@@ -174,6 +174,22 @@ export
 mkWorld : String -> String
 mkWorld res = schConstructor 0 ["false", res, "false"] -- PrimIO.MkIORes : {0 a : Type} -> a -> (1 x : %World) -> IORes a -- TODO: Is the `false`s necessary?
 
+-- io_pure : {0 a : Type} -> a -> IO a
+-- io_pure {a} x = MkIO {a} (\1 w : %World => (MkIORes {a} x w))
+--
+-- ns_PrimIO_un_io_pure(V_0, V_1) -> {0, {}, fun(V_2) -> {0, {}, V_1, V_2} end}.
+mkIOPure : String -> String
+mkIOPure val = "{0, {}, fun(World) -> {0, {}, " ++ val ++ ", World} end}"
+
+
+mkCurriedFun : List String -> String -> String
+mkCurriedFun []        body = body
+mkCurriedFun (x :: xs) body = "fun(" ++ x ++ ") -> " ++ mkCurriedFun xs body ++ " end"
+
+mkUncurriedFun : List String -> String -> String
+mkUncurriedFun xs body = "fun(" ++ showSep ", " xs ++ ") -> " ++ body ++ " end"
+
+
 schConstant : Constant -> String
 schConstant (I x) = show x
 schConstant (BI x) = show x
@@ -192,6 +208,21 @@ schCaseDef : Maybe String -> List String
 schCaseDef Nothing = []
 schCaseDef (Just tm) = ["(_) -> " ++ tm]
 
+
+applyUnsafePerformIO : CExp vars -> CExp vars
+applyUnsafePerformIO expr = CApp (CRef (NS ["PrimIO"] (UN "unsafePerformIO"))) [CErased, expr]
+
+applyToArgs : CExp vars -> List (CExp vars) -> CExp vars
+applyToArgs expr [] = expr
+applyToArgs expr (x :: xs) = applyToArgs (CApp expr [x]) xs
+
+expectArgAtIndex : (n : Nat) -> List a -> Core annot a
+expectArgAtIndex n xs =
+  case index' n xs of
+    Just val => pure val
+    Nothing => throw (InternalError ("Missing expected argument at index " ++ show n ++ " in list"))
+
+
 parameters (schExtPrim : {vars : _} -> Int -> SVars vars -> ExtPrim -> List (CExp vars) -> Core annot String)
   mutual
     bindArgs : Int -> (ns : List Name) -> SVars (ns ++ vars) -> List String
@@ -202,6 +233,16 @@ parameters (schExtPrim : {vars : _} -> Int -> SVars vars -> ExtPrim -> List (CEx
     schConAltTuple arity i vs args sc = do
       let vs' = extendSVars args vs
       pure $ "({" ++ showSep ", " (drop arity $ bindArgs 1 args vs') ++ "}) -> " ++ !(schExp i vs' sc)
+
+    -- Given an Erlang function `ErlangFunc` with arity 2:
+    -- 1. Curries this function according to arity: fun(X_1) -> fun(X_2) -> ErlangFunc(X_1, X_2) end end
+    -- 2. Transform the inner result with a user-defined function: fun(X_1) -> fun(X_2) -> `Transformer`(ErlangFunc(X_1, X_2)) end end
+    -- The transformer is specifically used to lift the value into the IO monad
+    schConAltFun : Int -> SVars vars -> (args : List Name) -> CExp (args ++ vars) -> (arity : Nat) -> (String -> String) -> Core annot String
+    schConAltFun i vs args sc arity transformer = do
+      let vs' = extendSVars args vs
+      let tempVars = take arity $ zipWith (\name, idx => name ++ show idx) (repeat "X_") [1..]
+      pure  $ "(Func) -> " ++ mkUncurriedFun (drop (S arity) $ bindArgs 1 args vs') !(schExp i vs' sc) ++ "(" ++ mkCurriedFun tempVars (transformer ("Func(" ++ showSep ", " tempVars ++ ")")) ++ ")"
 
     schConAlt : Int -> SVars vars -> CConAlt vars -> Core annot String
     schConAlt i vs (MkConAlt (NS ["Builtin"] (UN "MkUnit")) tag args sc) = do
@@ -225,6 +266,18 @@ parameters (schExtPrim : {vars : _} -> Int -> SVars vars -> ExtPrim -> List (CEx
     schConAlt i vs (MkConAlt (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple3")) tag args sc) = schConAltTuple 3 i vs args sc
     schConAlt i vs (MkConAlt (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple4")) tag args sc) = schConAltTuple 4 i vs args sc
     schConAlt i vs (MkConAlt (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple5")) tag args sc) = schConAltTuple 5 i vs args sc
+    schConAlt i vs (MkConAlt (NS ["Functions", "ErlangPrelude"] (UN "MkErlFun0")) tag args sc) = schConAltFun i vs args sc 0 id
+    schConAlt i vs (MkConAlt (NS ["Functions", "ErlangPrelude"] (UN "MkErlFun1")) tag args sc) = schConAltFun i vs args sc 1 id
+    schConAlt i vs (MkConAlt (NS ["Functions", "ErlangPrelude"] (UN "MkErlFun2")) tag args sc) = schConAltFun i vs args sc 2 id
+    schConAlt i vs (MkConAlt (NS ["Functions", "ErlangPrelude"] (UN "MkErlFun3")) tag args sc) = schConAltFun i vs args sc 3 id
+    schConAlt i vs (MkConAlt (NS ["Functions", "ErlangPrelude"] (UN "MkErlFun4")) tag args sc) = schConAltFun i vs args sc 4 id
+    schConAlt i vs (MkConAlt (NS ["Functions", "ErlangPrelude"] (UN "MkErlFun5")) tag args sc) = schConAltFun i vs args sc 5 id
+    schConAlt i vs (MkConAlt (NS ["Functions", "ErlangPrelude"] (UN "MkErlIO0")) tag args sc) = schConAltFun i vs args sc 0 mkIOPure
+    schConAlt i vs (MkConAlt (NS ["Functions", "ErlangPrelude"] (UN "MkErlIO1")) tag args sc) = schConAltFun i vs args sc 1 mkIOPure
+    schConAlt i vs (MkConAlt (NS ["Functions", "ErlangPrelude"] (UN "MkErlIO2")) tag args sc) = schConAltFun i vs args sc 2 mkIOPure
+    schConAlt i vs (MkConAlt (NS ["Functions", "ErlangPrelude"] (UN "MkErlIO3")) tag args sc) = schConAltFun i vs args sc 3 mkIOPure
+    schConAlt i vs (MkConAlt (NS ["Functions", "ErlangPrelude"] (UN "MkErlIO4")) tag args sc) = schConAltFun i vs args sc 4 mkIOPure
+    schConAlt i vs (MkConAlt (NS ["Functions", "ErlangPrelude"] (UN "MkErlIO5")) tag args sc) = schConAltFun i vs args sc 5 mkIOPure
     schConAlt i vs (MkConAlt n tag args sc) = do
       let vs' = extendSVars args vs
       pure $ "({" ++ showSep ", " (show tag :: bindArgs 1 args vs') ++ "}) -> " ++ !(schExp i vs' sc)
@@ -234,6 +287,17 @@ parameters (schExtPrim : {vars : _} -> Int -> SVars vars -> ExtPrim -> List (CEx
 
     schConTuple : Int -> SVars vars -> List (CExp vars) -> Core annot String
     schConTuple i vs args = pure $ "{" ++ showSep ", " !(traverse (schExp i vs) args) ++ "}"
+
+    -- Given an Idris function `idrisFun` with arity 2:
+    -- 1. Uncurries this function according to arity: fun(X_1, X_2) -> (idrisFun(X1))(X_2) end
+    -- 2. Transform the inner result with a user-defined function: fun(X_1, X_2) -> `transform`((idrisFun(X1))(X_2)) end
+    -- The transformer is specifically used to perform the side-effects of the result (using `unsafePerformIO`)
+    schConFun : Int -> SVars vars -> (arity : Nat) -> CExp vars -> (CExp vars -> CExp vars) -> Core annot String
+    schConFun i vs arity func transformer = do
+      let tempVars = take arity $ zipWith (\name, idx => name ++ show idx) (repeat "X_") [1..]
+      let tempCRefs = take arity $ zipWith (\name, idx => CRef (MN name idx)) (repeat "X") [1..]
+      let body = transformer (applyToArgs func tempCRefs)
+      pure $ mkUncurriedFun tempVars !(schExp i vs body)
 
     schCon : Int -> SVars vars -> CExp vars -> Core annot String
     schCon i vs (CCon (NS ["Builtin"] (UN "MkUnit")) _ _) = pure mkUnit
@@ -247,6 +311,18 @@ parameters (schExtPrim : {vars : _} -> Int -> SVars vars -> ExtPrim -> List (CEx
     schCon i vs (CCon (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple3")) _ args) = schConTuple i vs (drop 3 args)
     schCon i vs (CCon (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple4")) _ args) = schConTuple i vs (drop 4 args)
     schCon i vs (CCon (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple5")) _ args) = schConTuple i vs (drop 5 args)
+    schCon i vs (CCon (NS ["Functions", "ErlangPrelude"] (UN "MkErlFun0")) _ args) = schConFun i vs 0 !(expectArgAtIndex 1 args) id
+    schCon i vs (CCon (NS ["Functions", "ErlangPrelude"] (UN "MkErlFun1")) _ args) = schConFun i vs 1 !(expectArgAtIndex 2 args) id
+    schCon i vs (CCon (NS ["Functions", "ErlangPrelude"] (UN "MkErlFun2")) _ args) = schConFun i vs 2 !(expectArgAtIndex 3 args) id
+    schCon i vs (CCon (NS ["Functions", "ErlangPrelude"] (UN "MkErlFun3")) _ args) = schConFun i vs 3 !(expectArgAtIndex 4 args) id
+    schCon i vs (CCon (NS ["Functions", "ErlangPrelude"] (UN "MkErlFun4")) _ args) = schConFun i vs 4 !(expectArgAtIndex 5 args) id
+    schCon i vs (CCon (NS ["Functions", "ErlangPrelude"] (UN "MkErlFun5")) _ args) = schConFun i vs 5 !(expectArgAtIndex 6 args) id
+    schCon i vs (CCon (NS ["Functions", "ErlangPrelude"] (UN "MkErlIO0")) _ args) = schConFun i vs 0 !(expectArgAtIndex 1 args) applyUnsafePerformIO
+    schCon i vs (CCon (NS ["Functions", "ErlangPrelude"] (UN "MkErlIO1")) _ args) = schConFun i vs 1 !(expectArgAtIndex 2 args) applyUnsafePerformIO
+    schCon i vs (CCon (NS ["Functions", "ErlangPrelude"] (UN "MkErlIO2")) _ args) = schConFun i vs 2 !(expectArgAtIndex 3 args) applyUnsafePerformIO
+    schCon i vs (CCon (NS ["Functions", "ErlangPrelude"] (UN "MkErlIO3")) _ args) = schConFun i vs 3 !(expectArgAtIndex 4 args) applyUnsafePerformIO
+    schCon i vs (CCon (NS ["Functions", "ErlangPrelude"] (UN "MkErlIO4")) _ args) = schConFun i vs 4 !(expectArgAtIndex 5 args) applyUnsafePerformIO
+    schCon i vs (CCon (NS ["Functions", "ErlangPrelude"] (UN "MkErlIO5")) _ args) = schConFun i vs 5 !(expectArgAtIndex 6 args) applyUnsafePerformIO
     schCon i vs (CCon (NS ["Maps", "ErlangPrelude"] (UN "MkKeyValue")) _ [_, _, key, value]) = pure $ "#{" ++ !(schExp i vs key) ++ " => " ++ !(schExp i vs value) ++ "}"
     schCon i vs (CCon (NS ["Maps", "ErlangPrelude"] (UN "ErlMapNil")) _ _) = pure "#{}"
     schCon i vs (CCon (NS ["Maps", "ErlangPrelude"] (UN "ErlMapCons")) _ [x, xs]) = pure $ "maps:merge(" ++ !(schExp i vs xs) ++ ", " ++ !(schExp i vs x) ++ ")"
