@@ -198,7 +198,7 @@ parameters (schExtPrim : {vars : _} -> Int -> SVars vars -> ExtPrim -> List (CEx
     schConTupleAlt {vars} arity i vs args sc = do
         let vs' = extendSVars args vs
         body <- schExp i vs' sc
-        pure $ "({" ++ showSep ", " (drop (S arity) $ bindArgs 1 args vs') ++ "}) -> " ++ body
+        pure $ "({" ++ showSep ", " (drop arity $ bindArgs 1 args vs') ++ "}) -> " ++ body
       where
         bindArgs : Int -> (ns : List Name) -> SVars (ns ++ vars) -> List String
         bindArgs i [] vs = []
@@ -247,14 +247,14 @@ parameters (schExtPrim : {vars : _} -> Int -> SVars vars -> ExtPrim -> List (CEx
     schCon i vs (CCon (NS ["Prelude"] (UN "Nil")) _ _) = pure "[]"
     schCon i vs (CCon (NS ["Prelude"] (UN "::")) _ [_, x, xs]) = pure $ "[" ++ !(schExp i vs x) ++ " | " ++ !(schExp i vs xs) ++ "]"
     schCon i vs (CCon (NS ["Lists", "ErlangPrelude"] (UN "Nil")) _ []) = pure "[]"
-    schCon i vs (CCon (NS ["Lists", "ErlangPrelude"] (UN "::")) _ [_, _, _, x, xs]) = pure $ "[" ++ !(schExp i vs x) ++ " | " ++ !(schExp i vs xs) ++ "]"
+    schCon i vs (CCon (NS ["Lists", "ErlangPrelude"] (UN "::")) _ [_, _, x, xs]) = pure $ "[" ++ !(schExp i vs x) ++ " | " ++ !(schExp i vs xs) ++ "]"
     schCon i vs (CCon (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple0")) _ []) = schConTuple i vs []
-    schCon i vs (CCon (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple1")) _ args) = schConTuple i vs (drop 2 args)
-    schCon i vs (CCon (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple2")) _ args) = schConTuple i vs (drop 3 args)
-    schCon i vs (CCon (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple3")) _ args) = schConTuple i vs (drop 4 args)
-    schCon i vs (CCon (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple4")) _ args) = schConTuple i vs (drop 5 args)
-    schCon i vs (CCon (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple5")) _ args) = schConTuple i vs (drop 6 args)
-    schCon i vs (CCon (NS ["Maps", "ErlangPrelude"] (UN "MkKeyValue")) _ [_, _, key, _, value, _]) = pure $ "#{" ++ !(schExp i vs key) ++ " => " ++ !(schExp i vs value) ++ "}"
+    schCon i vs (CCon (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple1")) _ args) = schConTuple i vs (drop 1 args)
+    schCon i vs (CCon (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple2")) _ args) = schConTuple i vs (drop 2 args)
+    schCon i vs (CCon (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple3")) _ args) = schConTuple i vs (drop 3 args)
+    schCon i vs (CCon (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple4")) _ args) = schConTuple i vs (drop 4 args)
+    schCon i vs (CCon (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple5")) _ args) = schConTuple i vs (drop 5 args)
+    schCon i vs (CCon (NS ["Maps", "ErlangPrelude"] (UN "MkKeyValue")) _ [_, _, key, value]) = pure $ "#{" ++ !(schExp i vs key) ++ " => " ++ !(schExp i vs value) ++ "}"
     schCon i vs (CCon (NS ["Maps", "ErlangPrelude"] (UN "ErlMapNil")) _ _) = pure "#{}"
     schCon i vs (CCon (NS ["Maps", "ErlangPrelude"] (UN "ErlMapCons")) _ [x, xs]) = pure $ "maps:merge(" ++ !(schExp i vs xs) ++ ", " ++ !(schExp i vs x) ++ ")"
     schCon i vs (CCon x tag args) = pure $ schConstructor tag !(traverse (schExp i vs) args)
@@ -309,7 +309,7 @@ parameters (schExtPrim : {vars : _} -> Int -> SVars vars -> ExtPrim -> List (CEx
   -- Evaluate the outer `ErlList` to figure out the arity of the function call
   readArgs : Int -> SVars vars -> CExp vars -> Core annot (List String)
   readArgs i vs (CCon (NS ["Lists", "ErlangPrelude"] (UN "Nil")) _ []) = pure []
-  readArgs i vs (CCon (NS ["Lists", "ErlangPrelude"] (UN "::")) _ [_, _, _, x, xs]) = pure $ !(schExp i vs x) :: !(readArgs i vs xs)
+  readArgs i vs (CCon (NS ["Lists", "ErlangPrelude"] (UN "::")) _ [_, _, x, xs]) = pure $ !(schExp i vs x) :: !(readArgs i vs xs)
   readArgs i vs tm = throw (InternalError ("Unknown argument to foreign call: " ++ show tm))
 
   -- External primitives which are common to the scheme codegens (they can be
