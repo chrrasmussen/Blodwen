@@ -213,6 +213,12 @@ parameters (schExtPrim : {vars : _} -> Int -> SVars vars -> ExtPrim -> List (CEx
     schConAlt i vs (MkConAlt (NS ["Prelude"] (UN "::")) tag args sc) = do
       let vs' = extendSVars args vs
       pure $ "([" ++ showSep " | " (drop 1 $ bindArgs 1 args vs') ++ "]) -> " ++ !(schExp i vs' sc)
+    schConAlt i vs (MkConAlt (NS ["Lists", "ErlangPrelude"] (UN "Nil")) tag args sc) = do
+      let vs' = extendSVars args vs
+      pure $ "([]) -> " ++ !(schExp i vs' sc)
+    schConAlt i vs (MkConAlt (NS ["Lists", "ErlangPrelude"] (UN "::")) tag args sc) = do
+      let vs' = extendSVars args vs
+      pure $ "([" ++ showSep " | " (drop 2 $ bindArgs 1 args vs') ++ "]) -> " ++ !(schExp i vs' sc)
     schConAlt i vs (MkConAlt (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple0")) tag args sc) = schConAltTuple 0 i vs args sc
     schConAlt i vs (MkConAlt (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple1")) tag args sc) = schConAltTuple 1 i vs args sc
     schConAlt i vs (MkConAlt (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple2")) tag args sc) = schConAltTuple 2 i vs args sc
