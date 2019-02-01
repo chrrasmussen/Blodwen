@@ -229,8 +229,8 @@ parameters (schExtPrim : {vars : _} -> Int -> SVars vars -> ExtPrim -> List (CEx
     bindArgs i [] vs = []
     bindArgs i (n :: ns) (v :: vs) = v :: bindArgs (i + 1) ns vs
 
-    schConAltTuple : (arity : Nat) -> Int -> SVars vars -> (args : List Name) -> CExp (args ++ vars) -> Core annot String
-    schConAltTuple arity i vs args sc = do
+    schConAltTuple : Int -> SVars vars -> (args : List Name) -> CExp (args ++ vars) -> (arity : Nat) -> Core annot String
+    schConAltTuple i vs args sc arity = do
       let vs' = extendSVars args vs
       pure $ "({" ++ showSep ", " (drop arity $ bindArgs 1 args vs') ++ "}) -> " ++ !(schExp i vs' sc)
 
@@ -260,12 +260,12 @@ parameters (schExtPrim : {vars : _} -> Int -> SVars vars -> ExtPrim -> List (CEx
     schConAlt i vs (MkConAlt (NS ["Lists", "ErlangPrelude"] (UN "::")) tag args sc) = do
       let vs' = extendSVars args vs
       pure $ "([" ++ showSep " | " (drop 2 $ bindArgs 1 args vs') ++ "]) -> " ++ !(schExp i vs' sc)
-    schConAlt i vs (MkConAlt (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple0")) tag args sc) = schConAltTuple 0 i vs args sc
-    schConAlt i vs (MkConAlt (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple1")) tag args sc) = schConAltTuple 1 i vs args sc
-    schConAlt i vs (MkConAlt (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple2")) tag args sc) = schConAltTuple 2 i vs args sc
-    schConAlt i vs (MkConAlt (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple3")) tag args sc) = schConAltTuple 3 i vs args sc
-    schConAlt i vs (MkConAlt (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple4")) tag args sc) = schConAltTuple 4 i vs args sc
-    schConAlt i vs (MkConAlt (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple5")) tag args sc) = schConAltTuple 5 i vs args sc
+    schConAlt i vs (MkConAlt (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple0")) tag args sc) = schConAltTuple i vs args sc 0
+    schConAlt i vs (MkConAlt (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple1")) tag args sc) = schConAltTuple i vs args sc 1
+    schConAlt i vs (MkConAlt (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple2")) tag args sc) = schConAltTuple i vs args sc 2
+    schConAlt i vs (MkConAlt (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple3")) tag args sc) = schConAltTuple i vs args sc 3
+    schConAlt i vs (MkConAlt (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple4")) tag args sc) = schConAltTuple i vs args sc 4
+    schConAlt i vs (MkConAlt (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple5")) tag args sc) = schConAltTuple i vs args sc 5
     schConAlt i vs (MkConAlt (NS ["Functions", "ErlangPrelude"] (UN "MkErlFun0")) tag args sc) = schConAltFun i vs args sc 0 id
     schConAlt i vs (MkConAlt (NS ["Functions", "ErlangPrelude"] (UN "MkErlFun1")) tag args sc) = schConAltFun i vs args sc 1 id
     schConAlt i vs (MkConAlt (NS ["Functions", "ErlangPrelude"] (UN "MkErlFun2")) tag args sc) = schConAltFun i vs args sc 2 id
