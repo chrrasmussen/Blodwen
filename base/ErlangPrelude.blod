@@ -93,7 +93,8 @@ data ErlType : Type -> Type where
   ETErlTerm   : ErlType ErlTerm     -- Can contain any Erlang term
 
   -- Data types that bridge to native Erlang data types
-  ETErlList   : (ErlType x, ErlType (ErlList xs)) => ErlType (ErlList (x :: xs))
+  ETErlListNil  : ErlType (ErlList [])
+  ETErlListCons : (ErlType x, ErlType (ErlList xs)) => ErlType (ErlList (x :: xs))
   ETErlTuple0 : ErlType ErlTuple0
   ETErlTuple1 : ErlType a => ErlType (ErlTuple1 a)
   ETErlTuple2 : (ErlType a, ErlType b) => ErlType (ErlTuple2 a b)
@@ -110,7 +111,10 @@ namespace IO
   %extern prim__erlangCall : (ret : Type) -> String -> ErlList xs -> (1 x : %World) -> IORes ret
 
   export %inline
-  erlangCall : (ret : Type) -> {auto prf : ErlType ret} -> String -> ErlList xs -> IO ret
+  erlangCall : (ret : Type) -> {auto ret_prf : ErlType ret} ->
+               String ->
+               ErlList (x :: xs) -> {auto inp_prf : (ErlType x, ErlType (ErlList xs))} ->
+               IO ret
   erlangCall ret fn args = primIO (prim__erlangCall ret fn args)
 
 
@@ -119,7 +123,7 @@ namespace IO
 -------------------
 
 export
-unsafeGet : (ret : Type) -> {auto prf : ErlType ret} -> key -> ErlMap -> IO ret
+unsafeGet : (ret : Type) -> {auto ret_prf : ErlType ret} -> key -> {auto key_prf : ErlType key} -> ErlMap -> IO ret
 unsafeGet ret key m = erlangCall ret "maps:get" [key, m]
 
 
