@@ -55,6 +55,8 @@ compileToErlang (MkOpts moduleName) c tm outfile
   where
     header : String
     header = "-module('" ++ moduleName ++ "').\n" ++
+      -- "-mode(compile).\n" ++ -- TODO: Make mode into a flag
+      "-compile([nowarn_unused_function, nowarn_unused_vars]).\n" ++
       "-export([main/1]).\n" ++
       "\n"
 

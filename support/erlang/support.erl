@@ -1,8 +1,3 @@
-% -module(main).
-% -export([main/1]).
--compile([nowarn_unused_function, nowarn_unused_vars]).
-
-
 % Debugging
 
 debug_inspect(Val) ->
