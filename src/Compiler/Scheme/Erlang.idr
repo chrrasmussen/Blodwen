@@ -9,6 +9,7 @@ import Compiler.Scheme.FileUtils
 import Core.Context
 import Core.Directory
 import Core.Name
+import Core.Options
 import Core.TT
 
 import Data.CMap
@@ -39,13 +40,14 @@ mutual
 
 compileToErlang : Opts -> Ref Ctxt Defs -> ClosedTerm -> (outfile : String) -> Core annot ()
 compileToErlang (MkOpts moduleName) c tm outfile
-    = do (ns, tags) <- findUsedNames tm
+    = do ds <- getDirectives Erlang
+         (ns, tags) <- findUsedNames tm
          defs <- get Ctxt
          compdefs <- traverse (getScheme racketPrim defs) ns
          let code = concat compdefs
          main <- schExp racketPrim 0 [] !(compileExp tags tm)
          support <- readDataFile "erlang/support.erl"
-         let scm = header ++ support ++ code ++ "main(Args) -> " ++ main ++ ".\n"
+         let scm = header ++ unlines ds ++ support ++ code ++ "main(Args) -> " ++ main ++ ".\n"
          Right () <- coreLift $ writeFile outfile scm
             | Left err => throw (FileErr outfile err)
          coreLift $ chmod outfile 0o755
