@@ -1,0 +1,37 @@
+intTest
+0
+-42
+42
+integerTest
+0
+-42
+42
+stringTest
+<<>>
+<<"test">>
+[<<"a">>|<<"b">>]
+charTest
+97
+10
+doubleTest
+0.1
+-42.2
+42.3
+unitTest
+{}
+listTest
+[]
+[<<"a">>,<<"b">>,<<"c">>]
+erlListTest
+[]
+[<<"a">>,10,99]
+erlTuplesTest
+{}
+{<<"a">>}
+{<<"a">>,<<"b">>}
+{<<"a">>,<<"b">>,<<"c">>}
+{<<"a">>,<<"b">>,<<"c">>,<<"d">>}
+{<<"a">>,<<"b">>,<<"c">>,<<"d">>,<<"e">>}
+1/1: Building Main (Main.blod)
+Welcome to Blodwen. Good luck.
+Main> Main> Main> Main> Main> Main> Main> Main> Main> Main> Bye for now!

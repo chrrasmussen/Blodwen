@@ -1,0 +1,10 @@
+:exec intTest
+:exec integerTest
+:exec stringTest
+:exec charTest
+:exec doubleTest
+:exec unitTest
+:exec listTest
+:exec erlListTest
+:exec erlTuplesTest
+:q

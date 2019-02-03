@@ -1,0 +1,71 @@
+module Main
+
+import ErlangPrelude
+
+%cg erlang """
+integers() -> {0, -42, 42}.
+strings() -> {"", <<"test">>, [97 | <<"b">>]}.
+chars() -> {97, 10, 402}.
+doubles() -> {0.1, -42.2, 42.3}.
+unit() -> {}.
+lists() -> {[], ["a", "b", "c"]}.
+erl_lists() -> {[], [<<"a">>, 10, $c]}.
+erl_tuples() -> {{}, {1}, {1, 2}, {1, 2, 3}, {1, 2, 3, 4}}.
+"""
+
+
+intTest : IO ()
+intTest = do
+  putStrLn "intTest"
+  tuple <- erlangCall (ErlTuple3 Int Int Int) "integers" []
+  printLn tuple
+
+integerTest : IO ()
+integerTest = do
+  putStrLn "integerTest"
+  tuple <- erlangCall (ErlTuple3 Integer Integer Integer) "integers" []
+  printLn tuple
+
+stringTest : IO ()
+stringTest = do
+  putStrLn "stringTest"
+  tuple <- erlangCall (ErlTuple3 String String String) "strings" []
+  printLn tuple
+
+charTest : IO ()
+charTest = do
+  putStrLn "charTest"
+  tuple <- erlangCall (ErlTuple3 Char Char Char) "chars" []
+  printLn tuple
+
+doubleTest : IO ()
+doubleTest = do
+  putStrLn "doubleTest"
+  tuple <- erlangCall (ErlTuple3 Double Double Double) "doubles" []
+  printLn tuple
+
+unitTest : IO ()
+unitTest = do
+  putStrLn "unitTest"
+  unit <- erlangCall Unit "unit" []
+  printLn unit
+
+listTest : IO ()
+listTest = do
+  putStrLn "listTest"
+  tuple <- erlangCall (ErlTuple2 (List String) (List String)) "lists" []
+  printLn tuple
+
+-- Skips function calls, (Raw a), ErlTerm for now
+
+erlListTest : IO ()
+erlListTest = do
+  putStrLn "erlListTest"
+  tuple <- erlangCall (ErlTuple2 (ErlList []) (ErlList [String, Int, Char])) "erl_lists" []
+  printLn tuple
+
+erlTuplesTest : IO ()
+erlTuplesTest = do
+  putStrLn "erlTuplesTest"
+  tuple <- erlangCall (ErlTuple5 ErlTuple0 (ErlTuple1 Int) (ErlTuple2 Int Int) (ErlTuple3 Int Int Int) (ErlTuple4 Int Int Int Int)) "erl_tuples" []
+  printLn tuple
