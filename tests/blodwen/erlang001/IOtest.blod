@@ -3,6 +3,12 @@ module IOtest
 import Stuff
 import PrimIO
 
+%cg erlang """
+-mode(compile).
+-compile(inline).
+-compile({inline_size, 100}).
+"""
+
 hworld : IO ()
 hworld = putStrLn "Hello world!"
 
