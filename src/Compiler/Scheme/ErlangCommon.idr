@@ -254,6 +254,9 @@ parameters (schExtPrim : {vars : _} -> Int -> SVars vars -> ExtPrim -> List (CEx
     schConAlt i vs (MkConAlt (NS ["Prelude"] (UN "::")) tag args sc) = do
       let vs' = extendSVars args vs
       pure $ "([" ++ showSep " | " (drop 1 $ bindArgs 1 args vs') ++ "]) -> " ++ !(schExp i vs' sc)
+    schConAlt i vs (MkConAlt (NS ["Atoms", "ErlangPrelude"] (UN "MkErlAtom")) tag args sc) = do
+      let vs' = extendSVars args vs
+      pure $ "(Atom) -> fun(" ++ !(expectArgAtIndex 0 (bindArgs 1 args vs')) ++ ") -> " ++ !(schExp i vs' sc) ++ " end(atom_to_binary(Atom, utf8))"
     schConAlt i vs (MkConAlt (NS ["Lists", "ErlangPrelude"] (UN "Nil")) tag args sc) = do
       let vs' = extendSVars args vs
       pure $ "([]) -> " ++ !(schExp i vs' sc)
@@ -303,6 +306,7 @@ parameters (schExtPrim : {vars : _} -> Int -> SVars vars -> ExtPrim -> List (CEx
     schCon i vs (CCon (NS ["Builtin"] (UN "MkUnit")) _ _) = pure mkUnit
     schCon i vs (CCon (NS ["Prelude"] (UN "Nil")) _ _) = pure "[]"
     schCon i vs (CCon (NS ["Prelude"] (UN "::")) _ [_, x, xs]) = pure $ "[" ++ !(schExp i vs x) ++ " | " ++ !(schExp i vs xs) ++ "]"
+    schCon i vs (CCon (NS ["Atoms", "ErlangPrelude"] (UN "MkErlAtom")) _ [x]) = pure $ "binary_to_atom(iolist_to_binary(" ++ !(schExp i vs x) ++ "), utf8)"
     schCon i vs (CCon (NS ["Lists", "ErlangPrelude"] (UN "Nil")) _ []) = pure "[]"
     schCon i vs (CCon (NS ["Lists", "ErlangPrelude"] (UN "::")) _ [_, _, x, xs]) = pure $ "[" ++ !(schExp i vs x) ++ " | " ++ !(schExp i vs xs) ++ "]"
     schCon i vs (CCon (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple0")) _ []) = schConTuple i vs []

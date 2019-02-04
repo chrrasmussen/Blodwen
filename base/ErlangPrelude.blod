@@ -1,6 +1,12 @@
 module ErlangPrelude
 
 
+namespace Atoms
+  public export
+  data ErlAtom : Type where
+    MkErlAtom : String -> ErlAtom
+
+
 namespace Lists
   public export
   data ErlList : List Type -> Type where
@@ -146,6 +152,7 @@ mutual
     ETErlTerm       : ErlType ErlTerm     -- Can contain any Erlang term
 
     -- Data types that bridge to native Erlang data types
+    ETErlAtom       : ErlType ErlAtom
     ETErlList       : ErlTypes xs => ErlType (ErlList xs)
     ETErlTuple0     : ErlType ErlTuple0
     ETErlTuple1     : ErlTypes [a] => ErlType (ErlTuple1 a)
@@ -216,6 +223,11 @@ Cast ErlTuple0 () where
   cast MkErlTuple0 = MkUnit
 
 
+Cast Bool ErlAtom where
+  cast True = MkErlAtom "true"
+  cast False = MkErlAtom "false"
+
+
 ErlType a => Cast (List a) (ErlList []) where
   cast [] = []
 
@@ -250,6 +262,9 @@ Show ErlPort where
 
 
 -- NORMAL ERLANG TYPES
+
+Show ErlAtom where
+  show (MkErlAtom x) = "'" ++ x ++ "'"
 
 Show (ErlList []) where
   show [] = "[]"
