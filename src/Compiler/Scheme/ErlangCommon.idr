@@ -245,42 +245,50 @@ parameters (schExtPrim : {vars : _} -> Int -> SVars vars -> ExtPrim -> List (CEx
       pure  $ "(Func) -> " ++ mkUncurriedFun (drop (S arity) $ bindArgs 1 args vs') !(schExp i vs' sc) ++ "(" ++ mkCurriedFun tempVars (transformer ("Func(" ++ showSep ", " tempVars ++ ")")) ++ ")"
 
     schConAlt : Int -> SVars vars -> CConAlt vars -> Core annot String
+    -- Unit
     schConAlt i vs (MkConAlt (NS ["Builtin"] (UN "MkUnit")) tag args sc) = do
       let vs' = extendSVars args vs
       pure $ "(" ++ mkUnit ++ ") -> " ++ !(schExp i vs' sc)
+    -- List
     schConAlt i vs (MkConAlt (NS ["Prelude"] (UN "Nil")) tag args sc) = do
       let vs' = extendSVars args vs
       pure $ "([]) -> " ++ !(schExp i vs' sc)
     schConAlt i vs (MkConAlt (NS ["Prelude"] (UN "::")) tag args sc) = do
       let vs' = extendSVars args vs
       pure $ "([" ++ showSep " | " (drop 1 $ bindArgs 1 args vs') ++ "]) -> " ++ !(schExp i vs' sc)
+    -- ErlAtom
     schConAlt i vs (MkConAlt (NS ["Atoms", "ErlangPrelude"] (UN "MkErlAtom")) tag args sc) = do
       let vs' = extendSVars args vs
       pure $ "(Atom) -> fun(" ++ !(expectArgAtIndex 0 (bindArgs 1 args vs')) ++ ") -> " ++ !(schExp i vs' sc) ++ " end(atom_to_binary(Atom, utf8))"
+    -- ErlList
     schConAlt i vs (MkConAlt (NS ["Lists", "ErlangPrelude"] (UN "Nil")) tag args sc) = do
       let vs' = extendSVars args vs
       pure $ "([]) -> " ++ !(schExp i vs' sc)
     schConAlt i vs (MkConAlt (NS ["Lists", "ErlangPrelude"] (UN "::")) tag args sc) = do
       let vs' = extendSVars args vs
       pure $ "([" ++ showSep " | " (drop 2 $ bindArgs 1 args vs') ++ "]) -> " ++ !(schExp i vs' sc)
+    -- ErlTuple/A
     schConAlt i vs (MkConAlt (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple0")) tag args sc) = schConAltTuple i vs args sc 0
     schConAlt i vs (MkConAlt (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple1")) tag args sc) = schConAltTuple i vs args sc 1
     schConAlt i vs (MkConAlt (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple2")) tag args sc) = schConAltTuple i vs args sc 2
     schConAlt i vs (MkConAlt (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple3")) tag args sc) = schConAltTuple i vs args sc 3
     schConAlt i vs (MkConAlt (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple4")) tag args sc) = schConAltTuple i vs args sc 4
     schConAlt i vs (MkConAlt (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple5")) tag args sc) = schConAltTuple i vs args sc 5
+    -- ErlFun/A
     schConAlt i vs (MkConAlt (NS ["Functions", "ErlangPrelude"] (UN "MkErlFun0")) tag args sc) = schConAltFun i vs args sc 0 id
     schConAlt i vs (MkConAlt (NS ["Functions", "ErlangPrelude"] (UN "MkErlFun1")) tag args sc) = schConAltFun i vs args sc 1 id
     schConAlt i vs (MkConAlt (NS ["Functions", "ErlangPrelude"] (UN "MkErlFun2")) tag args sc) = schConAltFun i vs args sc 2 id
     schConAlt i vs (MkConAlt (NS ["Functions", "ErlangPrelude"] (UN "MkErlFun3")) tag args sc) = schConAltFun i vs args sc 3 id
     schConAlt i vs (MkConAlt (NS ["Functions", "ErlangPrelude"] (UN "MkErlFun4")) tag args sc) = schConAltFun i vs args sc 4 id
     schConAlt i vs (MkConAlt (NS ["Functions", "ErlangPrelude"] (UN "MkErlFun5")) tag args sc) = schConAltFun i vs args sc 5 id
+    -- ErlIO/A
     schConAlt i vs (MkConAlt (NS ["Functions", "ErlangPrelude"] (UN "MkErlIO0")) tag args sc) = schConAltFun i vs args sc 0 mkIOPure
     schConAlt i vs (MkConAlt (NS ["Functions", "ErlangPrelude"] (UN "MkErlIO1")) tag args sc) = schConAltFun i vs args sc 1 mkIOPure
     schConAlt i vs (MkConAlt (NS ["Functions", "ErlangPrelude"] (UN "MkErlIO2")) tag args sc) = schConAltFun i vs args sc 2 mkIOPure
     schConAlt i vs (MkConAlt (NS ["Functions", "ErlangPrelude"] (UN "MkErlIO3")) tag args sc) = schConAltFun i vs args sc 3 mkIOPure
     schConAlt i vs (MkConAlt (NS ["Functions", "ErlangPrelude"] (UN "MkErlIO4")) tag args sc) = schConAltFun i vs args sc 4 mkIOPure
     schConAlt i vs (MkConAlt (NS ["Functions", "ErlangPrelude"] (UN "MkErlIO5")) tag args sc) = schConAltFun i vs args sc 5 mkIOPure
+    -- Other
     schConAlt i vs (MkConAlt n tag args sc) = do
       let vs' = extendSVars args vs
       pure $ "({" ++ showSep ", " (show tag :: bindArgs 1 args vs') ++ "}) -> " ++ !(schExp i vs' sc)
@@ -303,33 +311,42 @@ parameters (schExtPrim : {vars : _} -> Int -> SVars vars -> ExtPrim -> List (CEx
       pure $ mkUncurriedFun tempVars !(schExp i vs body)
 
     schCon : Int -> SVars vars -> CExp vars -> Core annot String
+    -- Unit
     schCon i vs (CCon (NS ["Builtin"] (UN "MkUnit")) _ _) = pure mkUnit
+    -- List
     schCon i vs (CCon (NS ["Prelude"] (UN "Nil")) _ _) = pure "[]"
     schCon i vs (CCon (NS ["Prelude"] (UN "::")) _ [_, x, xs]) = pure $ "[" ++ !(schExp i vs x) ++ " | " ++ !(schExp i vs xs) ++ "]"
+    -- ErlAtom
     schCon i vs (CCon (NS ["Atoms", "ErlangPrelude"] (UN "MkErlAtom")) _ [x]) = pure $ "binary_to_atom(iolist_to_binary(" ++ !(schExp i vs x) ++ "), utf8)"
+    -- ErlList
     schCon i vs (CCon (NS ["Lists", "ErlangPrelude"] (UN "Nil")) _ []) = pure "[]"
     schCon i vs (CCon (NS ["Lists", "ErlangPrelude"] (UN "::")) _ [_, _, x, xs]) = pure $ "[" ++ !(schExp i vs x) ++ " | " ++ !(schExp i vs xs) ++ "]"
+    -- ErlTuple/A
     schCon i vs (CCon (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple0")) _ []) = schConTuple i vs []
     schCon i vs (CCon (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple1")) _ args) = schConTuple i vs (drop 1 args)
     schCon i vs (CCon (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple2")) _ args) = schConTuple i vs (drop 2 args)
     schCon i vs (CCon (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple3")) _ args) = schConTuple i vs (drop 3 args)
     schCon i vs (CCon (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple4")) _ args) = schConTuple i vs (drop 4 args)
     schCon i vs (CCon (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple5")) _ args) = schConTuple i vs (drop 5 args)
+    -- ErlFun/A
     schCon i vs (CCon (NS ["Functions", "ErlangPrelude"] (UN "MkErlFun0")) _ args) = schConFun i vs 0 !(expectArgAtIndex 1 args) id
     schCon i vs (CCon (NS ["Functions", "ErlangPrelude"] (UN "MkErlFun1")) _ args) = schConFun i vs 1 !(expectArgAtIndex 2 args) id
     schCon i vs (CCon (NS ["Functions", "ErlangPrelude"] (UN "MkErlFun2")) _ args) = schConFun i vs 2 !(expectArgAtIndex 3 args) id
     schCon i vs (CCon (NS ["Functions", "ErlangPrelude"] (UN "MkErlFun3")) _ args) = schConFun i vs 3 !(expectArgAtIndex 4 args) id
     schCon i vs (CCon (NS ["Functions", "ErlangPrelude"] (UN "MkErlFun4")) _ args) = schConFun i vs 4 !(expectArgAtIndex 5 args) id
     schCon i vs (CCon (NS ["Functions", "ErlangPrelude"] (UN "MkErlFun5")) _ args) = schConFun i vs 5 !(expectArgAtIndex 6 args) id
+    -- ErlIO/A
     schCon i vs (CCon (NS ["Functions", "ErlangPrelude"] (UN "MkErlIO0")) _ args) = schConFun i vs 0 !(expectArgAtIndex 1 args) applyUnsafePerformIO
     schCon i vs (CCon (NS ["Functions", "ErlangPrelude"] (UN "MkErlIO1")) _ args) = schConFun i vs 1 !(expectArgAtIndex 2 args) applyUnsafePerformIO
     schCon i vs (CCon (NS ["Functions", "ErlangPrelude"] (UN "MkErlIO2")) _ args) = schConFun i vs 2 !(expectArgAtIndex 3 args) applyUnsafePerformIO
     schCon i vs (CCon (NS ["Functions", "ErlangPrelude"] (UN "MkErlIO3")) _ args) = schConFun i vs 3 !(expectArgAtIndex 4 args) applyUnsafePerformIO
     schCon i vs (CCon (NS ["Functions", "ErlangPrelude"] (UN "MkErlIO4")) _ args) = schConFun i vs 4 !(expectArgAtIndex 5 args) applyUnsafePerformIO
     schCon i vs (CCon (NS ["Functions", "ErlangPrelude"] (UN "MkErlIO5")) _ args) = schConFun i vs 5 !(expectArgAtIndex 6 args) applyUnsafePerformIO
+    -- ErlMap
     schCon i vs (CCon (NS ["Maps", "ErlangPrelude"] (UN "MkKeyValue")) _ [_, _, key, value]) = pure $ "#{" ++ !(schExp i vs key) ++ " => " ++ !(schExp i vs value) ++ "}"
     schCon i vs (CCon (NS ["Maps", "ErlangPrelude"] (UN "ErlMapNil")) _ _) = pure "#{}"
     schCon i vs (CCon (NS ["Maps", "ErlangPrelude"] (UN "ErlMapCons")) _ [x, xs]) = pure $ "maps:merge(" ++ !(schExp i vs xs) ++ ", " ++ !(schExp i vs x) ++ ")"
+    -- Other
     schCon i vs (CCon x tag args) = pure $ schConstructor tag !(traverse (schExp i vs) args)
     schCon i vs tm = throw (InternalError ("Invalid constructor: " ++ show tm))
       
