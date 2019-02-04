@@ -19,9 +19,16 @@ doubleTest
 42.3
 unitTest
 {}
+boolTest
+true
+false
 listTest
 []
 [<<"a">>,<<"b">>,<<"c">>]
+erlAtomTest
+''
+ok
+a42
 erlListTest
 []
 [<<"a">>,10,99]
@@ -34,4 +41,4 @@ erlTuplesTest
 {<<"a">>,<<"b">>,<<"c">>,<<"d">>,<<"e">>}
 1/1: Building Main (Main.blod)
 Welcome to Blodwen. Good luck.
-Main> Main> Main> Main> Main> Main> Main> Main> Main> Main> Bye for now!
+Main> Main> Main> Main> Main> Main> Main> Main> Main> Main> Main> Main> Bye for now!

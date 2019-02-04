@@ -4,7 +4,9 @@
 :exec charTest
 :exec doubleTest
 :exec unitTest
+:exec boolTest
 :exec listTest
+:exec erlAtomTest
 :exec erlListTest
 :exec erlTuplesTest
 :q

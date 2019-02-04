@@ -10,12 +10,16 @@ doubleTest
 {0.1, -42.2, 42.3}
 unitTest
 ()
+boolTest
+{True, False}
 listTest
 {[], ["a", "b", "c"]}
+erlAtomTest
+{'', 'ok', 'a42'}
 erlListTest
 {[], ["a" | [10 | ['c' | []]]]}
 erlTuplesTest
 {{}, {1}, {1, 2}, {1, 2, 3}, {1, 2, 3, 4}}
 1/1: Building Main (Main.blod)
 Welcome to Blodwen. Good luck.
-Main> Main> Main> Main> Main> Main> Main> Main> Main> Main> Bye for now!
+Main> Main> Main> Main> Main> Main> Main> Main> Main> Main> Main> Main> Bye for now!

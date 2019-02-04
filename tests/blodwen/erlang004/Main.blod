@@ -47,6 +47,12 @@ unitTest = do
   putStrLn "unitTest"
   erlPrintLn ()
 
+boolTest : IO ()
+boolTest = do
+  putStrLn "boolTest"
+  erlPrintLn True
+  erlPrintLn False
+
 listTest : IO ()
 listTest = do
   putStrLn "listTest"
@@ -54,6 +60,13 @@ listTest = do
   erlPrintLn (the (List _) ["a", "b", "c"])
 
 -- Skips function calls, (Raw a), ErlTerm for now
+
+erlAtomTest : IO ()
+erlAtomTest = do
+  putStrLn "erlAtomTest"
+  erlPrintLn (MkErlAtom "") -- Surprisingly, this is allowed
+  erlPrintLn (MkErlAtom "ok")
+  erlPrintLn (MkErlAtom ("a" ++ show 42))
 
 erlListTest : IO ()
 erlListTest = do

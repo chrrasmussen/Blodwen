@@ -8,7 +8,9 @@ strings() -> {"", <<"test">>, [97 | <<"b">>]}.
 chars() -> {97, 10, 402}.
 doubles() -> {0.1, -42.2, 42.3}.
 unit() -> {}.
+bools() -> {true, false}.
 lists() -> {[], ["a", "b", "c"]}.
+erl_atoms() -> {'', ok, a42}.
 erl_lists() -> {[], [<<"a">>, 10, $c]}.
 erl_tuples() -> {{}, {1}, {1, 2}, {1, 2, 3}, {1, 2, 3, 4}}.
 """
@@ -50,6 +52,12 @@ unitTest = do
   unit <- erlangCall Unit "unit" []
   printLn unit
 
+boolTest : IO ()
+boolTest = do
+  putStrLn "boolTest"
+  tuple <- erlangCall (ErlTuple2 Bool Bool) "bools" []
+  printLn tuple
+
 listTest : IO ()
 listTest = do
   putStrLn "listTest"
@@ -57,6 +65,12 @@ listTest = do
   printLn tuple
 
 -- Skips function calls, (Raw a), ErlTerm for now
+
+erlAtomTest : IO ()
+erlAtomTest = do
+  putStrLn "erlAtomTest"
+  tuple <- erlangCall (ErlTuple3 ErlAtom ErlAtom ErlAtom) "erl_atoms" []
+  printLn tuple
 
 erlListTest : IO ()
 erlListTest = do
