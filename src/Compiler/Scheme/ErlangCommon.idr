@@ -249,6 +249,13 @@ parameters (schExtPrim : {vars : _} -> Int -> SVars vars -> ExtPrim -> List (CEx
     schConAlt i vs (MkConAlt (NS ["Builtin"] (UN "MkUnit")) tag args sc) = do
       let vs' = extendSVars args vs
       pure $ "(" ++ mkUnit ++ ") -> " ++ !(schExp i vs' sc)
+    -- Bool
+    schConAlt i vs (MkConAlt (NS ["Prelude"] (UN "True")) tag args sc) = do
+      let vs' = extendSVars args vs
+      pure $ "(true) -> " ++ !(schExp i vs' sc)
+    schConAlt i vs (MkConAlt (NS ["Prelude"] (UN "False")) tag args sc) = do
+      let vs' = extendSVars args vs
+      pure $ "(false) -> " ++ !(schExp i vs' sc)
     -- List
     schConAlt i vs (MkConAlt (NS ["Prelude"] (UN "Nil")) tag args sc) = do
       let vs' = extendSVars args vs
@@ -313,6 +320,9 @@ parameters (schExtPrim : {vars : _} -> Int -> SVars vars -> ExtPrim -> List (CEx
     schCon : Int -> SVars vars -> CExp vars -> Core annot String
     -- Unit
     schCon i vs (CCon (NS ["Builtin"] (UN "MkUnit")) _ _) = pure mkUnit
+    -- Bool
+    schCon i vs (CCon (NS ["Prelude"] (UN "True")) _ _) = pure "true"
+    schCon i vs (CCon (NS ["Prelude"] (UN "False")) _ _) = pure "false"
     -- List
     schCon i vs (CCon (NS ["Prelude"] (UN "Nil")) _ _) = pure "[]"
     schCon i vs (CCon (NS ["Prelude"] (UN "::")) _ [_, x, xs]) = pure $ "[" ++ !(schExp i vs x) ++ " | " ++ !(schExp i vs xs) ++ "]"
