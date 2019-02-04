@@ -1,21 +1,21 @@
 intTest
-{0, -42, 42}
+[0, -42, 42]
 integerTest
-{0, -42, 42}
+[0, -42, 42]
 stringTest
-{"", "test", "ab"}
+["", "test", "ab"]
 charTest
-{'a', '\n', '\402'}
+['a', '\n', '\402']
 doubleTest
-{0.1, -42.2, 42.3}
+[0.1, -42.2, 42.3]
 unitTest
 ()
 boolTest
-{True, False}
+[True, False]
 listTest
-{[], ["a", "b", "c"]}
+[[], ["a", "b", "c"]]
 erlAtomTest
-{'', 'ok', 'a42'}
+['', 'ok', 'a42']
 erlListTest
 {[], ["a" | [10 | ['c' | []]]]}
 erlTuplesTest

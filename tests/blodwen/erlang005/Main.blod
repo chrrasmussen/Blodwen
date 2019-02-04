@@ -3,14 +3,14 @@ module Main
 import ErlangPrelude
 
 %cg erlang """
-integers() -> {0, -42, 42}.
-strings() -> {"", <<"test">>, [97 | <<"b">>]}.
-chars() -> {97, 10, 402}.
-doubles() -> {0.1, -42.2, 42.3}.
+integers() -> [0, -42, 42].
+strings() -> ["", <<"test">>, [97 | <<"b">>]].
+chars() -> [97, 10, 402].
+doubles() -> [0.1, -42.2, 42.3].
 unit() -> {}.
-bools() -> {true, false}.
-lists() -> {[], ["a", "b", "c"]}.
-erl_atoms() -> {'', ok, a42}.
+bools() -> [true, false].
+lists() -> [[], ["a", "b", "c"]].
+erl_atoms() -> ['', ok, a42].
 erl_lists() -> {[], [<<"a">>, 10, $c]}.
 erl_tuples() -> {{}, {1}, {1, 2}, {1, 2, 3}, {1, 2, 3, 4}}.
 """
@@ -19,31 +19,31 @@ erl_tuples() -> {{}, {1}, {1, 2}, {1, 2, 3}, {1, 2, 3, 4}}.
 intTest : IO ()
 intTest = do
   putStrLn "intTest"
-  tuple <- erlangCall (ErlTuple3 Int Int Int) "integers" []
+  tuple <- erlangCall (List Int) "integers" []
   printLn tuple
 
 integerTest : IO ()
 integerTest = do
   putStrLn "integerTest"
-  tuple <- erlangCall (ErlTuple3 Integer Integer Integer) "integers" []
+  tuple <- erlangCall (List Integer) "integers" []
   printLn tuple
 
 stringTest : IO ()
 stringTest = do
   putStrLn "stringTest"
-  tuple <- erlangCall (ErlTuple3 String String String) "strings" []
+  tuple <- erlangCall (List String) "strings" []
   printLn tuple
 
 charTest : IO ()
 charTest = do
   putStrLn "charTest"
-  tuple <- erlangCall (ErlTuple3 Char Char Char) "chars" []
+  tuple <- erlangCall (List Char) "chars" []
   printLn tuple
 
 doubleTest : IO ()
 doubleTest = do
   putStrLn "doubleTest"
-  tuple <- erlangCall (ErlTuple3 Double Double Double) "doubles" []
+  tuple <- erlangCall (List Double) "doubles" []
   printLn tuple
 
 unitTest : IO ()
@@ -55,13 +55,13 @@ unitTest = do
 boolTest : IO ()
 boolTest = do
   putStrLn "boolTest"
-  tuple <- erlangCall (ErlTuple2 Bool Bool) "bools" []
+  tuple <- erlangCall (List Bool) "bools" []
   printLn tuple
 
 listTest : IO ()
 listTest = do
   putStrLn "listTest"
-  tuple <- erlangCall (ErlTuple2 (List String) (List String)) "lists" []
+  tuple <- erlangCall (List (List String)) "lists" []
   printLn tuple
 
 -- Skips function calls, (Raw a), ErlTerm for now
@@ -69,7 +69,7 @@ listTest = do
 erlAtomTest : IO ()
 erlAtomTest = do
   putStrLn "erlAtomTest"
-  tuple <- erlangCall (ErlTuple3 ErlAtom ErlAtom ErlAtom) "erl_atoms" []
+  tuple <- erlangCall (List ErlAtom) "erl_atoms" []
   printLn tuple
 
 erlListTest : IO ()
