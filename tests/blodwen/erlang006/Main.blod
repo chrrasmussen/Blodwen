@@ -74,3 +74,9 @@ ioTest = do
   printLn res1
   res2 <- erlRunIO2 (\x, y => do { putStrLn "Running IO action with arity 2"; pure (x + y) })
   printLn res2
+
+main : IO ()
+main = do
+  curriedFunTest
+  funTest
+  ioTest

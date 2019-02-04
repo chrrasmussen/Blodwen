@@ -1,12 +1,2 @@
-:exec intTest
-:exec integerTest
-:exec stringTest
-:exec charTest
-:exec doubleTest
-:exec unitTest
-:exec boolTest
-:exec listTest
-:exec erlAtomTest
-:exec erlListTest
-:exec erlTuplesTest
+:exec main
 :q

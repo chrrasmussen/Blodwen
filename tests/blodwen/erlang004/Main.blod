@@ -83,3 +83,17 @@ erlTuplesTest = do
   erlPrintLn (MkErlTuple3 "a" "b" "c")
   erlPrintLn (MkErlTuple4 "a" "b" "c" "d")
   erlPrintLn (MkErlTuple5 "a" "b" "c" "d" "e")
+
+main : IO ()
+main = do
+  intTest
+  integerTest
+  stringTest
+  charTest
+  doubleTest
+  unitTest
+  boolTest
+  listTest
+  erlAtomTest
+  erlListTest
+  erlTuplesTest

@@ -83,3 +83,17 @@ erlTuplesTest = do
   putStrLn "erlTuplesTest"
   tuple <- erlangCall (ErlTuple5 ErlTuple0 (ErlTuple1 Int) (ErlTuple2 Int Int) (ErlTuple3 Int Int Int) (ErlTuple4 Int Int Int Int)) "erl_tuples" []
   printLn tuple
+
+main : IO ()
+main = do
+  intTest
+  integerTest
+  stringTest
+  charTest
+  doubleTest
+  unitTest
+  boolTest
+  listTest
+  erlAtomTest
+  erlListTest
+  erlTuplesTest

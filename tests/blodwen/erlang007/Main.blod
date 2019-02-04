@@ -95,3 +95,9 @@ ioTest = do
   action2 <- erlCreateIO2
   res2 <- action2 1 2
   printLn res2
+
+main : IO ()
+main = do
+  curriedFunTest
+  funTest
+  ioTest

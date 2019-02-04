@@ -1,4 +1,2 @@
-:exec curriedFunTest
-:exec funTest
-:exec ioTest
+:exec main
 :q
