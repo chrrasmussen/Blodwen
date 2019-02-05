@@ -384,7 +384,7 @@ mutual
   genExp i vs (COp op args)
       = pure $ genOp op !(genArgs i vs args)
   genExp i vs (CExtPrim p args)
-      = genExtCommon i vs (toPrim p) args
+      = genExtPrim i vs (toPrim p) args
   genExp i vs (CForce t) = pure $ "(" ++ !(genExp i vs t) ++ "())" -- TODO: Should use another mechanism to avoid evaluating delayed computation multiple times
   genExp i vs (CDelay t) = pure $ "fun() -> " ++ !(genExp i vs t) ++ " end"
   genExp i vs (CConCase sc alts def)
@@ -414,44 +414,44 @@ mutual
   -- External primitives which are common to the scheme codegens (they can be
   -- overridden)
   export
-  genExtCommon : Int -> SVars vars -> ExtPrim -> List (CExp vars) -> Core annot String
-  genExtCommon i vs CCall [ret, fn, args, world]
+  genExtPrim : Int -> SVars vars -> ExtPrim -> List (CExp vars) -> Core annot String
+  genExtPrim i vs CCall [ret, fn, args, world]
       = throw (InternalError ("Can't compile C FFI calls to Erlang yet"))
-  genExtCommon i vs ErlangCall [_, ret, CPrimVal (Str fn), args, world]
+  genExtPrim i vs ErlangCall [_, ret, CPrimVal (Str fn), args, world]
       = do parameterList <- readArgs i vs args
            pure $ mkWorld $ "(" ++ fn ++ "(" ++ showSep ", " parameterList ++ "))"
-  genExtCommon i vs ErlangCall [_, ret, fn, args, world] -- TODO: Implement?
+  genExtPrim i vs ErlangCall [_, ret, fn, args, world] -- TODO: Implement?
       = do pure $ mkWorld "false"
-  genExtCommon i vs PutStr [arg, world]
+  genExtPrim i vs PutStr [arg, world]
       = pure $ "(fun() -> io_unicode_put_str(" ++ !(genExp i vs arg) ++ "), " ++ mkWorld mkUnit ++ " end())"
-  genExtCommon i vs GetStr [world]
+  genExtPrim i vs GetStr [world]
       = pure $ mkWorld "io_unicode_get_str(\"\")"
-  genExtCommon i vs FileOpen [file, mode, bin, world]
+  genExtPrim i vs FileOpen [file, mode, bin, world]
       = pure $ mkWorld $ "blodwen_open("
                                       ++ !(genExp i vs file) ++ ", "
                                       ++ !(genExp i vs mode) ++ ", "
                                       ++ !(genExp i vs bin) ++ ")"
-  genExtCommon i vs FileClose [file, world]
+  genExtPrim i vs FileClose [file, world]
       = pure $ "(fun() -> blodwen_close(" ++ !(genExp i vs file) ++ "), " ++ mkWorld mkUnit ++ " end())"
-  genExtCommon i vs FileReadLine [file, world]
+  genExtPrim i vs FileReadLine [file, world]
       = pure $ mkWorld $ "blodwen_read_line(" ++ !(genExp i vs file) ++ ")"
-  genExtCommon i vs FileWriteLine [file, str, world]
+  genExtPrim i vs FileWriteLine [file, str, world]
       = pure $ mkWorld $ "blodwen_write_line("
                                         ++ !(genExp i vs file) ++ ", "
                                         ++ !(genExp i vs str) ++ ")"
-  genExtCommon i vs FileEOF [file, world]
+  genExtPrim i vs FileEOF [file, world]
       = pure $ mkWorld $ "blodwen_eof(" ++ !(genExp i vs file) ++ ")"
-  genExtCommon i vs NewIORef [_, val, world]
+  genExtPrim i vs NewIORef [_, val, world]
       = pure $ mkWorld $ "(box " ++ !(genExp i vs val) ++ ")"
-  genExtCommon i vs ReadIORef [_, ref, world]
+  genExtPrim i vs ReadIORef [_, ref, world]
       = pure $ mkWorld $ "(unbox " ++ !(genExp i vs ref) ++ ")"
-  genExtCommon i vs WriteIORef [_, ref, val, world]
+  genExtPrim i vs WriteIORef [_, ref, val, world]
       = pure $ mkWorld $ "(set-box! "
                             ++ !(genExp i vs ref) ++ " "
                             ++ !(genExp i vs val) ++ ")"
-  genExtCommon i vs (Unknown n) args
+  genExtPrim i vs (Unknown n) args
       = throw (InternalError ("Can't compile unknown external primitive " ++ show n))
-  genExtCommon i vs prim args
+  genExtPrim i vs prim args
       = throw (InternalError ("Badly formed external primitive " ++ show prim
                                 ++ " " ++ show args))
 
