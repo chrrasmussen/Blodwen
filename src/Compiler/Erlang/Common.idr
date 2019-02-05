@@ -469,15 +469,13 @@ genDef n (MkError exp)
     = pure $ genName n ++ "() -> " ++ !(genExp 0 [] exp) ++ ".\n"
 genDef n (MkCon t a) = pure "" -- Nothing to compile here
 
--- Convert the name to scheme code
+-- Convert the name to Erlang code
 -- (There may be no code generated, for example if it's a constructor)
 export
 getErlang : Defs -> Name -> Core annot String
-getErlang defs n
-    = case lookupGlobalExact n (gamma defs) of
-           Nothing => throw (InternalError ("Compiling undefined name " ++ show n))
-           Just d => case compexpr d of
-                          Nothing =>
-                            throw (InternalError ("No compiled definition for " ++ show n))
-                          Just d =>
-                            genDef n d
+getErlang defs name = do
+  let Just def = lookupGlobalExact name (gamma defs)
+    | throw (InternalError ("Compiling undefined name " ++ show name))
+  let Just expr = compexpr def
+    | throw (InternalError ("No compiled definition for " ++ show name))
+  genDef name expr
