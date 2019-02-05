@@ -1,4 +1,4 @@
-module Compiler.Scheme.ErlangCommon
+module Compiler.Erlang.Common
 
 import Compiler.Common
 import Compiler.CompileExpr

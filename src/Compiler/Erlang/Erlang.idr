@@ -1,10 +1,10 @@
-module Compiler.Scheme.Erlang
+module Compiler.Erlang.Erlang
 
 import Compiler.Common
 import Compiler.CompileExpr
 import Compiler.Inline
-import Compiler.Scheme.ErlangCommon
-import Compiler.Scheme.FileUtils
+import Compiler.Erlang.Common
+import Compiler.Erlang.FileUtils
 
 import Core.Context
 import Core.Directory

@@ -3,7 +3,7 @@ module Idris.REPL
 import Compiler.Scheme.Chez
 import Compiler.Scheme.Chicken
 import Compiler.Scheme.Racket
-import Compiler.Scheme.Erlang
+import Compiler.Erlang.Erlang
 import Compiler.Common
 
 import Core.AutoSearch

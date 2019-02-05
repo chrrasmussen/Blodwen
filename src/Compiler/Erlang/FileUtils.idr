@@ -1,4 +1,4 @@
-module Compiler.Scheme.FileUtils
+module Compiler.Erlang.FileUtils
 
 %default total
 
