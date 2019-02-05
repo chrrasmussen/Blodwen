@@ -47,7 +47,7 @@ data SVars : List Name -> Type where
 
 extendSVars : (xs : List Name) -> SVars ns -> SVars (xs ++ ns)
 extendSVars {ns} xs vs = extSVars' (cast (length ns)) xs vs
-  where 
+  where
     extSVars' : Int -> (xs : List Name) -> SVars ns -> SVars (xs ++ ns)
     extSVars' i [] vs = vs
     extSVars' i (x :: xs) vs = genName (MN "V" i) :: extSVars' (i + 1) xs vs
@@ -149,7 +149,7 @@ Show ExtPrim where
   show (Unknown n) = "Unknown " ++ show n
 
 toPrim : Name -> ExtPrim
-toPrim pn@(NS _ n) 
+toPrim pn@(NS _ n)
     = cond [(n == UN "prim__erlangCall", ErlangCall),
             (n == UN "prim__cCall", CCall),
             (n == UN "prim__putStr", PutStr),
@@ -223,188 +223,187 @@ expectArgAtIndex n xs =
     Nothing => throw (InternalError ("Missing expected argument at index " ++ show n ++ " in list"))
 
 
-parameters (genExtPrim : {vars : _} -> Int -> SVars vars -> ExtPrim -> List (CExp vars) -> Core annot String)
-  mutual
-    bindArgs : Int -> (ns : List Name) -> SVars (ns ++ vars) -> List String
-    bindArgs i [] vs = []
-    bindArgs i (n :: ns) (v :: vs) = v :: bindArgs (i + 1) ns vs
+mutual
+  bindArgs : Int -> (ns : List Name) -> SVars (ns ++ vars) -> List String
+  bindArgs i [] vs = []
+  bindArgs i (n :: ns) (v :: vs) = v :: bindArgs (i + 1) ns vs
 
-    genConAltTuple : Int -> SVars vars -> (args : List Name) -> CExp (args ++ vars) -> (arity : Nat) -> Core annot String
-    genConAltTuple i vs args sc arity = do
-      let vs' = extendSVars args vs
-      pure $ "({" ++ showSep ", " (drop arity $ bindArgs 1 args vs') ++ "}) -> " ++ !(genExp i vs' sc)
+  genConAltTuple : Int -> SVars vars -> (args : List Name) -> CExp (args ++ vars) -> (arity : Nat) -> Core annot String
+  genConAltTuple i vs args sc arity = do
+    let vs' = extendSVars args vs
+    pure $ "({" ++ showSep ", " (drop arity $ bindArgs 1 args vs') ++ "}) -> " ++ !(genExp i vs' sc)
 
-    -- Given an Erlang function `ErlangFunc` with arity 2:
-    -- 1. Curries this function according to arity: fun(X_1) -> fun(X_2) -> ErlangFunc(X_1, X_2) end end
-    -- 2. Transform the inner result with a user-defined function: fun(X_1) -> fun(X_2) -> `Transformer`(ErlangFunc(X_1, X_2)) end end
-    -- The transformer is specifically used to lift the value into the IO monad
-    genConAltFun : Int -> SVars vars -> (args : List Name) -> CExp (args ++ vars) -> (arity : Nat) -> (String -> String) -> Core annot String
-    genConAltFun i vs args sc arity transformer = do
-      let vs' = extendSVars args vs
-      let tempVars = take arity $ zipWith (\name, idx => name ++ show idx) (repeat "X_") [1..]
-      pure  $ "(Func) -> " ++ mkUncurriedFun (drop (S arity) $ bindArgs 1 args vs') !(genExp i vs' sc) ++ "(" ++ mkCurriedFun tempVars (transformer ("Func(" ++ showSep ", " tempVars ++ ")")) ++ ")"
+  -- Given an Erlang function `ErlangFunc` with arity 2:
+  -- 1. Curries this function according to arity: fun(X_1) -> fun(X_2) -> ErlangFunc(X_1, X_2) end end
+  -- 2. Transform the inner result with a user-defined function: fun(X_1) -> fun(X_2) -> `Transformer`(ErlangFunc(X_1, X_2)) end end
+  -- The transformer is specifically used to lift the value into the IO monad
+  genConAltFun : Int -> SVars vars -> (args : List Name) -> CExp (args ++ vars) -> (arity : Nat) -> (String -> String) -> Core annot String
+  genConAltFun i vs args sc arity transformer = do
+    let vs' = extendSVars args vs
+    let tempVars = take arity $ zipWith (\name, idx => name ++ show idx) (repeat "X_") [1..]
+    pure  $ "(Func) -> " ++ mkUncurriedFun (drop (S arity) $ bindArgs 1 args vs') !(genExp i vs' sc) ++ "(" ++ mkCurriedFun tempVars (transformer ("Func(" ++ showSep ", " tempVars ++ ")")) ++ ")"
 
-    genConAlt : Int -> SVars vars -> CConAlt vars -> Core annot String
-    -- Unit
-    genConAlt i vs (MkConAlt (NS ["Builtin"] (UN "MkUnit")) tag args sc) = do
-      let vs' = extendSVars args vs
-      pure $ "(" ++ mkUnit ++ ") -> " ++ !(genExp i vs' sc)
-    -- Bool
-    genConAlt i vs (MkConAlt (NS ["Prelude"] (UN "True")) tag args sc) = do
-      let vs' = extendSVars args vs
-      pure $ "(true) -> " ++ !(genExp i vs' sc)
-    genConAlt i vs (MkConAlt (NS ["Prelude"] (UN "False")) tag args sc) = do
-      let vs' = extendSVars args vs
-      pure $ "(false) -> " ++ !(genExp i vs' sc)
-    -- List
-    genConAlt i vs (MkConAlt (NS ["Prelude"] (UN "Nil")) tag args sc) = do
-      let vs' = extendSVars args vs
-      pure $ "([]) -> " ++ !(genExp i vs' sc)
-    genConAlt i vs (MkConAlt (NS ["Prelude"] (UN "::")) tag args sc) = do
-      let vs' = extendSVars args vs
-      pure $ "([" ++ showSep " | " (drop 1 $ bindArgs 1 args vs') ++ "]) -> " ++ !(genExp i vs' sc)
-    -- ErlAtom
-    genConAlt i vs (MkConAlt (NS ["Atoms", "ErlangPrelude"] (UN "MkErlAtom")) tag args sc) = do
-      let vs' = extendSVars args vs
-      pure $ "(Atom) -> fun(" ++ !(expectArgAtIndex 0 (bindArgs 1 args vs')) ++ ") -> " ++ !(genExp i vs' sc) ++ " end(atom_to_binary(Atom, utf8))"
-    -- ErlList
-    genConAlt i vs (MkConAlt (NS ["Lists", "ErlangPrelude"] (UN "Nil")) tag args sc) = do
-      let vs' = extendSVars args vs
-      pure $ "([]) -> " ++ !(genExp i vs' sc)
-    genConAlt i vs (MkConAlt (NS ["Lists", "ErlangPrelude"] (UN "::")) tag args sc) = do
-      let vs' = extendSVars args vs
-      pure $ "([" ++ showSep " | " (drop 2 $ bindArgs 1 args vs') ++ "]) -> " ++ !(genExp i vs' sc)
-    -- ErlTuple/A
-    genConAlt i vs (MkConAlt (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple0")) tag args sc) = genConAltTuple i vs args sc 0
-    genConAlt i vs (MkConAlt (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple1")) tag args sc) = genConAltTuple i vs args sc 1
-    genConAlt i vs (MkConAlt (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple2")) tag args sc) = genConAltTuple i vs args sc 2
-    genConAlt i vs (MkConAlt (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple3")) tag args sc) = genConAltTuple i vs args sc 3
-    genConAlt i vs (MkConAlt (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple4")) tag args sc) = genConAltTuple i vs args sc 4
-    genConAlt i vs (MkConAlt (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple5")) tag args sc) = genConAltTuple i vs args sc 5
-    -- ErlFun/A
-    genConAlt i vs (MkConAlt (NS ["Functions", "ErlangPrelude"] (UN "MkErlFun0")) tag args sc) = genConAltFun i vs args sc 0 id
-    genConAlt i vs (MkConAlt (NS ["Functions", "ErlangPrelude"] (UN "MkErlFun1")) tag args sc) = genConAltFun i vs args sc 1 id
-    genConAlt i vs (MkConAlt (NS ["Functions", "ErlangPrelude"] (UN "MkErlFun2")) tag args sc) = genConAltFun i vs args sc 2 id
-    genConAlt i vs (MkConAlt (NS ["Functions", "ErlangPrelude"] (UN "MkErlFun3")) tag args sc) = genConAltFun i vs args sc 3 id
-    genConAlt i vs (MkConAlt (NS ["Functions", "ErlangPrelude"] (UN "MkErlFun4")) tag args sc) = genConAltFun i vs args sc 4 id
-    genConAlt i vs (MkConAlt (NS ["Functions", "ErlangPrelude"] (UN "MkErlFun5")) tag args sc) = genConAltFun i vs args sc 5 id
-    -- ErlIO/A
-    genConAlt i vs (MkConAlt (NS ["Functions", "ErlangPrelude"] (UN "MkErlIO0")) tag args sc) = genConAltFun i vs args sc 0 mkIOPure
-    genConAlt i vs (MkConAlt (NS ["Functions", "ErlangPrelude"] (UN "MkErlIO1")) tag args sc) = genConAltFun i vs args sc 1 mkIOPure
-    genConAlt i vs (MkConAlt (NS ["Functions", "ErlangPrelude"] (UN "MkErlIO2")) tag args sc) = genConAltFun i vs args sc 2 mkIOPure
-    genConAlt i vs (MkConAlt (NS ["Functions", "ErlangPrelude"] (UN "MkErlIO3")) tag args sc) = genConAltFun i vs args sc 3 mkIOPure
-    genConAlt i vs (MkConAlt (NS ["Functions", "ErlangPrelude"] (UN "MkErlIO4")) tag args sc) = genConAltFun i vs args sc 4 mkIOPure
-    genConAlt i vs (MkConAlt (NS ["Functions", "ErlangPrelude"] (UN "MkErlIO5")) tag args sc) = genConAltFun i vs args sc 5 mkIOPure
-    -- Other
-    genConAlt i vs (MkConAlt n tag args sc) = do
-      let vs' = extendSVars args vs
-      pure $ "({" ++ showSep ", " (show tag :: bindArgs 1 args vs') ++ "}) -> " ++ !(genExp i vs' sc)
+  genConAlt : Int -> SVars vars -> CConAlt vars -> Core annot String
+  -- Unit
+  genConAlt i vs (MkConAlt (NS ["Builtin"] (UN "MkUnit")) tag args sc) = do
+    let vs' = extendSVars args vs
+    pure $ "(" ++ mkUnit ++ ") -> " ++ !(genExp i vs' sc)
+  -- Bool
+  genConAlt i vs (MkConAlt (NS ["Prelude"] (UN "True")) tag args sc) = do
+    let vs' = extendSVars args vs
+    pure $ "(true) -> " ++ !(genExp i vs' sc)
+  genConAlt i vs (MkConAlt (NS ["Prelude"] (UN "False")) tag args sc) = do
+    let vs' = extendSVars args vs
+    pure $ "(false) -> " ++ !(genExp i vs' sc)
+  -- List
+  genConAlt i vs (MkConAlt (NS ["Prelude"] (UN "Nil")) tag args sc) = do
+    let vs' = extendSVars args vs
+    pure $ "([]) -> " ++ !(genExp i vs' sc)
+  genConAlt i vs (MkConAlt (NS ["Prelude"] (UN "::")) tag args sc) = do
+    let vs' = extendSVars args vs
+    pure $ "([" ++ showSep " | " (drop 1 $ bindArgs 1 args vs') ++ "]) -> " ++ !(genExp i vs' sc)
+  -- ErlAtom
+  genConAlt i vs (MkConAlt (NS ["Atoms", "ErlangPrelude"] (UN "MkErlAtom")) tag args sc) = do
+    let vs' = extendSVars args vs
+    pure $ "(Atom) -> fun(" ++ !(expectArgAtIndex 0 (bindArgs 1 args vs')) ++ ") -> " ++ !(genExp i vs' sc) ++ " end(atom_to_binary(Atom, utf8))"
+  -- ErlList
+  genConAlt i vs (MkConAlt (NS ["Lists", "ErlangPrelude"] (UN "Nil")) tag args sc) = do
+    let vs' = extendSVars args vs
+    pure $ "([]) -> " ++ !(genExp i vs' sc)
+  genConAlt i vs (MkConAlt (NS ["Lists", "ErlangPrelude"] (UN "::")) tag args sc) = do
+    let vs' = extendSVars args vs
+    pure $ "([" ++ showSep " | " (drop 2 $ bindArgs 1 args vs') ++ "]) -> " ++ !(genExp i vs' sc)
+  -- ErlTuple/A
+  genConAlt i vs (MkConAlt (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple0")) tag args sc) = genConAltTuple i vs args sc 0
+  genConAlt i vs (MkConAlt (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple1")) tag args sc) = genConAltTuple i vs args sc 1
+  genConAlt i vs (MkConAlt (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple2")) tag args sc) = genConAltTuple i vs args sc 2
+  genConAlt i vs (MkConAlt (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple3")) tag args sc) = genConAltTuple i vs args sc 3
+  genConAlt i vs (MkConAlt (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple4")) tag args sc) = genConAltTuple i vs args sc 4
+  genConAlt i vs (MkConAlt (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple5")) tag args sc) = genConAltTuple i vs args sc 5
+  -- ErlFun/A
+  genConAlt i vs (MkConAlt (NS ["Functions", "ErlangPrelude"] (UN "MkErlFun0")) tag args sc) = genConAltFun i vs args sc 0 id
+  genConAlt i vs (MkConAlt (NS ["Functions", "ErlangPrelude"] (UN "MkErlFun1")) tag args sc) = genConAltFun i vs args sc 1 id
+  genConAlt i vs (MkConAlt (NS ["Functions", "ErlangPrelude"] (UN "MkErlFun2")) tag args sc) = genConAltFun i vs args sc 2 id
+  genConAlt i vs (MkConAlt (NS ["Functions", "ErlangPrelude"] (UN "MkErlFun3")) tag args sc) = genConAltFun i vs args sc 3 id
+  genConAlt i vs (MkConAlt (NS ["Functions", "ErlangPrelude"] (UN "MkErlFun4")) tag args sc) = genConAltFun i vs args sc 4 id
+  genConAlt i vs (MkConAlt (NS ["Functions", "ErlangPrelude"] (UN "MkErlFun5")) tag args sc) = genConAltFun i vs args sc 5 id
+  -- ErlIO/A
+  genConAlt i vs (MkConAlt (NS ["Functions", "ErlangPrelude"] (UN "MkErlIO0")) tag args sc) = genConAltFun i vs args sc 0 mkIOPure
+  genConAlt i vs (MkConAlt (NS ["Functions", "ErlangPrelude"] (UN "MkErlIO1")) tag args sc) = genConAltFun i vs args sc 1 mkIOPure
+  genConAlt i vs (MkConAlt (NS ["Functions", "ErlangPrelude"] (UN "MkErlIO2")) tag args sc) = genConAltFun i vs args sc 2 mkIOPure
+  genConAlt i vs (MkConAlt (NS ["Functions", "ErlangPrelude"] (UN "MkErlIO3")) tag args sc) = genConAltFun i vs args sc 3 mkIOPure
+  genConAlt i vs (MkConAlt (NS ["Functions", "ErlangPrelude"] (UN "MkErlIO4")) tag args sc) = genConAltFun i vs args sc 4 mkIOPure
+  genConAlt i vs (MkConAlt (NS ["Functions", "ErlangPrelude"] (UN "MkErlIO5")) tag args sc) = genConAltFun i vs args sc 5 mkIOPure
+  -- Other
+  genConAlt i vs (MkConAlt n tag args sc) = do
+    let vs' = extendSVars args vs
+    pure $ "({" ++ showSep ", " (show tag :: bindArgs 1 args vs') ++ "}) -> " ++ !(genExp i vs' sc)
 
-    genConstAlt : Int -> SVars vars -> CConstAlt vars -> Core annot String
-    genConstAlt i vs (MkConstAlt c exp) = pure $ "(" ++ genConstant c ++ ") -> " ++ !(genExp i vs exp)
+  genConstAlt : Int -> SVars vars -> CConstAlt vars -> Core annot String
+  genConstAlt i vs (MkConstAlt c exp) = pure $ "(" ++ genConstant c ++ ") -> " ++ !(genExp i vs exp)
 
-    genConTuple : Int -> SVars vars -> List (CExp vars) -> Core annot String
-    genConTuple i vs args = pure $ "{" ++ showSep ", " !(traverse (genExp i vs) args) ++ "}"
+  genConTuple : Int -> SVars vars -> List (CExp vars) -> Core annot String
+  genConTuple i vs args = pure $ "{" ++ showSep ", " !(traverse (genExp i vs) args) ++ "}"
 
-    -- Given an Idris function `idrisFun` with arity 2:
-    -- 1. Uncurries this function according to arity: fun(X_1, X_2) -> (idrisFun(X1))(X_2) end
-    -- 2. Transform the inner result with a user-defined function: fun(X_1, X_2) -> `transform`((idrisFun(X1))(X_2)) end
-    -- The transformer is specifically used to perform the side-effects of the result (using `unsafePerformIO`)
-    genConFun : Int -> SVars vars -> (arity : Nat) -> CExp vars -> (CExp vars -> CExp vars) -> Core annot String
-    genConFun i vs arity func transformer = do
-      let tempVars = take arity $ zipWith (\name, idx => name ++ show idx) (repeat "X_") [1..]
-      let tempCRefs = take arity $ zipWith (\name, idx => CRef (MN name idx)) (repeat "X") [1..]
-      let body = transformer (applyToArgs func tempCRefs)
-      pure $ mkUncurriedFun tempVars !(genExp i vs body)
+  -- Given an Idris function `idrisFun` with arity 2:
+  -- 1. Uncurries this function according to arity: fun(X_1, X_2) -> (idrisFun(X1))(X_2) end
+  -- 2. Transform the inner result with a user-defined function: fun(X_1, X_2) -> `transform`((idrisFun(X1))(X_2)) end
+  -- The transformer is specifically used to perform the side-effects of the result (using `unsafePerformIO`)
+  genConFun : Int -> SVars vars -> (arity : Nat) -> CExp vars -> (CExp vars -> CExp vars) -> Core annot String
+  genConFun i vs arity func transformer = do
+    let tempVars = take arity $ zipWith (\name, idx => name ++ show idx) (repeat "X_") [1..]
+    let tempCRefs = take arity $ zipWith (\name, idx => CRef (MN name idx)) (repeat "X") [1..]
+    let body = transformer (applyToArgs func tempCRefs)
+    pure $ mkUncurriedFun tempVars !(genExp i vs body)
 
-    genCon : Int -> SVars vars -> CExp vars -> Core annot String
-    -- Unit
-    genCon i vs (CCon (NS ["Builtin"] (UN "MkUnit")) _ _) = pure mkUnit
-    -- Bool
-    genCon i vs (CCon (NS ["Prelude"] (UN "True")) _ _) = pure "true"
-    genCon i vs (CCon (NS ["Prelude"] (UN "False")) _ _) = pure "false"
-    -- List
-    genCon i vs (CCon (NS ["Prelude"] (UN "Nil")) _ _) = pure "[]"
-    genCon i vs (CCon (NS ["Prelude"] (UN "::")) _ [_, x, xs]) = pure $ "[" ++ !(genExp i vs x) ++ " | " ++ !(genExp i vs xs) ++ "]"
-    -- ErlAtom
-    genCon i vs (CCon (NS ["Atoms", "ErlangPrelude"] (UN "MkErlAtom")) _ [x]) = pure $ "binary_to_atom(iolist_to_binary(" ++ !(genExp i vs x) ++ "), utf8)"
-    -- ErlList
-    genCon i vs (CCon (NS ["Lists", "ErlangPrelude"] (UN "Nil")) _ []) = pure "[]"
-    genCon i vs (CCon (NS ["Lists", "ErlangPrelude"] (UN "::")) _ [_, _, x, xs]) = pure $ "[" ++ !(genExp i vs x) ++ " | " ++ !(genExp i vs xs) ++ "]"
-    -- ErlTuple/A
-    genCon i vs (CCon (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple0")) _ []) = genConTuple i vs []
-    genCon i vs (CCon (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple1")) _ args) = genConTuple i vs (drop 1 args)
-    genCon i vs (CCon (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple2")) _ args) = genConTuple i vs (drop 2 args)
-    genCon i vs (CCon (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple3")) _ args) = genConTuple i vs (drop 3 args)
-    genCon i vs (CCon (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple4")) _ args) = genConTuple i vs (drop 4 args)
-    genCon i vs (CCon (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple5")) _ args) = genConTuple i vs (drop 5 args)
-    -- ErlFun/A
-    genCon i vs (CCon (NS ["Functions", "ErlangPrelude"] (UN "MkErlFun0")) _ args) = genConFun i vs 0 !(expectArgAtIndex 1 args) id
-    genCon i vs (CCon (NS ["Functions", "ErlangPrelude"] (UN "MkErlFun1")) _ args) = genConFun i vs 1 !(expectArgAtIndex 2 args) id
-    genCon i vs (CCon (NS ["Functions", "ErlangPrelude"] (UN "MkErlFun2")) _ args) = genConFun i vs 2 !(expectArgAtIndex 3 args) id
-    genCon i vs (CCon (NS ["Functions", "ErlangPrelude"] (UN "MkErlFun3")) _ args) = genConFun i vs 3 !(expectArgAtIndex 4 args) id
-    genCon i vs (CCon (NS ["Functions", "ErlangPrelude"] (UN "MkErlFun4")) _ args) = genConFun i vs 4 !(expectArgAtIndex 5 args) id
-    genCon i vs (CCon (NS ["Functions", "ErlangPrelude"] (UN "MkErlFun5")) _ args) = genConFun i vs 5 !(expectArgAtIndex 6 args) id
-    -- ErlIO/A
-    genCon i vs (CCon (NS ["Functions", "ErlangPrelude"] (UN "MkErlIO0")) _ args) = genConFun i vs 0 !(expectArgAtIndex 1 args) applyUnsafePerformIO
-    genCon i vs (CCon (NS ["Functions", "ErlangPrelude"] (UN "MkErlIO1")) _ args) = genConFun i vs 1 !(expectArgAtIndex 2 args) applyUnsafePerformIO
-    genCon i vs (CCon (NS ["Functions", "ErlangPrelude"] (UN "MkErlIO2")) _ args) = genConFun i vs 2 !(expectArgAtIndex 3 args) applyUnsafePerformIO
-    genCon i vs (CCon (NS ["Functions", "ErlangPrelude"] (UN "MkErlIO3")) _ args) = genConFun i vs 3 !(expectArgAtIndex 4 args) applyUnsafePerformIO
-    genCon i vs (CCon (NS ["Functions", "ErlangPrelude"] (UN "MkErlIO4")) _ args) = genConFun i vs 4 !(expectArgAtIndex 5 args) applyUnsafePerformIO
-    genCon i vs (CCon (NS ["Functions", "ErlangPrelude"] (UN "MkErlIO5")) _ args) = genConFun i vs 5 !(expectArgAtIndex 6 args) applyUnsafePerformIO
-    -- ErlMap
-    genCon i vs (CCon (NS ["Maps", "ErlangPrelude"] (UN "MkKeyValue")) _ [_, _, key, value]) = pure $ "#{" ++ !(genExp i vs key) ++ " => " ++ !(genExp i vs value) ++ "}"
-    genCon i vs (CCon (NS ["Maps", "ErlangPrelude"] (UN "ErlMapNil")) _ _) = pure "#{}"
-    genCon i vs (CCon (NS ["Maps", "ErlangPrelude"] (UN "ErlMapCons")) _ [x, xs]) = pure $ "maps:merge(" ++ !(genExp i vs xs) ++ ", " ++ !(genExp i vs x) ++ ")"
-    -- Other
-    genCon i vs (CCon x tag args) = pure $ genConstructor tag !(traverse (genExp i vs) args)
-    genCon i vs tm = throw (InternalError ("Invalid constructor: " ++ show tm))
-      
-    -- oops, no traverse for Vect in Core
-    genArgs : Int -> SVars vars -> Vect n (CExp vars) -> Core annot (Vect n String)
-    genArgs i vs [] = pure []
-    genArgs i vs (arg :: args) = pure $ !(genExp i vs arg) :: !(genArgs i vs args)
+  genCon : Int -> SVars vars -> CExp vars -> Core annot String
+  -- Unit
+  genCon i vs (CCon (NS ["Builtin"] (UN "MkUnit")) _ _) = pure mkUnit
+  -- Bool
+  genCon i vs (CCon (NS ["Prelude"] (UN "True")) _ _) = pure "true"
+  genCon i vs (CCon (NS ["Prelude"] (UN "False")) _ _) = pure "false"
+  -- List
+  genCon i vs (CCon (NS ["Prelude"] (UN "Nil")) _ _) = pure "[]"
+  genCon i vs (CCon (NS ["Prelude"] (UN "::")) _ [_, x, xs]) = pure $ "[" ++ !(genExp i vs x) ++ " | " ++ !(genExp i vs xs) ++ "]"
+  -- ErlAtom
+  genCon i vs (CCon (NS ["Atoms", "ErlangPrelude"] (UN "MkErlAtom")) _ [x]) = pure $ "binary_to_atom(iolist_to_binary(" ++ !(genExp i vs x) ++ "), utf8)"
+  -- ErlList
+  genCon i vs (CCon (NS ["Lists", "ErlangPrelude"] (UN "Nil")) _ []) = pure "[]"
+  genCon i vs (CCon (NS ["Lists", "ErlangPrelude"] (UN "::")) _ [_, _, x, xs]) = pure $ "[" ++ !(genExp i vs x) ++ " | " ++ !(genExp i vs xs) ++ "]"
+  -- ErlTuple/A
+  genCon i vs (CCon (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple0")) _ []) = genConTuple i vs []
+  genCon i vs (CCon (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple1")) _ args) = genConTuple i vs (drop 1 args)
+  genCon i vs (CCon (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple2")) _ args) = genConTuple i vs (drop 2 args)
+  genCon i vs (CCon (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple3")) _ args) = genConTuple i vs (drop 3 args)
+  genCon i vs (CCon (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple4")) _ args) = genConTuple i vs (drop 4 args)
+  genCon i vs (CCon (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple5")) _ args) = genConTuple i vs (drop 5 args)
+  -- ErlFun/A
+  genCon i vs (CCon (NS ["Functions", "ErlangPrelude"] (UN "MkErlFun0")) _ args) = genConFun i vs 0 !(expectArgAtIndex 1 args) id
+  genCon i vs (CCon (NS ["Functions", "ErlangPrelude"] (UN "MkErlFun1")) _ args) = genConFun i vs 1 !(expectArgAtIndex 2 args) id
+  genCon i vs (CCon (NS ["Functions", "ErlangPrelude"] (UN "MkErlFun2")) _ args) = genConFun i vs 2 !(expectArgAtIndex 3 args) id
+  genCon i vs (CCon (NS ["Functions", "ErlangPrelude"] (UN "MkErlFun3")) _ args) = genConFun i vs 3 !(expectArgAtIndex 4 args) id
+  genCon i vs (CCon (NS ["Functions", "ErlangPrelude"] (UN "MkErlFun4")) _ args) = genConFun i vs 4 !(expectArgAtIndex 5 args) id
+  genCon i vs (CCon (NS ["Functions", "ErlangPrelude"] (UN "MkErlFun5")) _ args) = genConFun i vs 5 !(expectArgAtIndex 6 args) id
+  -- ErlIO/A
+  genCon i vs (CCon (NS ["Functions", "ErlangPrelude"] (UN "MkErlIO0")) _ args) = genConFun i vs 0 !(expectArgAtIndex 1 args) applyUnsafePerformIO
+  genCon i vs (CCon (NS ["Functions", "ErlangPrelude"] (UN "MkErlIO1")) _ args) = genConFun i vs 1 !(expectArgAtIndex 2 args) applyUnsafePerformIO
+  genCon i vs (CCon (NS ["Functions", "ErlangPrelude"] (UN "MkErlIO2")) _ args) = genConFun i vs 2 !(expectArgAtIndex 3 args) applyUnsafePerformIO
+  genCon i vs (CCon (NS ["Functions", "ErlangPrelude"] (UN "MkErlIO3")) _ args) = genConFun i vs 3 !(expectArgAtIndex 4 args) applyUnsafePerformIO
+  genCon i vs (CCon (NS ["Functions", "ErlangPrelude"] (UN "MkErlIO4")) _ args) = genConFun i vs 4 !(expectArgAtIndex 5 args) applyUnsafePerformIO
+  genCon i vs (CCon (NS ["Functions", "ErlangPrelude"] (UN "MkErlIO5")) _ args) = genConFun i vs 5 !(expectArgAtIndex 6 args) applyUnsafePerformIO
+  -- ErlMap
+  genCon i vs (CCon (NS ["Maps", "ErlangPrelude"] (UN "MkKeyValue")) _ [_, _, key, value]) = pure $ "#{" ++ !(genExp i vs key) ++ " => " ++ !(genExp i vs value) ++ "}"
+  genCon i vs (CCon (NS ["Maps", "ErlangPrelude"] (UN "ErlMapNil")) _ _) = pure "#{}"
+  genCon i vs (CCon (NS ["Maps", "ErlangPrelude"] (UN "ErlMapCons")) _ [x, xs]) = pure $ "maps:merge(" ++ !(genExp i vs xs) ++ ", " ++ !(genExp i vs x) ++ ")"
+  -- Other
+  genCon i vs (CCon x tag args) = pure $ genConstructor tag !(traverse (genExp i vs) args)
+  genCon i vs tm = throw (InternalError ("Invalid constructor: " ++ show tm))
 
-    export
-    genExp : Int -> SVars vars -> CExp vars -> Core annot String
-    genExp i vs (CLocal el) = pure $ lookupSVar el vs
-    genExp i vs (CRef n) = pure $ genName n
-    genExp i vs (CLam x sc) 
-       = do let vs' = extendSVars [x] vs 
-            sc' <- genExp i vs' sc
-            pure $ "fun(" ++ lookupSVar Here vs' ++ ") -> " ++ sc' ++ " end"
-    genExp i vs (CLet x val sc) 
-       = do let vs' = extendSVars [x] vs
-            val' <- genExp i vs val
-            sc' <- genExp i vs' sc
-            pure $ "(fun(" ++ lookupSVar Here vs' ++ ") -> " ++ sc' ++ " end(" ++ val' ++ "))"
-    genExp i vs (CApp x args) 
-        = pure $ "(" ++ !(genExp i vs x) ++ "(" ++ showSep ", " !(traverse (genExp i vs) args) ++ "))"
-    genExp i vs con@(CCon x tag args)
-        = genCon i vs con
-    genExp i vs (COp op args) 
-        = pure $ genOp op !(genArgs i vs args)
-    genExp i vs (CExtPrim p args) 
-        = genExtPrim i vs (toPrim p) args
-    genExp i vs (CForce t) = pure $ "(" ++ !(genExp i vs t) ++ "())" -- TODO: Should use another mechanism to avoid evaluating delayed computation multiple times
-    genExp i vs (CDelay t) = pure $ "fun() -> " ++ !(genExp i vs t) ++ " end"
-    genExp i vs (CConCase sc alts def)
-        = do tcode <- genExp i vs sc
-             defc <- maybe (pure Nothing) (\v => pure (Just !(genExp i vs v))) def
-             conAlts <- traverse (genConAlt i vs) alts
-             pure $ "(fun "
-                     ++ showSep "; " (conAlts ++ genCaseDef defc)
-                     ++ " end(" ++ tcode ++ "))"
-    genExp i vs (CConstCase sc alts def)
-        = do defc <- maybe (pure Nothing) (\v => pure (Just !(genExp i vs v))) def
-             tcode <- genExp i vs sc
-             constAlts <- traverse (genConstAlt i vs) alts
-             pure $ "(fun "
-                      ++ showSep "; " (constAlts ++ genCaseDef defc)
-                      ++ " end(blodwen_normalize_value(" ++ tcode ++ ")))"
-    genExp i vs (CPrimVal c) = pure $ genConstant c
-    genExp i vs CErased = pure "{}"
-    genExp i vs (CCrash msg) = pure $ "throw(\"" ++ msg ++ "\")"
+  -- oops, no traverse for Vect in Core
+  genArgs : Int -> SVars vars -> Vect n (CExp vars) -> Core annot (Vect n String)
+  genArgs i vs [] = pure []
+  genArgs i vs (arg :: args) = pure $ !(genExp i vs arg) :: !(genArgs i vs args)
+
+  export
+  genExp : Int -> SVars vars -> CExp vars -> Core annot String
+  genExp i vs (CLocal el) = pure $ lookupSVar el vs
+  genExp i vs (CRef n) = pure $ genName n
+  genExp i vs (CLam x sc)
+      = do let vs' = extendSVars [x] vs
+           sc' <- genExp i vs' sc
+           pure $ "fun(" ++ lookupSVar Here vs' ++ ") -> " ++ sc' ++ " end"
+  genExp i vs (CLet x val sc)
+      = do let vs' = extendSVars [x] vs
+           val' <- genExp i vs val
+           sc' <- genExp i vs' sc
+           pure $ "(fun(" ++ lookupSVar Here vs' ++ ") -> " ++ sc' ++ " end(" ++ val' ++ "))"
+  genExp i vs (CApp x args)
+      = pure $ "(" ++ !(genExp i vs x) ++ "(" ++ showSep ", " !(traverse (genExp i vs) args) ++ "))"
+  genExp i vs con@(CCon x tag args)
+      = genCon i vs con
+  genExp i vs (COp op args)
+      = pure $ genOp op !(genArgs i vs args)
+  genExp i vs (CExtPrim p args)
+      = genExtCommon i vs (toPrim p) args
+  genExp i vs (CForce t) = pure $ "(" ++ !(genExp i vs t) ++ "())" -- TODO: Should use another mechanism to avoid evaluating delayed computation multiple times
+  genExp i vs (CDelay t) = pure $ "fun() -> " ++ !(genExp i vs t) ++ " end"
+  genExp i vs (CConCase sc alts def)
+      = do tcode <- genExp i vs sc
+           defc <- maybe (pure Nothing) (\v => pure (Just !(genExp i vs v))) def
+           conAlts <- traverse (genConAlt i vs) alts
+           pure $ "(fun "
+                   ++ showSep "; " (conAlts ++ genCaseDef defc)
+                   ++ " end(" ++ tcode ++ "))"
+  genExp i vs (CConstCase sc alts def)
+      = do defc <- maybe (pure Nothing) (\v => pure (Just !(genExp i vs v))) def
+           tcode <- genExp i vs sc
+           constAlts <- traverse (genConstAlt i vs) alts
+           pure $ "(fun "
+                   ++ showSep "; " (constAlts ++ genCaseDef defc)
+                   ++ " end(blodwen_normalize_value(" ++ tcode ++ ")))"
+  genExp i vs (CPrimVal c) = pure $ genConstant c
+  genExp i vs CErased = pure "{}"
+  genExp i vs (CCrash msg) = pure $ "throw(\"" ++ msg ++ "\")"
 
   -- Evaluate the outer `ErlList` to figure out the arity of the function call
   readArgs : Int -> SVars vars -> CExp vars -> Core annot (List String)
@@ -416,14 +415,16 @@ parameters (genExtPrim : {vars : _} -> Int -> SVars vars -> ExtPrim -> List (CEx
   -- overridden)
   export
   genExtCommon : Int -> SVars vars -> ExtPrim -> List (CExp vars) -> Core annot String
+  genExtCommon i vs CCall [ret, fn, args, world]
+      = throw (InternalError ("Can't compile C FFI calls to Erlang yet"))
   genExtCommon i vs ErlangCall [_, ret, CPrimVal (Str fn), args, world]
-     = do parameterList <- readArgs i vs args
-          pure $ mkWorld $ "(" ++ fn ++ "(" ++ showSep ", " parameterList ++ "))"
+      = do parameterList <- readArgs i vs args
+           pure $ mkWorld $ "(" ++ fn ++ "(" ++ showSep ", " parameterList ++ "))"
   genExtCommon i vs ErlangCall [_, ret, fn, args, world] -- TODO: Implement?
       = do pure $ mkWorld "false"
-  genExtCommon i vs PutStr [arg, world] 
+  genExtCommon i vs PutStr [arg, world]
       = pure $ "(fun() -> io_unicode_put_str(" ++ !(genExp i vs arg) ++ "), " ++ mkWorld mkUnit ++ " end())"
-  genExtCommon i vs GetStr [world] 
+  genExtCommon i vs GetStr [world]
       = pure $ mkWorld "io_unicode_get_str(\"\")"
   genExtCommon i vs FileOpen [file, mode, bin, world]
       = pure $ mkWorld $ "blodwen_open("
@@ -445,39 +446,38 @@ parameters (genExtPrim : {vars : _} -> Int -> SVars vars -> ExtPrim -> List (CEx
   genExtCommon i vs ReadIORef [_, ref, world]
       = pure $ mkWorld $ "(unbox " ++ !(genExp i vs ref) ++ ")"
   genExtCommon i vs WriteIORef [_, ref, val, world]
-      = pure $ mkWorld $ "(set-box! " 
-                           ++ !(genExp i vs ref) ++ " " 
-                           ++ !(genExp i vs val) ++ ")"
-  genExtCommon i vs (Unknown n) args 
+      = pure $ mkWorld $ "(set-box! "
+                            ++ !(genExp i vs ref) ++ " "
+                            ++ !(genExp i vs val) ++ ")"
+  genExtCommon i vs (Unknown n) args
       = throw (InternalError ("Can't compile unknown external primitive " ++ show n))
-  genExtCommon i vs prim args 
+  genExtCommon i vs prim args
       = throw (InternalError ("Badly formed external primitive " ++ show prim
                                 ++ " " ++ show args))
 
-  genArglist : SVars ns -> String
-  genArglist [] = ""
-  genArglist [x] = x
-  genArglist (x :: xs) = x ++ ", " ++ genArglist xs
+genArglist : SVars ns -> String
+genArglist [] = ""
+genArglist [x] = x
+genArglist (x :: xs) = x ++ ", " ++ genArglist xs
 
-  genDef : Name -> CDef -> Core annot String
-  genDef n (MkFun args exp)
-     = let vs = initSVars args in
-           pure $ genName n ++ "(" ++ genArglist vs ++ ") -> "
-                      ++ !(genExp 0 vs exp) ++ ".\n"
-  genDef n (MkError exp)
-     = pure $ genName n ++ "() -> " ++ !(genExp 0 [] exp) ++ ".\n"
-  genDef n (MkCon t a) = pure "" -- Nothing to compile here
-  
+genDef : Name -> CDef -> Core annot String
+genDef n (MkFun args exp)
+    = let vs = initSVars args in
+          pure $ genName n ++ "(" ++ genArglist vs ++ ") -> "
+                    ++ !(genExp 0 vs exp) ++ ".\n"
+genDef n (MkError exp)
+    = pure $ genName n ++ "() -> " ++ !(genExp 0 [] exp) ++ ".\n"
+genDef n (MkCon t a) = pure "" -- Nothing to compile here
+
 -- Convert the name to scheme code
 -- (There may be no code generated, for example if it's a constructor)
 export
-getScheme : (genExtPrim : {vars : _} -> Int -> SVars vars -> ExtPrim -> List (CExp vars) -> Core annot String) ->
-            Defs -> Name -> Core annot String
-getScheme genExtPrim defs n
+getErlang : Defs -> Name -> Core annot String
+getErlang defs n
     = case lookupGlobalExact n (gamma defs) of
            Nothing => throw (InternalError ("Compiling undefined name " ++ show n))
            Just d => case compexpr d of
                           Nothing =>
                             throw (InternalError ("No compiled definition for " ++ show n))
                           Just d =>
-                            genDef genExtPrim n d
+                            genDef n d

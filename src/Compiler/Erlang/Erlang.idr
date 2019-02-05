@@ -31,21 +31,14 @@ findErlangCompiler = pure "/usr/bin/env erlc"
 findEscript : IO String
 findEscript = pure "/usr/bin/env escript"
 
-mutual
-  racketPrim : Int -> SVars vars -> ExtPrim -> List (CExp vars) -> Core annot String
-  racketPrim i vs CCall [ret, fn, args, world]
-      = throw (InternalError ("Can't compile C FFI calls to Erlang yet"))
-  racketPrim i vs prim args 
-      = genExtCommon racketPrim i vs prim args
-
 compileToErlang : Opts -> Ref Ctxt Defs -> ClosedTerm -> (outfile : String) -> Core annot ()
 compileToErlang (MkOpts moduleName) c tm outfile
     = do ds <- getDirectives Erlang
          (ns, tags) <- findUsedNames tm
          defs <- get Ctxt
-         compdefs <- traverse (getScheme racketPrim defs) ns
+         compdefs <- traverse (getErlang defs) ns
          let code = concat compdefs
-         main <- genExp racketPrim 0 [] !(compileExp tags tm)
+         main <- genExp 0 [] !(compileExp tags tm)
          support <- readDataFile "erlang/support.erl"
          let scm = header ++ unlines ds ++ support ++ code ++ "main(Args) -> " ++ main ++ ".\n"
          Right () <- coreLift $ writeFile outfile scm
