@@ -187,8 +187,12 @@ mutual
 namespace CaseExpr
   public export
   data ErlMatcher : Type -> Type where
-    MInteger : ErlMatcher Integer
-    MString : ErlMatcher String
+    MAny : (ErlTerm -> a) -> ErlMatcher a
+    MInteger : (Integer -> a) -> ErlMatcher a
+    MString : (String -> a) -> ErlMatcher a
+    MTuple0 : a -> ErlMatcher a
+    MTuple1 : (a -> b) -> ErlMatcher a -> ErlMatcher b
+    MTuple2 : (a -> b -> c) -> ErlMatcher a -> ErlMatcher b -> ErlMatcher c
 
   %extern
   export

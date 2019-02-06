@@ -482,23 +482,49 @@ mutual
     guard : ErlGuard vars
     body : CExp vars
 
+  concatGlobals : List (ErlClause vars) -> List (CExp vars)
+  concatGlobals clauses = clauses >>= globals
+
+  nextGlobal : (global : Int) -> List (ErlClause vars) -> Int
+  nextGlobal global clauses = global + cast (length (concatGlobals clauses))
+
   readMatchers : Int -> (global : Int) -> SVars vars -> CExp vars -> Core annot (List (ErlClause vars))
   readMatchers i global vs (CCon (NS ["Prelude"] (UN "Nil")) _ _) = pure []
   readMatchers i global vs (CCon (NS ["Prelude"] (UN "::")) _ [_, x, xs]) = do
     firstClause <- parseClause i 0 global vs x
-    let nextGlobal = global + cast {to=Int} (length (globals firstClause))
-    restClauses <- readMatchers i nextGlobal vs xs
+    restClauses <- readMatchers i (nextGlobal global [firstClause]) vs xs
     pure (firstClause :: restClauses)
   readMatchers i global vs args =
     throw (InternalError ("Expected a list of matchers " ++ show args))
 
+  unknownTag : Int
+  unknownTag = 0 -- TODO: What is the tag in CCon used for?
+
   parseClause : Int -> (local : Int) -> (global : Int) -> SVars vars -> CExp vars -> Core annot (ErlClause vars)
-  parseClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MInteger")) _ _) = do
+  parseClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MAny")) _ [_, func]) = do
     let ref = CRef (MN "C" local)
-    pure $ MkErlClause (local + 1) [] ref (IsInteger ref) ref
-  parseClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MString")) _ _) = do
+    pure $ MkErlClause (local + 1) [] ref IsAny (CApp func [ref])
+  parseClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MInteger")) _ [_, func]) = do
     let ref = CRef (MN "C" local)
-    pure $ MkErlClause (local + 1) [] ref (OrElse (IsBinary ref) (IsList ref)) ref
+    pure $ MkErlClause (local + 1) [] ref (IsInteger ref) (CApp func [ref])
+  parseClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MString")) _ [_, func]) = do
+    let ref = CRef (MN "C" local)
+    pure $ MkErlClause (local + 1) [] ref (OrElse (IsBinary ref) (IsList ref)) (CApp func [ref])
+  parseClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MTuple0")) _ [_, val]) = do
+    pure $ MkErlClause local [] (CCon (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple0")) unknownTag []) IsAny val
+  parseClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MTuple1")) _ [_, _, func, m1]) = do
+    m1res <- parseClause i local global vs m1
+    pure $ MkErlClause (nextLocal m1res) (globals m1res)
+      (CCon (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple1")) unknownTag [CErased, pattern m1res])
+      (guard m1res)
+      (CApp func [body m1res])
+  parseClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MTuple2")) _ [_, _, _, func, m1, m2]) = do
+    m1res <- parseClause i local global vs m1
+    m2res <- parseClause i (nextLocal m1res) (nextGlobal global [m1res]) vs m2
+    pure $ MkErlClause (nextLocal m2res) (concatGlobals [m1res, m2res])
+      (CCon (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple2")) unknownTag [CErased, CErased, pattern m1res, pattern m2res])
+      (AndAlso (guard m1res) (guard m2res))
+      (CApp (CApp func [body m1res]) [body m2res])
   parseClause i local global vs matcher =
     throw (InternalError ("Badly formed clause " ++ show matcher))
 
