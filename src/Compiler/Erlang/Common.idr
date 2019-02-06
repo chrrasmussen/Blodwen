@@ -130,6 +130,7 @@ public export
 data ExtPrim = CCall | ErlangCall | PutStr | GetStr
              | FileOpen | FileClose | FileReadLine | FileWriteLine | FileEOF
              | NewIORef | ReadIORef | WriteIORef
+             | ErlCase
              | Unknown Name
 
 export
@@ -146,6 +147,7 @@ Show ExtPrim where
   show NewIORef = "NewIORef"
   show ReadIORef = "ReadIORef"
   show WriteIORef = "WriteIORef"
+  show ErlCase = "ErlCase"
   show (Unknown n) = "Unknown " ++ show n
 
 toPrim : Name -> ExtPrim
@@ -161,7 +163,8 @@ toPrim pn@(NS _ n)
             (n == UN "prim__eof", FileEOF),
             (n == UN "prim__newIORef", NewIORef),
             (n == UN "prim__readIORef", ReadIORef),
-            (n == UN "prim__writeIORef", WriteIORef)
+            (n == UN "prim__writeIORef", WriteIORef),
+            (n == UN "erlCase", ErlCase)
             ]
            (Unknown pn)
 toPrim pn = Unknown pn
@@ -452,11 +455,74 @@ mutual
       = pure $ mkWorld $ "(set-box! "
                             ++ !(genExp i vs ref) ++ " "
                             ++ !(genExp i vs val) ++ ")"
+  genExtPrim i vs ErlCase [_, def, matchers@(CCon _ _ _), term] = do
+    clauses <- readMatchers i 0 vs matchers
+    genErlCase i vs def clauses term
+  genExtPrim i vs ErlCase [_, def, matchers, tm] =
+    pure $ mkWorld "false" -- TODO: Do I need to implement this to make `erlCase` work with variables?
   genExtPrim i vs (Unknown n) args
       = throw (InternalError ("Can't compile unknown external primitive " ++ show n))
   genExtPrim i vs prim args
       = throw (InternalError ("Badly formed external primitive " ++ show prim
                                 ++ " " ++ show args))
+
+  data ErlGuard : List Name -> Type where
+    IsAny     : ErlGuard vars
+    IsBinary  : CExp vars -> ErlGuard vars
+    IsList    : CExp vars -> ErlGuard vars
+    IsInteger : CExp vars -> ErlGuard vars
+    AndAlso   : ErlGuard vars -> ErlGuard vars -> ErlGuard vars
+    OrElse    : ErlGuard vars -> ErlGuard vars -> ErlGuard vars
+
+  record ErlClause (vars : List Name) where
+    constructor MkErlClause
+    nextLocal : Int
+    globals : List (CExp vars)
+    pattern : CExp vars
+    guard : ErlGuard vars
+    body : CExp vars
+
+  readMatchers : Int -> (global : Int) -> SVars vars -> CExp vars -> Core annot (List (ErlClause vars))
+  readMatchers i global vs (CCon (NS ["Prelude"] (UN "Nil")) _ _) = pure []
+  readMatchers i global vs (CCon (NS ["Prelude"] (UN "::")) _ [_, x, xs]) = do
+    firstClause <- parseClause i 0 global vs x
+    let nextGlobal = global + cast {to=Int} (length (globals firstClause))
+    restClauses <- readMatchers i nextGlobal vs xs
+    pure (firstClause :: restClauses)
+  readMatchers i global vs args =
+    throw (InternalError ("Expected a list of matchers " ++ show args))
+
+  parseClause : Int -> (local : Int) -> (global : Int) -> SVars vars -> CExp vars -> Core annot (ErlClause vars)
+  parseClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MInteger")) _ _) = do
+    let ref = CRef (MN "C" local)
+    pure $ MkErlClause (local + 1) [] ref (IsInteger ref) ref
+  parseClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MString")) _ _) = do
+    let ref = CRef (MN "C" local)
+    pure $ MkErlClause (local + 1) [] ref (OrElse (IsBinary ref) (IsList ref)) ref
+  parseClause i local global vs matcher =
+    throw (InternalError ("Badly formed clause " ++ show matcher))
+
+  genGuard : Int -> SVars vars -> ErlGuard vars -> Core annot String
+  genGuard i vs IsAny = pure "true"
+  genGuard i vs (IsBinary ref) = pure $ "is_binary(" ++ !(genExp i vs ref) ++ ")"
+  genGuard i vs (IsList ref) = pure $ "is_list(" ++ !(genExp i vs ref) ++ ")"
+  genGuard i vs (IsInteger ref) = pure $ "is_integer(" ++ !(genExp i vs ref) ++ ")"
+  genGuard i vs (AndAlso g1 g2) = pure $ "(" ++ !(genGuard i vs g1) ++ " andalso " ++ !(genGuard i vs g2) ++ ")"
+  genGuard i vs (OrElse g1 g2) = pure $ "(" ++ !(genGuard i vs g1) ++ " orelse " ++ !(genGuard i vs g2) ++ ")"
+
+  genClause : Int -> SVars vars -> ErlClause vars -> Core annot String
+  genClause i vs (MkErlClause _ _ pattern' guard' body') =
+    pure $ "(" ++ !(genExp i vs pattern') ++ ") when " ++ !(genGuard i vs guard') ++ " -> " ++ !(genExp i vs body')
+
+  genErlCase : Int -> SVars vars -> (def : CExp vars) -> List (ErlClause vars) -> (term : CExp vars) -> Core annot String
+  genErlCase i vs def clauses term = do
+    clausesStr <- traverse (genClause i vs) clauses
+    defStr <- pure $ "(_) -> " ++ !(genExp i vs def)
+    pure $ "(fun() -> " ++
+      "(fun " ++
+      showSep "; " (clausesStr ++ [defStr]) ++
+      " end(" ++ !(genExp i vs term) ++ "))" ++
+      " end())"
 
 genArglist : SVars ns -> String
 genArglist [] = ""

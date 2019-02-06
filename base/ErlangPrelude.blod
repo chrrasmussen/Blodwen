@@ -184,6 +184,17 @@ mutual
     ETErlTypesCons  : (ErlType x, ErlTypes xs) => ErlTypes (x :: xs)
 
 
+namespace CaseExpr
+  public export
+  data ErlMatcher : Type -> Type where
+    MInteger : ErlMatcher Integer
+    MString : ErlMatcher String
+
+  %extern
+  export
+  erlCase : a -> List (ErlMatcher a) -> ErlTerm -> a
+
+
 namespace IO
   %extern prim__erlangCall : (ret : Type) -> String -> ErlList xs -> (1 x : %World) -> IORes ret
 
