@@ -167,19 +167,22 @@ toPrim pn@(NS _ n)
 toPrim pn = Unknown pn
 
 
+mkErased : String
+mkErased = "erased"
+
 mkUnit : String
 mkUnit = "{}"
 
 export
 mkWorld : String -> String
-mkWorld res = genConstructor 0 ["false", res, "false"] -- PrimIO.MkIORes : {0 a : Type} -> a -> (1 x : %World) -> IORes a -- TODO: Is the `false`s necessary?
+mkWorld res = genConstructor 0 [mkErased, res, "false"] -- PrimIO.MkIORes : {0 a : Type} -> a -> (1 x : %World) -> IORes a -- TODO: Is the `false`s necessary?
 
 -- io_pure : {0 a : Type} -> a -> IO a
 -- io_pure {a} x = MkIO {a} (\1 w : %World => (MkIORes {a} x w))
 --
--- ns_PrimIO_un_io_pure(V_0, V_1) -> {0, {}, fun(V_2) -> {0, {}, V_1, V_2} end}.
+-- ns_PrimIO_un_io_pure(V_0, V_1) -> {0, erased, fun(V_2) -> {0, erased, V_1, V_2} end}.
 mkIOPure : String -> String
-mkIOPure val = "{0, {}, fun(World) -> {0, {}, " ++ val ++ ", World} end}"
+mkIOPure val = "{0, " ++ mkErased ++ ", fun(World) -> {0, " ++ mkErased ++ ", " ++ val ++ ", World} end}"
 
 
 mkCurriedFun : List String -> String -> String
@@ -402,7 +405,7 @@ mutual
                    ++ showSep "; " (constAlts ++ genCaseDef defc)
                    ++ " end(blodwen_normalize_value(" ++ tcode ++ ")))"
   genExp i vs (CPrimVal c) = pure $ genConstant c
-  genExp i vs CErased = pure "{}"
+  genExp i vs CErased = pure mkErased
   genExp i vs (CCrash msg) = pure $ "throw(\"" ++ msg ++ "\")"
 
   -- Evaluate the outer `ErlList` to figure out the arity of the function call
