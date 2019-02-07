@@ -15,7 +15,7 @@ blodwen_normalize_value(X) -> X.
 
 
 % NOTE: This is used to circumvent the type checker since
-% `erlangCall` is allowed to return any type
+% `erlCall` is allowed to return any type
 blodwen_id(X) -> X.
 
 

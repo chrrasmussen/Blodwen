@@ -19,49 +19,49 @@ erl_tuples() -> {{}, {1}, {1, 2}, {1, 2, 3}, {1, 2, 3, 4}}.
 intTest : IO ()
 intTest = do
   putStrLn "intTest"
-  tuple <- erlangCall (List Int) "integers" []
+  tuple <- erlCall (List Int) "integers" []
   printLn tuple
 
 integerTest : IO ()
 integerTest = do
   putStrLn "integerTest"
-  tuple <- erlangCall (List Integer) "integers" []
+  tuple <- erlCall (List Integer) "integers" []
   printLn tuple
 
 stringTest : IO ()
 stringTest = do
   putStrLn "stringTest"
-  tuple <- erlangCall (List String) "strings" []
+  tuple <- erlCall (List String) "strings" []
   printLn tuple
 
 charTest : IO ()
 charTest = do
   putStrLn "charTest"
-  tuple <- erlangCall (List Char) "chars" []
+  tuple <- erlCall (List Char) "chars" []
   printLn tuple
 
 doubleTest : IO ()
 doubleTest = do
   putStrLn "doubleTest"
-  tuple <- erlangCall (List Double) "doubles" []
+  tuple <- erlCall (List Double) "doubles" []
   printLn tuple
 
 unitTest : IO ()
 unitTest = do
   putStrLn "unitTest"
-  unit <- erlangCall Unit "unit" []
+  unit <- erlCall Unit "unit" []
   printLn unit
 
 boolTest : IO ()
 boolTest = do
   putStrLn "boolTest"
-  tuple <- erlangCall (List Bool) "bools" []
+  tuple <- erlCall (List Bool) "bools" []
   printLn tuple
 
 listTest : IO ()
 listTest = do
   putStrLn "listTest"
-  tuple <- erlangCall (List (List String)) "lists" []
+  tuple <- erlCall (List (List String)) "lists" []
   printLn tuple
 
 -- Skips function calls, (Raw a), ErlTerm for now
@@ -69,19 +69,19 @@ listTest = do
 erlAtomTest : IO ()
 erlAtomTest = do
   putStrLn "erlAtomTest"
-  tuple <- erlangCall (List ErlAtom) "erl_atoms" []
+  tuple <- erlCall (List ErlAtom) "erl_atoms" []
   printLn tuple
 
 erlListTest : IO ()
 erlListTest = do
   putStrLn "erlListTest"
-  tuple <- erlangCall (ErlTuple2 (ErlList []) (ErlList [String, Int, Char])) "erl_lists" []
+  tuple <- erlCall (ErlTuple2 (ErlList []) (ErlList [String, Int, Char])) "erl_lists" []
   printLn tuple
 
 erlTuplesTest : IO ()
 erlTuplesTest = do
   putStrLn "erlTuplesTest"
-  tuple <- erlangCall (ErlTuple5 ErlTuple0 (ErlTuple1 Int) (ErlTuple2 Int Int) (ErlTuple3 Int Int Int) (ErlTuple4 Int Int Int Int)) "erl_tuples" []
+  tuple <- erlCall (ErlTuple5 ErlTuple0 (ErlTuple1 Int) (ErlTuple2 Int Int) (ErlTuple3 Int Int Int) (ErlTuple4 Int Int Int Int)) "erl_tuples" []
   printLn tuple
 
 main : IO ()

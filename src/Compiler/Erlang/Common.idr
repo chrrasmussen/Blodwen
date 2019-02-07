@@ -127,16 +127,15 @@ genOp (Cast IntType CharType) [x] = op "blodwen_int_to_char" [x]
 genOp (Cast from to) [x] = "throw(\"Invalid cast " ++ show from ++ "->" ++ show to ++ "\")"
 
 public export
-data ExtPrim = CCall | ErlangCall | PutStr | GetStr
+data ExtPrim = CCall | PutStr | GetStr
              | FileOpen | FileClose | FileReadLine | FileWriteLine | FileEOF
              | NewIORef | ReadIORef | WriteIORef
-             | ErlCase
+             | ErlCall | ErlCase
              | Unknown Name
 
 export
 Show ExtPrim where
   show CCall = "CCall"
-  show ErlangCall = "ErlangCall"
   show PutStr = "PutStr"
   show GetStr = "GetStr"
   show FileOpen = "FileOpen"
@@ -147,13 +146,13 @@ Show ExtPrim where
   show NewIORef = "NewIORef"
   show ReadIORef = "ReadIORef"
   show WriteIORef = "WriteIORef"
+  show ErlCall = "ErlCall"
   show ErlCase = "ErlCase"
   show (Unknown n) = "Unknown " ++ show n
 
 toPrim : Name -> ExtPrim
 toPrim pn@(NS _ n)
-    = cond [(n == UN "prim__erlangCall", ErlangCall),
-            (n == UN "prim__cCall", CCall),
+    = cond [(n == UN "prim__cCall", CCall),
             (n == UN "prim__putStr", PutStr),
             (n == UN "prim__getStr", GetStr),
             (n == UN "prim__open", FileOpen),
@@ -164,6 +163,7 @@ toPrim pn@(NS _ n)
             (n == UN "prim__newIORef", NewIORef),
             (n == UN "prim__readIORef", ReadIORef),
             (n == UN "prim__writeIORef", WriteIORef),
+            (n == UN "prim__erlCall", ErlCall),
             (n == UN "erlCase", ErlCase)
             ]
            (Unknown pn)
@@ -419,10 +419,10 @@ mutual
   genExtPrim : Int -> SVars vars -> ExtPrim -> List (CExp vars) -> Core annot String
   genExtPrim i vs CCall [ret, fn, args, world]
       = throw (InternalError ("Can't compile C FFI calls to Erlang yet"))
-  genExtPrim i vs ErlangCall [_, ret, CPrimVal (Str fn), args, world]
+  genExtPrim i vs ErlCall [_, ret, CPrimVal (Str fn), args, world]
       = do parameterList <- readArgs i vs args
            pure $ mkWorld $ "(" ++ fn ++ "(" ++ showSep ", " parameterList ++ "))"
-  genExtPrim i vs ErlangCall [_, ret, fn, args, world] -- TODO: Implement?
+  genExtPrim i vs ErlCall [_, ret, fn, args, world] -- TODO: Implement?
       = do pure $ mkWorld "false"
   genExtPrim i vs PutStr [arg, world]
       = pure $ "(fun() -> io_unicode_put_str(" ++ !(genExp i vs arg) ++ "), " ++ mkWorld mkUnit ++ " end())"

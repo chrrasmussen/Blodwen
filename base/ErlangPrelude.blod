@@ -178,14 +178,14 @@ namespace CaseExpr
 
 
 namespace IO
-  %extern prim__erlangCall : (ret : Type) -> String -> ErlList xs -> (1 x : %World) -> IORes ret
+  %extern prim__erlCall : (ret : Type) -> String -> ErlList xs -> (1 x : %World) -> IORes ret
 
   export %inline
-  erlangCall : (ret : Type) -> {auto ret_prf : ErlType ret} ->
-               String ->
-               ErlList xs -> {auto inp_prf : ErlTypes xs} ->
-               IO ret
-  erlangCall ret fn args = primIO (prim__erlangCall ret fn args)
+  erlCall : (ret : Type) -> {auto ret_prf : ErlType ret} ->
+            String ->
+            ErlList xs -> {auto inp_prf : ErlTypes xs} ->
+            IO ret
+  erlCall ret fn args = primIO (prim__erlCall ret fn args)
 
 
 ----------
@@ -194,7 +194,7 @@ namespace IO
 
 -- TODO: Is `believe_me x` a better solution?
 toErlTerm : ErlType a => a -> ErlTerm
-toErlTerm x = unsafePerformIO $ erlangCall ErlTerm "blodwen_id" [x]
+toErlTerm x = unsafePerformIO $ erlCall ErlTerm "blodwen_id" [x]
 
 -- Allow all supported Erlang types to be type erased
 ErlType a => Cast a ErlTerm where
