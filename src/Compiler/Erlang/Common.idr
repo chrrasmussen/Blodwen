@@ -471,6 +471,7 @@ mutual
     IsBinary  : CExp vars -> ErlGuard vars
     IsList    : CExp vars -> ErlGuard vars
     IsInteger : CExp vars -> ErlGuard vars
+    IsEq      : CExp vars -> CExp vars -> ErlGuard vars
     AndAlso   : ErlGuard vars -> ErlGuard vars -> ErlGuard vars
     OrElse    : ErlGuard vars -> ErlGuard vars -> ErlGuard vars
 
@@ -501,6 +502,10 @@ mutual
   unknownTag = 0 -- TODO: What is the tag in CCon used for?
 
   parseClause : Int -> (local : Int) -> (global : Int) -> SVars vars -> CExp vars -> Core annot (ErlClause vars)
+  parseClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MExact")) _ [_, _, _, matchValue, func]) = do
+    let localRef = CRef (MN "C" global)
+    let globalRef = CRef (MN "G" global)
+    pure $ MkErlClause (local + 1) [matchValue] localRef (IsEq localRef globalRef) (CApp func [matchValue])
   parseClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MAny")) _ [_, func]) = do
     let ref = CRef (MN "C" local)
     pure $ MkErlClause (local + 1) [] ref IsAny (CApp func [ref])
@@ -533,6 +538,7 @@ mutual
   genGuard i vs (IsBinary ref) = pure $ "is_binary(" ++ !(genExp i vs ref) ++ ")"
   genGuard i vs (IsList ref) = pure $ "is_list(" ++ !(genExp i vs ref) ++ ")"
   genGuard i vs (IsInteger ref) = pure $ "is_integer(" ++ !(genExp i vs ref) ++ ")"
+  genGuard i vs (IsEq ref1 ref2) = pure $ !(genExp i vs ref1) ++ " =:= " ++ !(genExp i vs ref2)
   genGuard i vs (AndAlso g1 g2) = pure $ "(" ++ !(genGuard i vs g1) ++ " andalso " ++ !(genGuard i vs g2) ++ ")"
   genGuard i vs (OrElse g1 g2) = pure $ "(" ++ !(genGuard i vs g1) ++ " orelse " ++ !(genGuard i vs g2) ++ ")"
 
@@ -542,9 +548,14 @@ mutual
 
   genErlCase : Int -> SVars vars -> (def : CExp vars) -> List (ErlClause vars) -> (term : CExp vars) -> Core annot String
   genErlCase i vs def clauses term = do
+    allGlobals <- traverse (genExp i vs) (concatGlobals clauses)
+    let globalVars = take (length allGlobals) $ (zipWith (\name, idx => name ++ show idx) (repeat "G_") [0..])
+    let globalBindings = zipWith (\var, glob => var ++ " = " ++ glob) globalVars allGlobals
+    let globalsStr = if length globalBindings > 0 then showSep ", " globalBindings ++ ", " else ""
     clausesStr <- traverse (genClause i vs) clauses
     defStr <- pure $ "(_) -> " ++ !(genExp i vs def)
     pure $ "(fun() -> " ++
+      globalsStr ++
       "(fun " ++
       showSep "; " (clausesStr ++ [defStr]) ++
       " end(" ++ !(genExp i vs term) ++ "))" ++

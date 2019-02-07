@@ -187,6 +187,7 @@ mutual
 namespace CaseExpr
   public export
   data ErlMatcher : Type -> Type where
+    MExact : ErlType a => a -> (a -> b) -> ErlMatcher b
     MAny : (ErlTerm -> a) -> ErlMatcher a
     MInteger : (Integer -> a) -> ErlMatcher a
     MString : (String -> a) -> ErlMatcher a
