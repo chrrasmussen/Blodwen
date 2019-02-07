@@ -357,10 +357,6 @@ mutual
   genCon i vs (CCon (NS ["Functions", "ErlangPrelude"] (UN "MkErlIO3")) _ args) = genConFun i vs 3 !(expectArgAtIndex 4 args) applyUnsafePerformIO
   genCon i vs (CCon (NS ["Functions", "ErlangPrelude"] (UN "MkErlIO4")) _ args) = genConFun i vs 4 !(expectArgAtIndex 5 args) applyUnsafePerformIO
   genCon i vs (CCon (NS ["Functions", "ErlangPrelude"] (UN "MkErlIO5")) _ args) = genConFun i vs 5 !(expectArgAtIndex 6 args) applyUnsafePerformIO
-  -- ErlMap
-  genCon i vs (CCon (NS ["Maps", "ErlangPrelude"] (UN "MkKeyValue")) _ [_, _, key, value]) = pure $ "#{" ++ !(genExp i vs key) ++ " => " ++ !(genExp i vs value) ++ "}"
-  genCon i vs (CCon (NS ["Maps", "ErlangPrelude"] (UN "ErlMapNil")) _ _) = pure "#{}"
-  genCon i vs (CCon (NS ["Maps", "ErlangPrelude"] (UN "ErlMapCons")) _ [x, xs]) = pure $ "maps:merge(" ++ !(genExp i vs xs) ++ ", " ++ !(genExp i vs x) ++ ")"
   -- Other
   genCon i vs (CCon x tag args) = pure $ genConstructor tag !(traverse (genExp i vs) args)
   genCon i vs tm = throw (InternalError ("Invalid constructor: " ++ show tm))

@@ -90,32 +90,6 @@ namespace Functions
     MkErlIO5  : (a -> b -> c -> d -> e -> IO ret) -> ErlIO5 a b c d e ret
 
 
-namespace Maps
-  export
-  data ErlMapKeyValue : Type where
-    MkKeyValue : key -> value -> ErlMapKeyValue
-
-  -- TODO: Which priority?
-  infix 3 :=
-
-  export
-  (:=) : key -> value -> ErlMapKeyValue
-  (:=) = MkKeyValue
-
-  export
-  data ErlMap : Type where
-    ErlMapNil : ErlMap
-    ErlMapCons : ErlMapKeyValue -> ErlMap -> ErlMap
-
-  export
-  Nil : ErlMap
-  Nil = ErlMapNil
-
-  export
-  (::) : ErlMapKeyValue -> ErlMap -> ErlMap
-  (::) = ErlMapCons
-
-
 namespace Idris
   public export
   data Raw a = MkRaw a
@@ -124,6 +98,9 @@ namespace Idris
 namespace Opaque
   public export
   data ErlTerm : Type where
+
+  public export
+  data ErlMap : Type where
 
   public export
   data ErlPid : Type where
@@ -209,15 +186,6 @@ namespace IO
                ErlList xs -> {auto inp_prf : ErlTypes xs} ->
                IO ret
   erlangCall ret fn args = primIO (prim__erlangCall ret fn args)
-
-
--------------------
--- MAP FUNCTIONS --
--------------------
-
-export
-unsafeGet : (ret : Type) -> {auto ret_prf : ErlType ret} -> key -> {auto key_prf : ErlType key} -> ErlMap -> IO ret
-unsafeGet ret key m = erlangCall ret "maps:get" [key, m]
 
 
 ----------
