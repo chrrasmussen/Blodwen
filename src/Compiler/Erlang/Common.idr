@@ -548,18 +548,15 @@ mutual
 
   genErlCase : Int -> SVars vars -> (def : CExp vars) -> List (ErlClause vars) -> (term : CExp vars) -> Core annot String
   genErlCase i vs def clauses term = do
-    allGlobals <- traverse (genExp i vs) (concatGlobals clauses)
-    let globalVars = take (length allGlobals) $ (zipWith (\name, idx => name ++ show idx) (repeat "G_") [0..])
-    let globalBindings = zipWith (\var, glob => var ++ " = " ++ glob) globalVars allGlobals
-    let globalsStr = if length globalBindings > 0 then showSep ", " globalBindings ++ ", " else ""
+    globalValues <- traverse (genExp i vs) (concatGlobals clauses)
+    let globalVars = take (length globalValues) $ (zipWith (\name, idx => name ++ show idx) (repeat "G_") [0..])
     clausesStr <- traverse (genClause i vs) clauses
     defStr <- pure $ "(_) -> " ++ !(genExp i vs def)
-    pure $ "(fun() -> " ++
-      globalsStr ++
+    pure $ "(fun(" ++ showSep ", " globalVars ++") -> " ++
       "(fun " ++
       showSep "; " (clausesStr ++ [defStr]) ++
       " end(" ++ !(genExp i vs term) ++ "))" ++
-      " end())"
+      " end(" ++ showSep ", " globalValues ++ "))"
 
 genArglist : SVars ns -> String
 genArglist [] = ""
