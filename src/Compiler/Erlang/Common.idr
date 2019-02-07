@@ -91,7 +91,7 @@ genOp (GTE StringType) [x, y] = op "unicode_string_gte" [x, y]
 genOp (GT StringType) [x, y] = op "unicode_string_gt" [x, y]
 genOp (LT ty) [x, y] = boolToInt (infixop "<" x y)
 genOp (LTE ty) [x, y] = boolToInt (infixop "=<" x y)
-genOp (EQ ty) [x, y] = boolToInt (infixop "==" x y)
+genOp (EQ ty) [x, y] = boolToInt (infixop "=:=" x y)
 genOp (GTE ty) [x, y] = boolToInt (infixop ">=" x y)
 genOp (GT ty) [x, y] = boolToInt (infixop ">" x y)
 genOp StrLength [x] = op "unicode_string_length" [x]
