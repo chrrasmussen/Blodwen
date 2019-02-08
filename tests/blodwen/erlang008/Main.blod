@@ -17,7 +17,8 @@ testErlCase = do
 testErlCaseInErlCase : IO ()
 testErlCaseInErlCase = do
   putStrLn "testErlCaseInErlCase"
-  -- TODO: Implement
+  putStrLn (erlCase "not found" [MErlTuple1 (\val => erlCase "inner not found" [MInteger show] val) (MAny id)] (cast (MkErlTuple1 42)))
+  putStrLn (erlCase "not found" [MExact "find this" (\val => erlCase "inner not found" [MExact "find this" id] (cast val))] (cast "find this"))
 
 testMExact : IO ()
 testMExact = do
@@ -77,6 +78,7 @@ testMErlTuple2 = do
 main : IO ()
 main = do
   testErlCase
+  testErlCaseInErlCase
   testMExact
   testMAny
   testMInteger

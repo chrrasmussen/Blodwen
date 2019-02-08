@@ -7,6 +7,9 @@ string matches on second try
 -1
 Just "val"
 Nothing
+testErlCaseInErlCase
+42
+find this
 testMExact
 match me
 not found
