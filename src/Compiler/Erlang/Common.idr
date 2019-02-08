@@ -511,15 +511,15 @@ mutual
   parseClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MString")) _ [_, func]) = do
     let ref = CRef (MN "C" local)
     pure $ MkErlClause (local + 1) [] ref (OrElse (IsBinary ref) (IsList ref)) (CApp func [ref])
-  parseClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MTuple0")) _ [_, val]) = do
+  parseClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MErlTuple0")) _ [_, val]) = do
     pure $ MkErlClause local [] (CCon (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple0")) unknownTag []) IsAny val
-  parseClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MTuple1")) _ [_, _, func, m1]) = do
+  parseClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MErlTuple1")) _ [_, _, func, m1]) = do
     m1res <- parseClause i local global vs m1
     pure $ MkErlClause (nextLocal m1res) (globals m1res)
       (CCon (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple1")) unknownTag [CErased, pattern m1res])
       (guard m1res)
       (CApp func [body m1res])
-  parseClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MTuple2")) _ [_, _, _, func, m1, m2]) = do
+  parseClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MErlTuple2")) _ [_, _, _, func, m1, m2]) = do
     m1res <- parseClause i local global vs m1
     m2res <- parseClause i (nextLocal m1res) (nextGlobal global [m1res]) vs m2
     pure $ MkErlClause (nextLocal m2res) (concatGlobals [m1res, m2res])

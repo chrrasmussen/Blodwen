@@ -168,9 +168,9 @@ namespace CaseExpr
     MAny : (ErlTerm -> a) -> ErlMatcher a
     MInteger : (Integer -> a) -> ErlMatcher a
     MString : (String -> a) -> ErlMatcher a
-    MTuple0 : a -> ErlMatcher a
-    MTuple1 : (a -> b) -> ErlMatcher a -> ErlMatcher b
-    MTuple2 : (a -> b -> c) -> ErlMatcher a -> ErlMatcher b -> ErlMatcher c
+    MErlTuple0 : a -> ErlMatcher a
+    MErlTuple1 : (a -> b) -> ErlMatcher a -> ErlMatcher b
+    MErlTuple2 : (a -> b -> c) -> ErlMatcher a -> ErlMatcher b -> ErlMatcher c
 
   %extern
   export

@@ -28,16 +28,16 @@ testMString
 found string!
 not found
 not found
-testMTuple0
+testMErlTuple0
 is empty tuple
 is empty tuple
 not found
-testMTuple1
+testMErlTuple1
 found any value
 42
 string inside 1-element tuple
 not found
-testMTuple2
+testMErlTuple2
 first string & second string
 42
 not found

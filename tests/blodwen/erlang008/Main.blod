@@ -52,27 +52,27 @@ testMString = do
   putStrLn (erlCase "not found" [MString id] (cast 42))
   putStrLn (erlCase "not found" [MString id] (cast (MkErlAtom "ok")))
 
-testMTuple0 : IO ()
-testMTuple0 = do
-  putStrLn "testMTuple0"
-  putStrLn (erlCase "not found" [MTuple0 "is empty tuple"] (cast MkErlTuple0))
-  putStrLn (erlCase "not found" [MTuple0 "is empty tuple"] (cast ()))
-  putStrLn (erlCase "not found" [MTuple0 "is empty tuple"] (cast "not an empty tuple"))
+testMErlTuple0 : IO ()
+testMErlTuple0 = do
+  putStrLn "testMErlTuple0"
+  putStrLn (erlCase "not found" [MErlTuple0 "is empty tuple"] (cast MkErlTuple0))
+  putStrLn (erlCase "not found" [MErlTuple0 "is empty tuple"] (cast ()))
+  putStrLn (erlCase "not found" [MErlTuple0 "is empty tuple"] (cast "not an empty tuple"))
 
-testMTuple1 : IO ()
-testMTuple1 = do
-  putStrLn "testMTuple1"
-  putStrLn (erlCase "not found" [MTuple1 id (MAny (const "found any value"))] (cast (MkErlTuple1 42)))
-  putStrLn (erlCase "not found" [MTuple1 id (MInteger show)] (cast (MkErlTuple1 42)))
-  putStrLn (erlCase "not found" [MTuple1 id (MString id)] (cast (MkErlTuple1 "string inside 1-element tuple")))
-  putStrLn (erlCase "not found" [MTuple1 id (MAny (const "found any value"))] (cast 42))
+testMErlTuple1 : IO ()
+testMErlTuple1 = do
+  putStrLn "testMErlTuple1"
+  putStrLn (erlCase "not found" [MErlTuple1 id (MAny (const "found any value"))] (cast (MkErlTuple1 42)))
+  putStrLn (erlCase "not found" [MErlTuple1 id (MInteger show)] (cast (MkErlTuple1 42)))
+  putStrLn (erlCase "not found" [MErlTuple1 id (MString id)] (cast (MkErlTuple1 "string inside 1-element tuple")))
+  putStrLn (erlCase "not found" [MErlTuple1 id (MAny (const "found any value"))] (cast 42))
 
-testMTuple2 : IO ()
-testMTuple2 = do
-  putStrLn "testMTuple2"
-  putStrLn (erlCase "not found" [MTuple2 (\x, y => x ++ " & " ++ y) (MString id) (MString id)] (cast (MkErlTuple2 "first string" "second string")))
-  putStrLn (erlCase "not found" [MTuple2 (\x, y => y) (MExact (MkErlAtom "ok") id) (MInteger show)] (cast (MkErlTuple2 (MkErlAtom "ok") 42)))
-  putStrLn (erlCase "not found" [MTuple2 (\x, y => y) (MExact (MkErlAtom "ok") id) (MInteger show)] (cast (MkErlTuple3 (MkErlAtom "ok") 42 "too long tuple")))
+testMErlTuple2 : IO ()
+testMErlTuple2 = do
+  putStrLn "testMErlTuple2"
+  putStrLn (erlCase "not found" [MErlTuple2 (\x, y => x ++ " & " ++ y) (MString id) (MString id)] (cast (MkErlTuple2 "first string" "second string")))
+  putStrLn (erlCase "not found" [MErlTuple2 (\x, y => y) (MExact (MkErlAtom "ok") id) (MInteger show)] (cast (MkErlTuple2 (MkErlAtom "ok") 42)))
+  putStrLn (erlCase "not found" [MErlTuple2 (\x, y => y) (MExact (MkErlAtom "ok") id) (MInteger show)] (cast (MkErlTuple3 (MkErlAtom "ok") 42 "too long tuple")))
 
 main : IO ()
 main = do
@@ -81,6 +81,6 @@ main = do
   testMAny
   testMInteger
   testMString
-  testMTuple0
-  testMTuple1
-  testMTuple2
+  testMErlTuple0
+  testMErlTuple1
+  testMErlTuple2
