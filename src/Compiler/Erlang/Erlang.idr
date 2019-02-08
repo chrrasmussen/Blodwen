@@ -76,8 +76,8 @@ generateBeam c tm outfile = do
     case dirname outfile of
       Just path => path
       _ => "."
-  tmpDir <- coreLift $ tmpName
   erlc <- coreLift findErlangCompiler
+  tmpDir <- coreLift $ tmpName
   coreLift $ system ("mkdir -p " ++ quoted tmpDir)
   let generatedFile = tmpDir ++ "/" ++ modName ++ ".erl"
   let opts = MkOpts modName
@@ -98,14 +98,18 @@ compileExpr c tm outfile =
 
 -- TODO: Add error handling
 executeExpr : Ref Ctxt Defs -> ClosedTerm -> Core annot ()
-executeExpr c tm
-    = do escript <- coreLift $ findEscript
-         tmp <- coreLift $ tmpName
-         let generatedFile = tmp ++ ".erl"
-         let opts = MkOpts "main"
-         compileToErlang opts c tm generatedFile
-         coreLift $ system (escript ++ " " ++ quoted generatedFile)
-         pure ()
+executeExpr c tm = do
+  erlc <- coreLift findErlangCompiler
+  escript <- coreLift $ findEscript
+  tmpDir <- coreLift $ tmpName
+  coreLift $ system ("mkdir -p " ++ quoted tmpDir)
+  let generatedFile = tmpDir ++ "/main.erl"
+  let compiledFile = tmpDir ++ "/main.beam"
+  let opts = MkOpts "main"
+  compileToErlang opts c tm generatedFile
+  coreLift $ system (erlc ++ " -W0 -o " ++ quoted tmpDir ++ " " ++ quoted generatedFile)
+  coreLift $ system (escript ++ " " ++ quoted compiledFile)
+  pure ()
 
 export
 codegenErlang : Codegen annot
