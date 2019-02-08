@@ -1,0 +1,46 @@
+testErlCase
+not found
+not found
+not found
+string matches on second try
+42
+-1
+Just "val"
+Nothing
+testMExact
+match me
+not found
+'ok'
+not found
+42
+not found
+testMAny
+matched on string
+matched on atom
+matched on integer
+testMInteger
+42
+0
+-42
+not found
+not found
+testMString
+found string!
+not found
+not found
+testMTuple0
+is empty tuple
+is empty tuple
+not found
+testMTuple1
+found any value
+42
+string inside 1-element tuple
+not found
+testMTuple2
+first string & second string
+42
+not found
+1/1: Building Main (Main.blod)
+Welcome to Blodwen. Good luck.
+Main> Main> Bye for now!

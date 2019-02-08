@@ -1,0 +1,86 @@
+module Main
+
+import ErlangPrelude
+
+testErlCase : IO ()
+testErlCase = do
+  putStrLn "testErlCase"
+  putStrLn (erlCase "not found" [] (cast "any value"))
+  putStrLn (erlCase "not found" [] (cast 1))
+  putStrLn (erlCase "not found" [MInteger show] (cast "string is not an integer"))
+  putStrLn (erlCase "not found" [MInteger show, MString id] (cast "string matches on second try"))
+  printLn (erlCase (-1) [MInteger id] (cast 42))
+  printLn (erlCase (-1) [MInteger id] (cast "string is not an integer"))
+  printLn (erlCase Nothing [MString Just] (cast "val"))
+  printLn (erlCase Nothing [MString Just] (cast 0))
+
+testErlCaseInErlCase : IO ()
+testErlCaseInErlCase = do
+  putStrLn "testErlCaseInErlCase"
+  -- TODO: Implement
+
+testMExact : IO ()
+testMExact = do
+  putStrLn "testMExact"
+  putStrLn (erlCase "not found" [MExact "match me" id] (cast "match me"))
+  putStrLn (erlCase "not found" [MExact "match me" id] (cast "something else"))
+  putStrLn (erlCase "not found" [MExact (MkErlAtom "ok") show] (cast (MkErlAtom "ok")))
+  putStrLn (erlCase "not found" [MExact (MkErlAtom "ok") show] (cast "ok"))
+  putStrLn (erlCase "not found" [MExact 42 show] (cast 42))
+  putStrLn (erlCase "not found" [MExact 42 show] (cast (the Double 42)))
+
+testMAny : IO ()
+testMAny = do
+  putStrLn "testMAny"
+  putStrLn (erlCase "not found" [MAny (const "matched on string")] (cast "match me"))
+  putStrLn (erlCase "not found" [MAny (const "matched on atom")] (cast (MkErlAtom "ok")))
+  putStrLn (erlCase "not found" [MAny (const "matched on integer")] (cast 42))
+
+testMInteger : IO ()
+testMInteger = do
+  putStrLn "testMInteger"
+  putStrLn (erlCase "not found" [MInteger show] (cast 42))
+  putStrLn (erlCase "not found" [MInteger show] (cast 0))
+  putStrLn (erlCase "not found" [MInteger show] (cast (-42)))
+  putStrLn (erlCase "not found" [MInteger show] (cast "string is not an integer"))
+  putStrLn (erlCase "not found" [MInteger show] (cast (the Double 42)))
+
+testMString : IO ()
+testMString = do
+  putStrLn "testMString"
+  putStrLn (erlCase "not found" [MString (++ "!")] (cast "found string"))
+  putStrLn (erlCase "not found" [MString id] (cast 42))
+  putStrLn (erlCase "not found" [MString id] (cast (MkErlAtom "ok")))
+
+testMTuple0 : IO ()
+testMTuple0 = do
+  putStrLn "testMTuple0"
+  putStrLn (erlCase "not found" [MTuple0 "is empty tuple"] (cast MkErlTuple0))
+  putStrLn (erlCase "not found" [MTuple0 "is empty tuple"] (cast ()))
+  putStrLn (erlCase "not found" [MTuple0 "is empty tuple"] (cast "not an empty tuple"))
+
+testMTuple1 : IO ()
+testMTuple1 = do
+  putStrLn "testMTuple1"
+  putStrLn (erlCase "not found" [MTuple1 id (MAny (const "found any value"))] (cast (MkErlTuple1 42)))
+  putStrLn (erlCase "not found" [MTuple1 id (MInteger show)] (cast (MkErlTuple1 42)))
+  putStrLn (erlCase "not found" [MTuple1 id (MString id)] (cast (MkErlTuple1 "string inside 1-element tuple")))
+  putStrLn (erlCase "not found" [MTuple1 id (MAny (const "found any value"))] (cast 42))
+
+testMTuple2 : IO ()
+testMTuple2 = do
+  putStrLn "testMTuple2"
+  putStrLn (erlCase "not found" [MTuple2 (\x, y => x ++ " & " ++ y) (MString id) (MString id)] (cast (MkErlTuple2 "first string" "second string")))
+  putStrLn (erlCase "not found" [MTuple2 (\x, y => y) (MExact (MkErlAtom "ok") id) (MInteger show)] (cast (MkErlTuple2 (MkErlAtom "ok") 42)))
+  putStrLn (erlCase "not found" [MTuple2 (\x, y => y) (MExact (MkErlAtom "ok") id) (MInteger show)] (cast (MkErlTuple3 (MkErlAtom "ok") 42 "too long tuple")))
+
+main : IO ()
+main = do
+  testErlCase
+  testMExact
+  testMAny
+  testMInteger
+  testMString
+  testMTuple0
+  testMTuple1
+  testMTuple2
