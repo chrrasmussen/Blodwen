@@ -45,6 +45,15 @@ testMErlMap
 found map
 found map
 not found
+testMErlPid
+found pid
+not found
+testMErlRef
+found ref
+not found
+testMErlPort
+found port
+not found
 testMErlList
 first item
 first item42

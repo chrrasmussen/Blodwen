@@ -470,6 +470,9 @@ mutual
     IsList    : CExp vars -> ErlGuard vars
     IsAtom    : CExp vars -> ErlGuard vars
     IsMap     : CExp vars -> ErlGuard vars
+    IsPid     : CExp vars -> ErlGuard vars
+    IsRef     : CExp vars -> ErlGuard vars
+    IsPort    : CExp vars -> ErlGuard vars
     IsEq      : CExp vars -> CExp vars -> ErlGuard vars
     AndAlso   : ErlGuard vars -> ErlGuard vars -> ErlGuard vars
     OrElse    : ErlGuard vars -> ErlGuard vars -> ErlGuard vars
@@ -521,6 +524,9 @@ mutual
   readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MString")) _ [_, mapper]) = createGuardClause i local global vs mapper (\ref => OrElse (IsBinary ref) (IsList ref))
   readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MErlAtom")) _ [_, mapper]) = createGuardClause i local global vs mapper IsAtom
   readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MErlMap")) _ [_, mapper]) = createGuardClause i local global vs mapper IsMap
+  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MErlPid")) _ [_, mapper]) = createGuardClause i local global vs mapper IsPid
+  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MErlRef")) _ [_, mapper]) = createGuardClause i local global vs mapper IsRef
+  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MErlPort")) _ [_, mapper]) = createGuardClause i local global vs mapper IsPort
   -- MErlList
   readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MErlList")) _ [_, _, xs, mapper]) = do
     clauses <- readClauseErlMatchers i local global vs xs mapper
@@ -570,6 +576,9 @@ mutual
   genGuard i vs (IsList ref) = pure $ "is_list(" ++ !(genExp i vs ref) ++ ")"
   genGuard i vs (IsAtom ref) = pure $ "is_atom(" ++ !(genExp i vs ref) ++ ")"
   genGuard i vs (IsMap ref) = pure $ "is_map(" ++ !(genExp i vs ref) ++ ")"
+  genGuard i vs (IsPid ref) = pure $ "is_pid(" ++ !(genExp i vs ref) ++ ")"
+  genGuard i vs (IsRef ref) = pure $ "is_reference(" ++ !(genExp i vs ref) ++ ")"
+  genGuard i vs (IsPort ref) = pure $ "is_port(" ++ !(genExp i vs ref) ++ ")"
   genGuard i vs (IsEq ref1 ref2) = pure $ !(genExp i vs ref1) ++ " =:= " ++ !(genExp i vs ref2)
   genGuard i vs (AndAlso g1 g2) = pure $ "(" ++ !(genGuard i vs g1) ++ " andalso " ++ !(genGuard i vs g2) ++ ")"
   genGuard i vs (OrElse g1 g2) = pure $ "(" ++ !(genGuard i vs g1) ++ " orelse " ++ !(genGuard i vs g2) ++ ")"

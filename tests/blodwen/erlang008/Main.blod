@@ -6,9 +6,12 @@ import ErlangPrelude
 get_map_empty() -> #{}.
 get_map_ex1() -> #{<<"first">> => <<"ex1">>}.
 get_map_ex2() -> #{<<"first">> => <<"ex2">>, <<"second">> => 42}.
+get_pid() -> list_to_pid("<0.4.1>").
+get_ref() -> list_to_ref("#Ref<0.4192537678.4073193475.71181>").
+get_port() -> list_to_port("#Port<0.4>").
 """
 
--- Wrappers around Erlang map examples
+-- Wrappers around Erlang functions
 
 mapEmpty : ErlMap
 mapEmpty = unsafePerformIO $ erlCall ErlMap "get_map_empty" []
@@ -18,6 +21,15 @@ mapEx1 = unsafePerformIO $ erlCall ErlMap "get_map_ex1" []
 
 mapEx2 : ErlMap
 mapEx2 = unsafePerformIO $ erlCall ErlMap "get_map_ex2" []
+
+pidEx : ErlPid
+pidEx = unsafePerformIO $ erlCall ErlPid "get_pid" []
+
+refEx : ErlRef
+refEx = unsafePerformIO $ erlCall ErlRef "get_ref" []
+
+portEx : ErlPort
+portEx = unsafePerformIO $ erlCall ErlPort "get_port" []
 
 
 -- Tests
@@ -96,6 +108,24 @@ testMErlMap = do
   putStrLn (erlCase "not found" [MErlMap (const "found map")] (cast mapEx1))
   putStrLn (erlCase "not found" [MErlMap (const "found map")] (cast "not a map"))
 
+testMErlPid : IO ()
+testMErlPid = do
+  putStrLn "testMErlPid"
+  putStrLn (erlCase "not found" [MErlPid (const "found pid")] (cast pidEx))
+  putStrLn (erlCase "not found" [MErlPid (const "found pid")] (cast "not a pid"))
+
+testMErlRef : IO ()
+testMErlRef = do
+  putStrLn "testMErlRef"
+  putStrLn (erlCase "not found" [MErlRef (const "found ref")] (cast refEx))
+  putStrLn (erlCase "not found" [MErlRef (const "found ref")] (cast "not a ref"))
+
+testMErlPort : IO ()
+testMErlPort = do
+  putStrLn "testMErlPort"
+  putStrLn (erlCase "not found" [MErlPort (const "found port")] (cast portEx))
+  putStrLn (erlCase "not found" [MErlPort (const "found port")] (cast "not a port"))
+
 testMErlList : IO ()
 testMErlList = do
   putStrLn "testMErlList"
@@ -137,6 +167,9 @@ main = do
   testMString
   testMErlAtom
   testMErlMap
+  testMErlPid
+  testMErlRef
+  testMErlPort
   testMErlList
   testMErlTuple
   testMErlMapSubset

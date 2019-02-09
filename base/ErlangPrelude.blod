@@ -177,6 +177,9 @@ namespace CaseExpr
       MString       : (String  -> a) -> ErlMatcher a
       MErlAtom      : (ErlAtom -> a) -> ErlMatcher a
       MErlMap       : (ErlMap  -> a) -> ErlMatcher a
+      MErlPid       : (ErlPid  -> a) -> ErlMatcher a
+      MErlRef       : (ErlRef  -> a) -> ErlMatcher a
+      MErlPort      : (ErlPort -> a) -> ErlMatcher a
       MErlList      : ErlMatchers ErlMatcher xs  -> TypesToFunc xs ret -> ErlMatcher ret
       MErlTuple     : ErlMatchers ErlMatcher xs  -> TypesToFunc xs ret -> ErlMatcher ret
       MErlMapSubset : ErlMatchers ErlMapEntry xs -> TypesToFunc xs ret -> ErlMatcher ret
