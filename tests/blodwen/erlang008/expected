@@ -44,6 +44,15 @@ testMErlTuple2
 first string & second string
 42
 not found
+testMErlMap
+found map
+found map
+not found
+testMErlMapSubset
+ex1
+ex2
+not found
+ex2 & 42
 1/1: Building Main (Main.blod)
 Welcome to Blodwen. Good luck.
 Main> Main> Bye for now!

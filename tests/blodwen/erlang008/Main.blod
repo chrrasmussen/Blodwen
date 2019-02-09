@@ -2,6 +2,26 @@ module Main
 
 import ErlangPrelude
 
+%cg erlang """
+get_map_empty() -> #{}.
+get_map_ex1() -> #{<<"first">> => <<"ex1">>}.
+get_map_ex2() -> #{<<"first">> => <<"ex2">>, <<"second">> => 42}.
+"""
+
+-- Wrappers around Erlang map examples
+
+mapEmpty : ErlMap
+mapEmpty = unsafePerformIO $ erlCall ErlMap "get_map_empty" []
+
+mapEx1 : ErlMap
+mapEx1 = unsafePerformIO $ erlCall ErlMap "get_map_ex1" []
+
+mapEx2 : ErlMap
+mapEx2 = unsafePerformIO $ erlCall ErlMap "get_map_ex2" []
+
+
+-- Tests
+
 testErlCase : IO ()
 testErlCase = do
   putStrLn "testErlCase"
@@ -75,6 +95,21 @@ testMErlTuple2 = do
   putStrLn (erlCase "not found" [MErlTuple2 (\x, y => y) (MExact (MkErlAtom "ok") id) (MInteger show)] (cast (MkErlTuple2 (MkErlAtom "ok") 42)))
   putStrLn (erlCase "not found" [MErlTuple2 (\x, y => y) (MExact (MkErlAtom "ok") id) (MInteger show)] (cast (MkErlTuple3 (MkErlAtom "ok") 42 "too long tuple")))
 
+testMErlMap : IO ()
+testMErlMap = do
+  putStrLn "testMErlMap"
+  putStrLn (erlCase "not found" [MErlMap (const "found map")] (cast mapEmpty))
+  putStrLn (erlCase "not found" [MErlMap (const "found map")] (cast mapEx1))
+  putStrLn (erlCase "not found" [MErlMap (const "found map")] (cast "not a map"))
+
+testMErlMapSubset : IO ()
+testMErlMapSubset = do
+  putStrLn "testMErlMapSubset"
+  putStrLn (erlCase "not found" [MErlMapSubset ["first" := MString id] id] (cast mapEx1))
+  putStrLn (erlCase "not found" [MErlMapSubset ["first" := MString id] id] (cast mapEx2))
+  putStrLn (erlCase "not found" [MErlMapSubset ["first" := MString id, "second" := MInteger id] (\first, second => first ++ " & " ++ show second)] (cast mapEx1))
+  putStrLn (erlCase "not found" [MErlMapSubset ["first" := MString id, "second" := MInteger id] (\first, second => first ++ " & " ++ show second)] (cast mapEx2))
+
 main : IO ()
 main = do
   testErlCase
@@ -86,3 +121,5 @@ main = do
   testMErlTuple0
   testMErlTuple1
   testMErlTuple2
+  testMErlMap
+  testMErlMapSubset

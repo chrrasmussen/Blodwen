@@ -163,14 +163,39 @@ mutual
 
 namespace CaseExpr
   public export
-  data ErlMatcher : Type -> Type where
-    MExact : ErlType a => a -> (a -> b) -> ErlMatcher b
-    MAny : (ErlTerm -> a) -> ErlMatcher a
-    MInteger : (Integer -> a) -> ErlMatcher a
-    MString : (String -> a) -> ErlMatcher a
-    MErlTuple0 : a -> ErlMatcher a
-    MErlTuple1 : (a -> b) -> ErlMatcher a -> ErlMatcher b
-    MErlTuple2 : (a -> b -> c) -> ErlMatcher a -> ErlMatcher b -> ErlMatcher c
+  TypesToFunc : List Type -> Type -> Type
+  TypesToFunc [] ret = ret
+  TypesToFunc (x :: xs) ret = x -> TypesToFunc xs ret
+
+  mutual
+    public export
+    data ErlMatcher : Type -> Type where
+      MExact : ErlType a => a -> (a -> b) -> ErlMatcher b
+      MAny : (ErlTerm -> a) -> ErlMatcher a
+      MInteger : (Integer -> a) -> ErlMatcher a
+      MString : (String -> a) -> ErlMatcher a
+      MErlTuple0 : a -> ErlMatcher a
+      MErlTuple1 : (a -> b) -> ErlMatcher a -> ErlMatcher b
+      MErlTuple2 : (a -> b -> c) -> ErlMatcher a -> ErlMatcher b -> ErlMatcher c
+      MErlMap : (ErlMap -> a) -> ErlMatcher a
+      MErlMapSubset : ErlMapEntries xs -> TypesToFunc xs ret -> ErlMatcher ret
+
+    namespace MapMatchers
+      public export
+      data ErlMapEntries : List Type -> Type where
+        Nil : ErlMapEntries []
+        (::) : ErlMapEntry x -> ErlMapEntries xs -> ErlMapEntries (x :: xs)
+
+      export
+      data ErlMapEntry : Type -> Type where
+        MkErlMapEntry : ErlType key => key -> ErlMatcher value -> ErlMapEntry value
+
+      -- TODO: Which priority?
+      infix 3 :=
+
+      export %inline
+      (:=) : ErlType key => key -> ErlMatcher value -> ErlMapEntry value
+      (:=) = MkErlMapEntry
 
   %extern
   export

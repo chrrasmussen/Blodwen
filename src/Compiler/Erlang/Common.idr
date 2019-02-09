@@ -467,6 +467,7 @@ mutual
     IsBinary  : CExp vars -> ErlGuard vars
     IsList    : CExp vars -> ErlGuard vars
     IsInteger : CExp vars -> ErlGuard vars
+    IsMap     : CExp vars -> ErlGuard vars
     IsEq      : CExp vars -> CExp vars -> ErlGuard vars
     AndAlso   : ErlGuard vars -> ErlGuard vars -> ErlGuard vars
     OrElse    : ErlGuard vars -> ErlGuard vars -> ErlGuard vars
@@ -481,6 +482,9 @@ mutual
 
   concatGlobals : List (ErlClause vars) -> List (CExp vars)
   concatGlobals clauses = clauses >>= globals
+
+  concatGuards : List (ErlClause vars) -> ErlGuard vars
+  concatGuards clauses = foldl AndAlso IsAny (map guard clauses)
 
   nextGlobal : (global : Int) -> List (ErlClause vars) -> Int
   nextGlobal global clauses = global + cast (length (concatGlobals clauses))
@@ -520,14 +524,38 @@ mutual
       ("{" ++ showSep ", " [pattern m1res, pattern m2res] ++ "}")
       (AndAlso (guard m1res) (guard m2res))
       (CApp (CApp func [body m1res]) [body m2res])
+  parseClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MErlMap")) _ [_, func]) = do
+    let ref = CRef (MN "C" local)
+    pure $ MkErlClause (local + 1) [] !(genExp i vs ref) (IsMap ref) (CApp func [ref])
+  parseClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MErlMapSubset")) _ [_, _, xs, func]) = do
+    clauses <- parseClauseMap i local global vs xs func
+    let nextLoc = maybe local nextLocal (last' clauses)
+    pure $ MkErlClause nextLoc (concatGlobals clauses)
+      ("#{" ++ showSep ", " (map pattern clauses) ++ "}")
+      (concatGuards clauses)
+      (applyToArgs func (map body clauses))
+  parseClause i local global vs (CCon (NS ["MapMatchers", "CaseExpr", "ErlangPrelude"] (UN "MkErlMapEntry")) _ [_, _, _, key, valueMatcher]) = do
+    let globalRef = CRef (MN "G" global)
+    clause <- parseClause i local (global + 1) vs valueMatcher
+    pure $ MkErlClause (nextLocal clause) (key :: globals clause) (!(genExp i vs globalRef) ++ " := " ++ (pattern clause)) (guard clause) (body clause)
   parseClause i local global vs matcher =
     throw (InternalError ("Badly formed clause " ++ show matcher))
+
+  parseClauseMap : Int -> (local : Int) -> (global : Int) -> SVars vars -> CExp vars -> (mapperFunc : CExp vars) -> Core annot (List (ErlClause vars))
+  parseClauseMap i local global vs (CCon (NS ["MapMatchers", "CaseExpr", "ErlangPrelude"] (UN "Nil")) _ _) mapperFunc = pure []
+  parseClauseMap i local global vs (CCon (NS ["MapMatchers", "CaseExpr", "ErlangPrelude"] (UN "::")) _ [_, _, x, xs]) mapperFunc = do
+    first <- parseClause i local global vs x
+    rest <- parseClauseMap i (nextLocal first) (nextGlobal global [first]) vs xs mapperFunc
+    pure (first :: rest)
+  parseClauseMap i local global vs args mapperFunc =
+    throw (InternalError ("Badly formed ErlMapEntries " ++ show args))
 
   genGuard : Int -> SVars vars -> ErlGuard vars -> Core annot String
   genGuard i vs IsAny = pure "true"
   genGuard i vs (IsBinary ref) = pure $ "is_binary(" ++ !(genExp i vs ref) ++ ")"
   genGuard i vs (IsList ref) = pure $ "is_list(" ++ !(genExp i vs ref) ++ ")"
   genGuard i vs (IsInteger ref) = pure $ "is_integer(" ++ !(genExp i vs ref) ++ ")"
+  genGuard i vs (IsMap ref) = pure $ "is_map(" ++ !(genExp i vs ref) ++ ")"
   genGuard i vs (IsEq ref1 ref2) = pure $ !(genExp i vs ref1) ++ " =:= " ++ !(genExp i vs ref2)
   genGuard i vs (AndAlso g1 g2) = pure $ "(" ++ !(genGuard i vs g1) ++ " andalso " ++ !(genGuard i vs g2) ++ ")"
   genGuard i vs (OrElse g1 g2) = pure $ "(" ++ !(genGuard i vs g1) ++ " orelse " ++ !(genGuard i vs g2) ++ ")"
