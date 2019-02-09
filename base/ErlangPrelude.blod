@@ -147,22 +147,22 @@ mutual
     ETErlRef        : ErlType ErlRef
     ETErlPort       : ErlType ErlPort
     ETErlTuple0     : ErlType ErlTuple0
-    ETErlTuple1     : ErlTypes [a] => ErlType (ErlTuple1 a)
-    ETErlTuple2     : ErlTypes [a, b] => ErlType (ErlTuple2 a b)
-    ETErlTuple3     : ErlTypes [a, b, c] => ErlType (ErlTuple3 a b c)
-    ETErlTuple4     : ErlTypes [a, b, c, d] => ErlType (ErlTuple4 a b c d)
-    ETErlTuple5     : ErlTypes [a, b, c, d, e] => ErlType (ErlTuple5 a b c d e)
-    ETErlFun0       : ErlTypes [ret] => ErlType (ErlFun0 ret)
-    ETErlFun1       : ErlTypes [a, ret] => ErlType (ErlFun1 a ret)
-    ETErlFun2       : ErlTypes [a, b, ret] => ErlType (ErlFun2 a b ret)
-    ETErlFun3       : ErlTypes [a, b, c, ret] => ErlType (ErlFun3 a b c ret)
-    ETErlFun4       : ErlTypes [a, b, c, d, ret] => ErlType (ErlFun4 a b c d ret)
+    ETErlTuple1     : ErlTypes [a]                  => ErlType (ErlTuple1 a)
+    ETErlTuple2     : ErlTypes [a, b]               => ErlType (ErlTuple2 a b)
+    ETErlTuple3     : ErlTypes [a, b, c]            => ErlType (ErlTuple3 a b c)
+    ETErlTuple4     : ErlTypes [a, b, c, d]         => ErlType (ErlTuple4 a b c d)
+    ETErlTuple5     : ErlTypes [a, b, c, d, e]      => ErlType (ErlTuple5 a b c d e)
+    ETErlFun0       : ErlTypes [ret]                => ErlType (ErlFun0 ret)
+    ETErlFun1       : ErlTypes [a, ret]             => ErlType (ErlFun1 a ret)
+    ETErlFun2       : ErlTypes [a, b, ret]          => ErlType (ErlFun2 a b ret)
+    ETErlFun3       : ErlTypes [a, b, c, ret]       => ErlType (ErlFun3 a b c ret)
+    ETErlFun4       : ErlTypes [a, b, c, d, ret]    => ErlType (ErlFun4 a b c d ret)
     ETErlFun5       : ErlTypes [a, b, c, d, e, ret] => ErlType (ErlFun5 a b c d e ret)
-    ETErlIO0        : ErlTypes [ret] => ErlType (ErlIO0 ret)
-    ETErlIO1        : ErlTypes [a, ret] => ErlType (ErlIO1 a ret)
-    ETErlIO2        : ErlTypes [a, b, ret] => ErlType (ErlIO2 a b ret)
-    ETErlIO3        : ErlTypes [a, b, c, ret] => ErlType (ErlIO3 a b c ret)
-    ETErlIO4        : ErlTypes [a, b, c, d, ret] => ErlType (ErlIO4 a b c d ret)
+    ETErlIO0        : ErlTypes [ret]                => ErlType (ErlIO0 ret)
+    ETErlIO1        : ErlTypes [a, ret]             => ErlType (ErlIO1 a ret)
+    ETErlIO2        : ErlTypes [a, b, ret]          => ErlType (ErlIO2 a b ret)
+    ETErlIO3        : ErlTypes [a, b, c, ret]       => ErlType (ErlIO3 a b c ret)
+    ETErlIO4        : ErlTypes [a, b, c, d, ret]    => ErlType (ErlIO4 a b c d ret)
     ETErlIO5        : ErlTypes [a, b, c, d, e, ret] => ErlType (ErlIO5 a b c d e ret)
 
   public export
@@ -180,18 +180,18 @@ namespace CaseExpr
   mutual
     public export
     data ErlMatcher : Type -> Type where
-      MExact : ErlType a => a -> (a -> b) -> ErlMatcher b
-      MAny          : (ErlTerm -> a) -> ErlMatcher a
-      MInteger      : (Integer -> a) -> ErlMatcher a
-      MDouble       : (Double  -> a) -> ErlMatcher a
-      MString       : (String  -> a) -> ErlMatcher a
-      MErlAtom      : (ErlAtom -> a) -> ErlMatcher a
-      MErlBinary    : (ErlBinary -> a) -> ErlMatcher a
-      MErlCharlist  : (ErlCharlist -> a) -> ErlMatcher a
-      MErlMap       : (ErlMap  -> a) -> ErlMatcher a
-      MErlPid       : (ErlPid  -> a) -> ErlMatcher a
-      MErlRef       : (ErlRef  -> a) -> ErlMatcher a
-      MErlPort      : (ErlPort -> a) -> ErlMatcher a
+      MExact        : ErlType a => a -> (a -> b) -> ErlMatcher b
+      MAny          : (ErlTerm -> a)      -> ErlMatcher a
+      MInteger      : (Integer -> a)      -> ErlMatcher a
+      MDouble       : (Double -> a)       -> ErlMatcher a
+      MString       : (String -> a)       -> ErlMatcher a
+      MErlAtom      : (ErlAtom -> a)      -> ErlMatcher a
+      MErlBinary    : (ErlBinary -> a)    -> ErlMatcher a
+      MErlCharlist  : (ErlCharlist -> a)  -> ErlMatcher a
+      MErlMap       : (ErlMap -> a)       -> ErlMatcher a
+      MErlPid       : (ErlPid -> a)       -> ErlMatcher a
+      MErlRef       : (ErlRef -> a)       -> ErlMatcher a
+      MErlPort      : (ErlPort -> a)      -> ErlMatcher a
       MErlList      : ErlMatchers ErlMatcher xs  -> TypesToFunc xs ret -> ErlMatcher ret
       MErlTuple     : ErlMatchers ErlMatcher xs  -> TypesToFunc xs ret -> ErlMatcher ret
       MErlMapSubset : ErlMatchers ErlMapEntry xs -> TypesToFunc xs ret -> ErlMatcher ret
