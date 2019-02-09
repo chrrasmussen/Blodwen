@@ -332,7 +332,7 @@ mutual
   genCon i vs (CCon (NS ["Prelude"] (UN "Nil")) _ _) = pure "[]"
   genCon i vs (CCon (NS ["Prelude"] (UN "::")) _ [_, x, xs]) = pure $ "[" ++ !(genExp i vs x) ++ " | " ++ !(genExp i vs xs) ++ "]"
   -- ErlAtom
-  genCon i vs (CCon (NS ["Atoms", "ErlangPrelude"] (UN "MkErlAtom")) _ [x]) = pure $ "binary_to_atom(iolist_to_binary(" ++ !(genExp i vs x) ++ "), utf8)"
+  genCon i vs (CCon (NS ["Atoms", "ErlangPrelude"] (UN "MkErlAtom")) _ [x]) = pure $ "binary_to_atom(unicode:characters_to_binary(" ++ !(genExp i vs x) ++ "), utf8)"
   -- ErlList
   genCon i vs (CCon (NS ["Lists", "ErlangPrelude"] (UN "Nil")) _ []) = pure "[]"
   genCon i vs (CCon (NS ["Lists", "ErlangPrelude"] (UN "::")) _ [_, _, x, xs]) = pure $ "[" ++ !(genExp i vs x) ++ " | " ++ !(genExp i vs xs) ++ "]"

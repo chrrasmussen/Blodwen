@@ -76,11 +76,11 @@ int_div(X, Y, Bits) -> (X div Y) rem int_pow(2, Bits).
 
 % Comparisons
 
-unicode_string_lt(X, Y) -> blodwen_bool_to_int(iolist_to_binary(X) < iolist_to_binary(Y)).
-unicode_string_lte(X, Y) -> blodwen_bool_to_int(iolist_to_binary(X) =< iolist_to_binary(Y)).
-unicode_string_eq(X, Y) -> blodwen_bool_to_int(iolist_to_binary(X) == iolist_to_binary(Y)).
-unicode_string_gte(X, Y) -> blodwen_bool_to_int(iolist_to_binary(X) >= iolist_to_binary(Y)).
-unicode_string_gt(X, Y) -> blodwen_bool_to_int(iolist_to_binary(X) > iolist_to_binary(Y)).
+unicode_string_lt(X, Y) -> blodwen_bool_to_int(unicode:characters_to_binary(X) < unicode:characters_to_binary(Y)).
+unicode_string_lte(X, Y) -> blodwen_bool_to_int(unicode:characters_to_binary(X) =< unicode:characters_to_binary(Y)).
+unicode_string_eq(X, Y) -> blodwen_bool_to_int(unicode:characters_to_binary(X) =:= unicode:characters_to_binary(Y)).
+unicode_string_gte(X, Y) -> blodwen_bool_to_int(unicode:characters_to_binary(X) >= unicode:characters_to_binary(Y)).
+unicode_string_gt(X, Y) -> blodwen_bool_to_int(unicode:characters_to_binary(X) > unicode:characters_to_binary(Y)).
 
 
 % Strings
@@ -190,7 +190,7 @@ blodwen_read_file(File) ->
 % TODO: Return error number instead (in all cases)?
 -spec blodwen_open(file:name_all(), iolist(), idr_bool()) -> idr_either(error_code(), handle()).
 blodwen_open(File, Mode, Bin) ->
-  Flags = case iolist_to_binary(Mode) of
+  Flags = case unicode:characters_to_binary(Mode) of
     <<"r">> -> [read];
     <<"w">> -> [write];
     _ -> throw("I haven't worked that one out yet, sorry...")
