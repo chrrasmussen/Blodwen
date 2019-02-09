@@ -9,6 +9,8 @@ get_map_ex2() -> #{<<"first">> => <<"ex2">>, <<"second">> => 42}.
 get_pid() -> list_to_pid("<0.4.1>").
 get_ref() -> list_to_ref("#Ref<0.4192537678.4073193475.71181>").
 get_port() -> list_to_port("#Port<0.4>").
+get_binary() -> <<"hello">>.
+get_charlist() -> "hello".
 """
 
 -- Wrappers around Erlang functions
@@ -30,6 +32,12 @@ refEx = unsafePerformIO $ erlCall ErlRef "get_ref" []
 
 portEx : ErlPort
 portEx = unsafePerformIO $ erlCall ErlPort "get_port" []
+
+binaryEx : ErlBinary
+binaryEx = unsafePerformIO $ erlCall ErlBinary "get_binary" []
+
+charlistEx : ErlCharlist
+charlistEx = unsafePerformIO $ erlCall ErlCharlist "get_charlist" []
 
 
 -- Tests
@@ -101,6 +109,18 @@ testMErlAtom = do
   putStrLn (erlCase "not found" [MErlAtom show] (cast (MkErlAtom "error")))
   putStrLn (erlCase "not found" [MErlAtom show] (cast "string is not an atom"))
 
+testMErlBinary : IO ()
+testMErlBinary = do
+  putStrLn "testMErlBinary"
+  putStrLn (erlCase "not found" [MErlBinary show] (cast binaryEx))
+  putStrLn (erlCase "not found" [MErlBinary show] (cast 42))
+
+testMErlCharlist : IO ()
+testMErlCharlist = do
+  putStrLn "testMErlCharlist"
+  putStrLn (erlCase "not found" [MErlCharlist show] (cast charlistEx))
+  putStrLn (erlCase "not found" [MErlCharlist show] (cast 42))
+
 testMErlMap : IO ()
 testMErlMap = do
   putStrLn "testMErlMap"
@@ -166,6 +186,8 @@ main = do
   testMDouble
   testMString
   testMErlAtom
+  testMErlBinary
+  testMErlCharlist
   testMErlMap
   testMErlPid
   testMErlRef

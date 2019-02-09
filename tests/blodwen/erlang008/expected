@@ -41,6 +41,12 @@ testMErlAtom
 'ok'
 'error'
 not found
+testMErlBinary
+<<"hello">>
+not found
+testMErlCharlist
+[104, 101, 108, 108, 111]
+not found
 testMErlMap
 found map
 found map

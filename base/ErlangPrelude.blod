@@ -186,6 +186,8 @@ namespace CaseExpr
       MDouble       : (Double  -> a) -> ErlMatcher a
       MString       : (String  -> a) -> ErlMatcher a
       MErlAtom      : (ErlAtom -> a) -> ErlMatcher a
+      MErlBinary    : (ErlBinary -> a) -> ErlMatcher a
+      MErlCharlist  : (ErlCharlist -> a) -> ErlMatcher a
       MErlMap       : (ErlMap  -> a) -> ErlMatcher a
       MErlPid       : (ErlPid  -> a) -> ErlMatcher a
       MErlRef       : (ErlRef  -> a) -> ErlMatcher a
