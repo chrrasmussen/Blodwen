@@ -68,6 +68,20 @@ erlAtomTest = do
   erlPrintLn (MkErlAtom "ok")
   erlPrintLn (MkErlAtom ("a" ++ show 42))
 
+erlBinaryTest : IO ()
+erlBinaryTest = do
+  putStrLn "erlBinaryTest"
+  erlPrintLn (MkErlBinary "")
+  erlPrintLn (MkErlBinary "ok")
+  erlPrintLn (MkErlBinary ("a" ++ show 42))
+
+erlCharlistTest : IO ()
+erlCharlistTest = do
+  putStrLn "erlCharlistTest"
+  erlPrintLn (MkErlCharlist "")
+  erlPrintLn (MkErlCharlist "ok")
+  erlPrintLn (MkErlCharlist ("a" ++ show 42))
+
 erlListTest : IO ()
 erlListTest = do
   putStrLn "erlListTest"
@@ -95,5 +109,7 @@ main = do
   boolTest
   listTest
   erlAtomTest
+  erlBinaryTest
+  erlCharlistTest
   erlListTest
   erlTuplesTest

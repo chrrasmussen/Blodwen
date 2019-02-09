@@ -12,6 +12,14 @@ namespace Atoms
     MkErlAtom : String -> ErlAtom
 
 
+namespace Strings
+  public export
+  data ErlBinary = MkErlBinary String
+
+  public export
+  data ErlCharlist = MkErlCharlist String
+
+
 namespace Lists
   public export
   data ErlList : List Type -> Type where
@@ -131,6 +139,8 @@ mutual
 
     -- Data types that bridge to native Erlang data types
     ETErlAtom       : ErlType ErlAtom
+    ETErlBinary     : ErlType ErlBinary
+    ETErlCharlist   : ErlType ErlCharlist
     ETErlList       : ErlTypes xs => ErlType (ErlList xs)
     ETErlMap        : ErlType ErlMap
     ETErlPid        : ErlType ErlPid
@@ -329,6 +339,12 @@ Show ErlPort where
 
 Show ErlAtom where
   show (MkErlAtom x) = "'" ++ x ++ "'"
+
+Show ErlBinary where
+  show (MkErlBinary x) = "<<" ++ show x ++ ">>"
+
+Show ErlCharlist where
+  show (MkErlCharlist x) = show (erlUnsafeCast (List Int) (cast x))
 
 Show (ErlList []) where
   show [] = "[]"

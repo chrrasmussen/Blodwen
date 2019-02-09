@@ -29,6 +29,14 @@ erlAtomTest
 ''
 ok
 a42
+erlBinaryTest
+<<>>
+<<"ok">>
+<<"a42">>
+erlCharlistTest
+[]
+"ok"
+"a42"
 erlListTest
 []
 [<<"a">>,10,99]

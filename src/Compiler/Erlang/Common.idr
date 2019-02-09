@@ -272,6 +272,14 @@ mutual
   genConAlt i vs (MkConAlt (NS ["Atoms", "ErlangPrelude"] (UN "MkErlAtom")) tag args sc) = do
     let vs' = extendSVars args vs
     pure $ "(Atom) -> fun(" ++ !(expectArgAtIndex 0 (bindArgs 1 args vs')) ++ ") -> " ++ !(genExp i vs' sc) ++ " end(atom_to_binary(Atom, utf8))"
+  -- ErlBinary
+  genConAlt i vs (MkConAlt (NS ["Strings", "ErlangPrelude"] (UN "MkErlBinary")) tag args sc) = do
+    let vs' = extendSVars args vs
+    pure $ "(" ++ !(expectArgAtIndex 0 (bindArgs 1 args vs')) ++ ") -> " ++ !(genExp i vs' sc)
+  -- ErlAtom
+  genConAlt i vs (MkConAlt (NS ["Strings", "ErlangPrelude"] (UN "MkErlCharlist")) tag args sc) = do
+    let vs' = extendSVars args vs
+    pure $ "(" ++ !(expectArgAtIndex 0 (bindArgs 1 args vs')) ++ ") -> " ++ !(genExp i vs' sc)
   -- ErlList
   genConAlt i vs (MkConAlt (NS ["Lists", "ErlangPrelude"] (UN "Nil")) tag args sc) = do
     let vs' = extendSVars args vs
@@ -333,6 +341,10 @@ mutual
   genCon i vs (CCon (NS ["Prelude"] (UN "::")) _ [_, x, xs]) = pure $ "[" ++ !(genExp i vs x) ++ " | " ++ !(genExp i vs xs) ++ "]"
   -- ErlAtom
   genCon i vs (CCon (NS ["Atoms", "ErlangPrelude"] (UN "MkErlAtom")) _ [x]) = pure $ "binary_to_atom(unicode:characters_to_binary(" ++ !(genExp i vs x) ++ "), utf8)"
+  -- ErlBinary
+  genCon i vs (CCon (NS ["Strings", "ErlangPrelude"] (UN "MkErlBinary")) _ [x]) = pure $ "unicode:characters_to_binary(" ++ !(genExp i vs x) ++ ")"
+  -- ErlCharlist
+  genCon i vs (CCon (NS ["Strings", "ErlangPrelude"] (UN "MkErlCharlist")) _ [x]) = pure $ "unicode:characters_to_list(" ++ !(genExp i vs x) ++ ")"
   -- ErlList
   genCon i vs (CCon (NS ["Lists", "ErlangPrelude"] (UN "Nil")) _ []) = pure "[]"
   genCon i vs (CCon (NS ["Lists", "ErlangPrelude"] (UN "::")) _ [_, _, x, xs]) = pure $ "[" ++ !(genExp i vs x) ++ " | " ++ !(genExp i vs xs) ++ "]"
