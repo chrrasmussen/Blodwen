@@ -82,6 +82,13 @@ testMString = do
   putStrLn (erlCase "not found" [MString id] (cast 42))
   putStrLn (erlCase "not found" [MString id] (cast (MkErlAtom "ok")))
 
+testMErlAtom : IO ()
+testMErlAtom = do
+  putStrLn "testMErlAtom"
+  putStrLn (erlCase "not found" [MErlAtom show] (cast (MkErlAtom "ok")))
+  putStrLn (erlCase "not found" [MErlAtom show] (cast (MkErlAtom "error")))
+  putStrLn (erlCase "not found" [MErlAtom show] (cast "string is not an atom"))
+
 testMErlTuple0 : IO ()
 testMErlTuple0 = do
   putStrLn "testMErlTuple0"
@@ -128,6 +135,7 @@ main = do
   testMInteger
   testMDouble
   testMString
+  testMErlAtom
   testMErlTuple0
   testMErlTuple1
   testMErlTuple2

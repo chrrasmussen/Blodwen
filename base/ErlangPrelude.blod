@@ -175,6 +175,7 @@ namespace CaseExpr
       MInteger : (Integer -> a) -> ErlMatcher a
       MDouble : (Double -> a) -> ErlMatcher a
       MString : (String -> a) -> ErlMatcher a
+      MErlAtom : (ErlAtom -> a) -> ErlMatcher a
       MErlTuple0 : a -> ErlMatcher a
       MErlTuple1 : (a -> b) -> ErlMatcher a -> ErlMatcher b
       MErlTuple2 : (a -> b -> c) -> ErlMatcher a -> ErlMatcher b -> ErlMatcher c

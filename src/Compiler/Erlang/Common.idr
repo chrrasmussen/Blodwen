@@ -468,6 +468,7 @@ mutual
     IsDouble  : CExp vars -> ErlGuard vars
     IsBinary  : CExp vars -> ErlGuard vars
     IsList    : CExp vars -> ErlGuard vars
+    IsAtom    : CExp vars -> ErlGuard vars
     IsMap     : CExp vars -> ErlGuard vars
     IsEq      : CExp vars -> CExp vars -> ErlGuard vars
     AndAlso   : ErlGuard vars -> ErlGuard vars -> ErlGuard vars
@@ -521,6 +522,10 @@ mutual
   readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MString")) _ [_, func]) = do
     let ref = CRef (MN "C" local)
     pure $ MkErlClause (local + 1) [] !(genExp i vs ref) (OrElse (IsBinary ref) (IsList ref)) (CApp func [ref])
+  -- MErlAtom
+  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MErlAtom")) _ [_, func]) = do
+    let ref = CRef (MN "C" local)
+    pure $ MkErlClause (local + 1) [] !(genExp i vs ref) (IsAtom ref) (CApp func [ref])
   -- MErlTuple/A
   readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MErlTuple0")) _ [_, val]) = do
     pure $ MkErlClause local [] "{}" IsAny val
@@ -568,6 +573,7 @@ mutual
   genGuard i vs (IsDouble ref) = pure $ "is_float(" ++ !(genExp i vs ref) ++ ")"
   genGuard i vs (IsBinary ref) = pure $ "is_binary(" ++ !(genExp i vs ref) ++ ")"
   genGuard i vs (IsList ref) = pure $ "is_list(" ++ !(genExp i vs ref) ++ ")"
+  genGuard i vs (IsAtom ref) = pure $ "is_atom(" ++ !(genExp i vs ref) ++ ")"
   genGuard i vs (IsMap ref) = pure $ "is_map(" ++ !(genExp i vs ref) ++ ")"
   genGuard i vs (IsEq ref1 ref2) = pure $ !(genExp i vs ref1) ++ " =:= " ++ !(genExp i vs ref2)
   genGuard i vs (AndAlso g1 g2) = pure $ "(" ++ !(genGuard i vs g1) ++ " andalso " ++ !(genGuard i vs g2) ++ ")"

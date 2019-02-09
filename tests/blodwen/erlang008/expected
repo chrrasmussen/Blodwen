@@ -37,6 +37,10 @@ testMString
 found string!
 not found
 not found
+testMErlAtom
+'ok'
+'error'
+not found
 testMErlTuple0
 is empty tuple
 is empty tuple
