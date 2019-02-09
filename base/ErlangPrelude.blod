@@ -220,6 +220,28 @@ namespace IO
   erlUnsafeCast to term = unsafePerformIO $ erlCall to "blodwen_id" [term]
 
 
+namespace Concurrency
+  export
+  erlSelf : IO ErlPid
+  erlSelf = erlCall ErlPid "erlang:self" []
+
+  export
+  erlSpawn : IO () -> IO ErlPid
+  erlSpawn action = erlCall ErlPid "erlang:spawn_link" [MkErlIO0 action]
+
+  -- TODO: Support more receivers than just `ErlPid`
+  export
+  erlSend : ErlType a => ErlPid -> a -> IO ()
+  erlSend receiver value = do
+    erlCall ErlTerm "erlang:send" [receiver, value]
+    pure ()
+
+  -- TODO: Add proof that `ms` is in proper range: 0 - 16#FFFFFFFF (http://erlang.org/doc/reference_manual/expressions.html#receive)
+  %extern
+  export
+  erlReceive : (ms : Int) -> a -> List (ErlMatcher a) -> IO a
+
+
 namespace Maps
   export
   empty : ErlMap
