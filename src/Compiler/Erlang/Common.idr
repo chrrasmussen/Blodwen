@@ -502,57 +502,57 @@ mutual
 
   readClause : Int -> (local : Int) -> (global : Int) -> SVars vars -> CExp vars -> Core annot (ErlClause vars)
   -- MExact
-  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MExact")) _ [_, _, _, matchValue, func]) = do
+  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MExact")) _ [_, _, _, matchValue, mapper]) = do
     let localRef = CRef (MN "C" global)
     let globalRef = CRef (MN "G" global)
-    pure $ MkErlClause (local + 1) [matchValue] !(genExp i vs localRef) (IsEq localRef globalRef) (CApp func [matchValue])
+    pure $ MkErlClause (local + 1) [matchValue] !(genExp i vs localRef) (IsEq localRef globalRef) (CApp mapper [matchValue])
   -- MAny
-  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MAny")) _ [_, func]) = do
+  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MAny")) _ [_, mapper]) = do
     let ref = CRef (MN "C" local)
-    pure $ MkErlClause (local + 1) [] !(genExp i vs ref) IsAny (CApp func [ref])
+    pure $ MkErlClause (local + 1) [] !(genExp i vs ref) IsAny (CApp mapper [ref])
   -- MInteger
-  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MInteger")) _ [_, func]) = do
+  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MInteger")) _ [_, mapper]) = do
     let ref = CRef (MN "C" local)
-    pure $ MkErlClause (local + 1) [] !(genExp i vs ref) (IsInteger ref) (CApp func [ref])
+    pure $ MkErlClause (local + 1) [] !(genExp i vs ref) (IsInteger ref) (CApp mapper [ref])
   -- MDouble
-  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MDouble")) _ [_, func]) = do
+  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MDouble")) _ [_, mapper]) = do
     let ref = CRef (MN "C" local)
-    pure $ MkErlClause (local + 1) [] !(genExp i vs ref) (IsDouble ref) (CApp func [ref])
+    pure $ MkErlClause (local + 1) [] !(genExp i vs ref) (IsDouble ref) (CApp mapper [ref])
   -- MString
-  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MString")) _ [_, func]) = do
+  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MString")) _ [_, mapper]) = do
     let ref = CRef (MN "C" local)
-    pure $ MkErlClause (local + 1) [] !(genExp i vs ref) (OrElse (IsBinary ref) (IsList ref)) (CApp func [ref])
+    pure $ MkErlClause (local + 1) [] !(genExp i vs ref) (OrElse (IsBinary ref) (IsList ref)) (CApp mapper [ref])
   -- MErlAtom
-  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MErlAtom")) _ [_, func]) = do
+  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MErlAtom")) _ [_, mapper]) = do
     let ref = CRef (MN "C" local)
-    pure $ MkErlClause (local + 1) [] !(genExp i vs ref) (IsAtom ref) (CApp func [ref])
+    pure $ MkErlClause (local + 1) [] !(genExp i vs ref) (IsAtom ref) (CApp mapper [ref])
   -- MErlList
-  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MErlList")) _ [_, _, xs, func]) = do
-    clauses <- readClauseErlMatchers i local global vs xs func
+  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MErlList")) _ [_, _, xs, mapper]) = do
+    clauses <- readClauseErlMatchers i local global vs xs mapper
     let nextLoc = maybe local nextLocal (last' clauses)
     pure $ MkErlClause nextLoc (concatGlobals clauses)
       ("[" ++ showSep ", " (map pattern clauses) ++ "]")
       (concatGuards clauses)
-      (applyToArgs func (map body clauses))
+      (applyToArgs mapper (map body clauses))
   -- MErlTuple
-  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MErlTuple")) _ [_, _, xs, func]) = do
-    clauses <- readClauseErlMatchers i local global vs xs func
+  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MErlTuple")) _ [_, _, xs, mapper]) = do
+    clauses <- readClauseErlMatchers i local global vs xs mapper
     let nextLoc = maybe local nextLocal (last' clauses)
     pure $ MkErlClause nextLoc (concatGlobals clauses)
       ("{" ++ showSep ", " (map pattern clauses) ++ "}")
       (concatGuards clauses)
-      (applyToArgs func (map body clauses))
+      (applyToArgs mapper (map body clauses))
   -- MErlMap
-  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MErlMap")) _ [_, func]) = do
+  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MErlMap")) _ [_, mapper]) = do
     let ref = CRef (MN "C" local)
-    pure $ MkErlClause (local + 1) [] !(genExp i vs ref) (IsMap ref) (CApp func [ref])
-  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MErlMapSubset")) _ [_, _, xs, func]) = do
-    clauses <- readClauseErlMatchers i local global vs xs func
+    pure $ MkErlClause (local + 1) [] !(genExp i vs ref) (IsMap ref) (CApp mapper [ref])
+  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MErlMapSubset")) _ [_, _, xs, mapper]) = do
+    clauses <- readClauseErlMatchers i local global vs xs mapper
     let nextLoc = maybe local nextLocal (last' clauses)
     pure $ MkErlClause nextLoc (concatGlobals clauses)
       ("#{" ++ showSep ", " (map pattern clauses) ++ "}")
       (concatGuards clauses)
-      (applyToArgs func (map body clauses))
+      (applyToArgs mapper (map body clauses))
   readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MkErlMapEntry")) _ [_, _, _, key, valueMatcher]) = do
     let globalRef = CRef (MN "G" global)
     clause <- readClause i local (global + 1) vs valueMatcher
@@ -561,13 +561,13 @@ mutual
   readClause i local global vs matcher =
     throw (InternalError ("Badly formed clause " ++ show matcher))
 
-  readClauseErlMatchers : Int -> (local : Int) -> (global : Int) -> SVars vars -> CExp vars -> (mapperFunc : CExp vars) -> Core annot (List (ErlClause vars))
-  readClauseErlMatchers i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "Nil")) _ _) mapperFunc = pure []
-  readClauseErlMatchers i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "::")) _ [_, _, _, x, xs]) mapperFunc = do
+  readClauseErlMatchers : Int -> (local : Int) -> (global : Int) -> SVars vars -> CExp vars -> (mapper : CExp vars) -> Core annot (List (ErlClause vars))
+  readClauseErlMatchers i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "Nil")) _ _) mapper = pure []
+  readClauseErlMatchers i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "::")) _ [_, _, _, x, xs]) mapper = do
     first <- readClause i local global vs x
-    rest <- readClauseErlMatchers i (nextLocal first) (nextGlobal global [first]) vs xs mapperFunc
+    rest <- readClauseErlMatchers i (nextLocal first) (nextGlobal global [first]) vs xs mapper
     pure (first :: rest)
-  readClauseErlMatchers i local global vs args mapperFunc =
+  readClauseErlMatchers i local global vs args mapper =
     throw (InternalError ("Badly formed ErlMatchers " ++ show args))
 
   genGuard : Int -> SVars vars -> ErlGuard vars -> Core annot String
