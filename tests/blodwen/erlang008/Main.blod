@@ -89,6 +89,13 @@ testMErlAtom = do
   putStrLn (erlCase "not found" [MErlAtom show] (cast (MkErlAtom "error")))
   putStrLn (erlCase "not found" [MErlAtom show] (cast "string is not an atom"))
 
+testMErlMap : IO ()
+testMErlMap = do
+  putStrLn "testMErlMap"
+  putStrLn (erlCase "not found" [MErlMap (const "found map")] (cast mapEmpty))
+  putStrLn (erlCase "not found" [MErlMap (const "found map")] (cast mapEx1))
+  putStrLn (erlCase "not found" [MErlMap (const "found map")] (cast "not a map"))
+
 testMErlList : IO ()
 testMErlList = do
   putStrLn "testMErlList"
@@ -111,13 +118,6 @@ testMErlTuple = do
   putStrLn (erlCase "not found" [MErlTuple [MExact (MkErlAtom "ok") id, MInteger show] (\x, y => y)] (cast (MkErlTuple2 (MkErlAtom "ok") 42)))
   putStrLn (erlCase "not found" [MErlTuple [MExact (MkErlAtom "ok") id, MInteger show] (\x, y => y)] (cast (MkErlTuple3 (MkErlAtom "ok") 42 "too long tuple")))
 
-testMErlMap : IO ()
-testMErlMap = do
-  putStrLn "testMErlMap"
-  putStrLn (erlCase "not found" [MErlMap (const "found map")] (cast mapEmpty))
-  putStrLn (erlCase "not found" [MErlMap (const "found map")] (cast mapEx1))
-  putStrLn (erlCase "not found" [MErlMap (const "found map")] (cast "not a map"))
-
 testMErlMapSubset : IO ()
 testMErlMapSubset = do
   putStrLn "testMErlMapSubset"
@@ -136,7 +136,7 @@ main = do
   testMDouble
   testMString
   testMErlAtom
+  testMErlMap
   testMErlList
   testMErlTuple
-  testMErlMap
   testMErlMapSubset

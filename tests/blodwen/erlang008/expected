@@ -41,6 +41,10 @@ testMErlAtom
 'ok'
 'error'
 not found
+testMErlMap
+found map
+found map
+not found
 testMErlList
 first item
 first item42
@@ -56,10 +60,6 @@ string inside 1-element tuple
 not found
 first string & second string
 42
-not found
-testMErlMap
-found map
-found map
 not found
 testMErlMapSubset
 ex1
