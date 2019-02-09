@@ -214,6 +214,35 @@ namespace IO
             IO ret
   erlCall ret fn args = primIO (prim__erlCall ret fn args)
 
+  -- TODO: Is `believe_me x` a better solution?
+  export
+  erlUnsafeCast : (to : Type) -> {auto prf : ErlType to} -> ErlTerm -> to
+  erlUnsafeCast to term = unsafePerformIO $ erlCall to "blodwen_id" [term]
+
+
+namespace Maps
+  export
+  empty : ErlMap
+  empty = unsafePerformIO $ erlCall ErlMap "maps:new" []
+
+  -- TODO: Return type may not match the actual content
+  export
+  unsafeLookup : ErlType key => key -> (ret : Type) -> {auto prf : ErlType ret} -> ErlMap -> Maybe ret
+  unsafeLookup key ty m = unsafePerformIO $ do
+    result <- erlCall ErlTerm "maps:find" [key, m]
+    pure $ erlCase Nothing [MErlTuple2 (\ok, value => Just (erlUnsafeCast ty value)) (MExact (MkErlAtom "ok") id) (MAny id)] result
+
+  export
+  insert : (ErlType key, ErlType value) => key -> value -> ErlMap -> ErlMap
+  insert key value m = unsafePerformIO $ erlCall ErlMap "maps:put" [key, value, m]
+
+  export
+  delete : ErlType key => key -> ErlMap -> ErlMap
+  delete key m = unsafePerformIO $ erlCall ErlMap "maps:remove" [key, m]
+
+  size : ErlMap -> Integer
+  size m = unsafePerformIO $ erlCall Integer "maps:size" [m]
+
 
 ----------
 -- CAST --
