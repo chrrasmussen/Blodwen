@@ -1,6 +1,11 @@
 module ErlangPrelude
 
 
+namespace Idris
+  public export
+  data Raw a = MkRaw a
+
+
 namespace Atoms
   public export
   data ErlAtom : Type where
@@ -12,6 +17,23 @@ namespace Lists
   data ErlList : List Type -> Type where
     Nil : ErlList []
     (::) : x -> ErlList xs -> ErlList (x :: xs)
+
+
+namespace Opaque
+  export
+  data ErlTerm : Type where
+
+  export
+  data ErlMap : Type where
+
+  export
+  data ErlPid : Type where
+
+  export
+  data ErlRef : Type where
+
+  export
+  data ErlPort : Type where
 
 
 namespace Tuples
@@ -90,28 +112,6 @@ namespace Functions
     MkErlIO5  : (a -> b -> c -> d -> e -> IO ret) -> ErlIO5 a b c d e ret
 
 
-namespace Idris
-  public export
-  data Raw a = MkRaw a
-
-
-namespace Opaque
-  export
-  data ErlTerm : Type where
-
-  export
-  data ErlMap : Type where
-
-  export
-  data ErlPid : Type where
-
-  export
-  data ErlRef : Type where
-
-  export
-  data ErlPort : Type where
-
-
 mutual
   public export
   data ErlType : Type -> Type where
@@ -132,6 +132,10 @@ mutual
     -- Data types that bridge to native Erlang data types
     ETErlAtom       : ErlType ErlAtom
     ETErlList       : ErlTypes xs => ErlType (ErlList xs)
+    ETErlMap        : ErlType ErlMap
+    ETErlPid        : ErlType ErlPid
+    ETErlRef        : ErlType ErlRef
+    ETErlPort       : ErlType ErlPort
     ETErlTuple0     : ErlType ErlTuple0
     ETErlTuple1     : ErlTypes [a] => ErlType (ErlTuple1 a)
     ETErlTuple2     : ErlTypes [a, b] => ErlType (ErlTuple2 a b)
@@ -150,10 +154,6 @@ mutual
     ETErlIO3        : ErlTypes [a, b, c, ret] => ErlType (ErlIO3 a b c ret)
     ETErlIO4        : ErlTypes [a, b, c, d, ret] => ErlType (ErlIO4 a b c d ret)
     ETErlIO5        : ErlTypes [a, b, c, d, e, ret] => ErlType (ErlIO5 a b c d e ret)
-    ETErlMap        : ErlType ErlMap
-    ETErlPid        : ErlType ErlPid
-    ETErlRef        : ErlType ErlRef
-    ETErlPort       : ErlType ErlPort
 
   public export
   data ErlTypes : List Type -> Type where
