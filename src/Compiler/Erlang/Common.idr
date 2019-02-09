@@ -534,19 +534,14 @@ mutual
       ("[" ++ showSep ", " (map pattern clauses) ++ "]")
       (concatGuards clauses)
       (applyToArgs func (map body clauses))
-  -- MErlTuple/A
-  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MErlTuple0")) _ [_, val]) = do
-    pure $ MkErlClause local [] "{}" IsAny val
-  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MErlTuple1")) _ [_, _, func, m1]) = do
-    m1res <- readClause i local global vs m1
-    pure $ MkErlClause (nextLocal m1res) (globals m1res) ("{" ++ pattern m1res ++ "}") (guard m1res) (CApp func [body m1res])
-  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MErlTuple2")) _ [_, _, _, func, m1, m2]) = do
-    m1res <- readClause i local global vs m1
-    m2res <- readClause i (nextLocal m1res) (nextGlobal global [m1res]) vs m2
-    pure $ MkErlClause (nextLocal m2res) (concatGlobals [m1res, m2res])
-      ("{" ++ showSep ", " [pattern m1res, pattern m2res] ++ "}")
-      (AndAlso (guard m1res) (guard m2res))
-      (CApp (CApp func [body m1res]) [body m2res])
+  -- MErlTuple
+  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MErlTuple")) _ [_, _, xs, func]) = do
+    clauses <- readClauseErlMatchers i local global vs xs func
+    let nextLoc = maybe local nextLocal (last' clauses)
+    pure $ MkErlClause nextLoc (concatGlobals clauses)
+      ("{" ++ showSep ", " (map pattern clauses) ++ "}")
+      (concatGuards clauses)
+      (applyToArgs func (map body clauses))
   -- MErlMap
   readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MErlMap")) _ [_, func]) = do
     let ref = CRef (MN "C" local)

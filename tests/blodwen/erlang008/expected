@@ -46,16 +46,14 @@ first item
 first item42
 not found
 not found
-testMErlTuple0
+testMErlTuple
 is empty tuple
 is empty tuple
 not found
-testMErlTuple1
 found any value
 42
 string inside 1-element tuple
 not found
-testMErlTuple2
 first string & second string
 42
 not found

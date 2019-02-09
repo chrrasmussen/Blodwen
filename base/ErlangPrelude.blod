@@ -177,9 +177,7 @@ namespace CaseExpr
       MString : (String -> a) -> ErlMatcher a
       MErlAtom : (ErlAtom -> a) -> ErlMatcher a
       MErlList : ErlMatchers xs -> TypesToFunc xs ret -> ErlMatcher ret
-      MErlTuple0 : a -> ErlMatcher a
-      MErlTuple1 : (a -> b) -> ErlMatcher a -> ErlMatcher b
-      MErlTuple2 : (a -> b -> c) -> ErlMatcher a -> ErlMatcher b -> ErlMatcher c
+      MErlTuple : ErlMatchers xs -> TypesToFunc xs ret -> ErlMatcher ret
       MErlMap : (ErlMap -> a) -> ErlMatcher a
       MErlMapSubset : ErlMapEntries xs -> TypesToFunc xs ret -> ErlMatcher ret
 
@@ -259,7 +257,7 @@ namespace Maps
   unsafeLookup : ErlType key => key -> (ret : Type) -> {auto prf : ErlType ret} -> ErlMap -> Maybe ret
   unsafeLookup key ty m = unsafePerformIO $ do
     result <- erlCall ErlTerm "maps:find" [key, m]
-    pure $ erlCase Nothing [MErlTuple2 (\ok, value => Just (erlUnsafeCast ty value)) (MExact (MkErlAtom "ok") id) (MAny id)] result
+    pure $ erlCase Nothing [MErlTuple [MExact (MkErlAtom "ok") id, MAny id] (\ok, value => Just (erlUnsafeCast ty value))] result
 
   export
   insert : (ErlType key, ErlType value) => key -> value -> ErlMap -> ErlMap
