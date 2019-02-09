@@ -89,6 +89,14 @@ testMErlAtom = do
   putStrLn (erlCase "not found" [MErlAtom show] (cast (MkErlAtom "error")))
   putStrLn (erlCase "not found" [MErlAtom show] (cast "string is not an atom"))
 
+testMErlList : IO ()
+testMErlList = do
+  putStrLn "testMErlList"
+  putStrLn (erlCase "not found" [MErlList [MString id] id] (cast $ (the (ErlList _) ["first item"])))
+  putStrLn (erlCase "not found" [MErlList [MString id, MInteger show] (++)] (cast $ (the (ErlList _) ["first item", 42])))
+  putStrLn (erlCase "not found" [MErlList [MString id] id] (cast $ (the (ErlList _) [])))
+  putStrLn (erlCase "not found" [MErlList [MString id] id] (cast $ (the (ErlList _) ["a", "b"])))
+
 testMErlTuple0 : IO ()
 testMErlTuple0 = do
   putStrLn "testMErlTuple0"
@@ -136,6 +144,7 @@ main = do
   testMDouble
   testMString
   testMErlAtom
+  testMErlList
   testMErlTuple0
   testMErlTuple1
   testMErlTuple2

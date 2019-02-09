@@ -41,6 +41,11 @@ testMErlAtom
 'ok'
 'error'
 not found
+testMErlList
+first item
+first item42
+not found
+not found
 testMErlTuple0
 is empty tuple
 is empty tuple

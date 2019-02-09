@@ -526,6 +526,14 @@ mutual
   readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MErlAtom")) _ [_, func]) = do
     let ref = CRef (MN "C" local)
     pure $ MkErlClause (local + 1) [] !(genExp i vs ref) (IsAtom ref) (CApp func [ref])
+  -- MErlList
+  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MErlList")) _ [_, _, xs, func]) = do
+    clauses <- readClauseErlMatchers i local global vs xs func
+    let nextLoc = maybe local nextLocal (last' clauses)
+    pure $ MkErlClause nextLoc (concatGlobals clauses)
+      ("[" ++ showSep ", " (map pattern clauses) ++ "]")
+      (concatGuards clauses)
+      (applyToArgs func (map body clauses))
   -- MErlTuple/A
   readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MErlTuple0")) _ [_, val]) = do
     pure $ MkErlClause local [] "{}" IsAny val
@@ -557,6 +565,15 @@ mutual
   -- Other
   readClause i local global vs matcher =
     throw (InternalError ("Badly formed clause " ++ show matcher))
+
+  readClauseErlMatchers : Int -> (local : Int) -> (global : Int) -> SVars vars -> CExp vars -> (mapperFunc : CExp vars) -> Core annot (List (ErlClause vars))
+  readClauseErlMatchers i local global vs (CCon (NS ["GenericMatchers", "CaseExpr", "ErlangPrelude"] (UN "Nil")) _ _) mapperFunc = pure []
+  readClauseErlMatchers i local global vs (CCon (NS ["GenericMatchers", "CaseExpr", "ErlangPrelude"] (UN "::")) _ [_, _, x, xs]) mapperFunc = do
+    first <- readClause i local global vs x
+    rest <- readClauseErlMatchers i (nextLocal first) (nextGlobal global [first]) vs xs mapperFunc
+    pure (first :: rest)
+  readClauseErlMatchers i local global vs args mapperFunc =
+    throw (InternalError ("Badly formed ErlMatchers " ++ show args))
 
   readClauseMap : Int -> (local : Int) -> (global : Int) -> SVars vars -> CExp vars -> (mapperFunc : CExp vars) -> Core annot (List (ErlClause vars))
   readClauseMap i local global vs (CCon (NS ["MapMatchers", "CaseExpr", "ErlangPrelude"] (UN "Nil")) _ _) mapperFunc = pure []

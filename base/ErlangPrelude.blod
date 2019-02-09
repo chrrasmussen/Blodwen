@@ -176,11 +176,18 @@ namespace CaseExpr
       MDouble : (Double -> a) -> ErlMatcher a
       MString : (String -> a) -> ErlMatcher a
       MErlAtom : (ErlAtom -> a) -> ErlMatcher a
+      MErlList : ErlMatchers xs -> TypesToFunc xs ret -> ErlMatcher ret
       MErlTuple0 : a -> ErlMatcher a
       MErlTuple1 : (a -> b) -> ErlMatcher a -> ErlMatcher b
       MErlTuple2 : (a -> b -> c) -> ErlMatcher a -> ErlMatcher b -> ErlMatcher c
       MErlMap : (ErlMap -> a) -> ErlMatcher a
       MErlMapSubset : ErlMapEntries xs -> TypesToFunc xs ret -> ErlMatcher ret
+
+    namespace GenericMatchers
+      public export
+      data ErlMatchers : List Type -> Type where
+        Nil : ErlMatchers []
+        (::) : ErlMatcher x -> ErlMatchers xs -> ErlMatchers (x :: xs)
 
     namespace MapMatchers
       public export
