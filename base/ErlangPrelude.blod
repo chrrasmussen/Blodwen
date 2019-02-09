@@ -8,8 +8,7 @@ namespace Idris
 
 namespace Atoms
   public export
-  data ErlAtom : Type where
-    MkErlAtom : String -> ErlAtom
+  data ErlAtom = MkErlAtom String
 
 
 namespace Strings
@@ -46,28 +45,22 @@ namespace Opaque
 
 namespace Tuples
   public export
-  data ErlTuple0 : Type where
-    MkErlTuple0 : ErlTuple0
+  data ErlTuple0 = MkErlTuple0
 
   public export
-  data ErlTuple1 : Type -> Type where
-    MkErlTuple1 : a -> ErlTuple1 a
+  data ErlTuple1 a = MkErlTuple1 a
 
   public export
-  data ErlTuple2 : Type -> Type -> Type where
-    MkErlTuple2 : a -> b -> ErlTuple2 a b
+  data ErlTuple2 a b = MkErlTuple2 a b
 
   public export
-  data ErlTuple3 : Type -> Type -> Type -> Type where
-    MkErlTuple3 : a -> b -> c ->  ErlTuple3 a b c
+  data ErlTuple3 a b c = MkErlTuple3 a b c
 
   public export
-  data ErlTuple4 : Type -> Type -> Type -> Type -> Type where
-    MkErlTuple4 : a -> b -> c -> d -> ErlTuple4 a b c d
+  data ErlTuple4 a b c d = MkErlTuple4 a b c d
 
   public export
-  data ErlTuple5 : Type -> Type -> Type -> Type -> Type -> Type where
-    MkErlTuple5 : a -> b -> c -> d -> e -> ErlTuple5 a b c d e
+  data ErlTuple5 a b c d e = MkErlTuple5 a b c d e
 
 
 namespace Functions
