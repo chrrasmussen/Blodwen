@@ -96,19 +96,19 @@ namespace Idris
 
 
 namespace Opaque
-  public export
+  export
   data ErlTerm : Type where
 
-  public export
+  export
   data ErlMap : Type where
 
-  public export
+  export
   data ErlPid : Type where
 
-  public export
+  export
   data ErlRef : Type where
 
-  public export
+  export
   data ErlPort : Type where
 
 
