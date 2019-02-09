@@ -66,6 +66,15 @@ testMInteger = do
   putStrLn (erlCase "not found" [MInteger show] (cast "string is not an integer"))
   putStrLn (erlCase "not found" [MInteger show] (cast (the Double 42)))
 
+testMDouble : IO ()
+testMDouble = do
+  putStrLn "testMDouble"
+  putStrLn (erlCase "not found" [MDouble show] (cast (the Double 42)))
+  putStrLn (erlCase "not found" [MDouble show] (cast (the Double 0)))
+  putStrLn (erlCase "not found" [MDouble show] (cast (the Double (-42))))
+  putStrLn (erlCase "not found" [MDouble show] (cast "string is not an double"))
+  putStrLn (erlCase "not found" [MDouble show] (cast 42))
+
 testMString : IO ()
 testMString = do
   putStrLn "testMString"
@@ -117,6 +126,7 @@ main = do
   testMExact
   testMAny
   testMInteger
+  testMDouble
   testMString
   testMErlTuple0
   testMErlTuple1

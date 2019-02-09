@@ -117,9 +117,9 @@ mutual
   data ErlType : Type -> Type where
     ETInt           : ErlType Int
     ETInteger       : ErlType Integer
+    ETDouble        : ErlType Double
     ETString        : ErlType String
     ETChar          : ErlType Char
-    ETDouble        : ErlType Double
 
     ETUnit          : ErlType ()
     ETBool          : ErlType Bool
@@ -173,6 +173,7 @@ namespace CaseExpr
       MExact : ErlType a => a -> (a -> b) -> ErlMatcher b
       MAny : (ErlTerm -> a) -> ErlMatcher a
       MInteger : (Integer -> a) -> ErlMatcher a
+      MDouble : (Double -> a) -> ErlMatcher a
       MString : (String -> a) -> ErlMatcher a
       MErlTuple0 : a -> ErlMatcher a
       MErlTuple1 : (a -> b) -> ErlMatcher a -> ErlMatcher b

@@ -464,9 +464,10 @@ mutual
 
   data ErlGuard : List Name -> Type where
     IsAny     : ErlGuard vars
+    IsInteger : CExp vars -> ErlGuard vars
+    IsDouble  : CExp vars -> ErlGuard vars
     IsBinary  : CExp vars -> ErlGuard vars
     IsList    : CExp vars -> ErlGuard vars
-    IsInteger : CExp vars -> ErlGuard vars
     IsMap     : CExp vars -> ErlGuard vars
     IsEq      : CExp vars -> CExp vars -> ErlGuard vars
     AndAlso   : ErlGuard vars -> ErlGuard vars -> ErlGuard vars
@@ -512,6 +513,10 @@ mutual
   readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MInteger")) _ [_, func]) = do
     let ref = CRef (MN "C" local)
     pure $ MkErlClause (local + 1) [] !(genExp i vs ref) (IsInteger ref) (CApp func [ref])
+  -- MDouble
+  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MDouble")) _ [_, func]) = do
+    let ref = CRef (MN "C" local)
+    pure $ MkErlClause (local + 1) [] !(genExp i vs ref) (IsDouble ref) (CApp func [ref])
   -- MString
   readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MString")) _ [_, func]) = do
     let ref = CRef (MN "C" local)
@@ -559,9 +564,10 @@ mutual
 
   genGuard : Int -> SVars vars -> ErlGuard vars -> Core annot String
   genGuard i vs IsAny = pure "true"
+  genGuard i vs (IsInteger ref) = pure $ "is_integer(" ++ !(genExp i vs ref) ++ ")"
+  genGuard i vs (IsDouble ref) = pure $ "is_float(" ++ !(genExp i vs ref) ++ ")"
   genGuard i vs (IsBinary ref) = pure $ "is_binary(" ++ !(genExp i vs ref) ++ ")"
   genGuard i vs (IsList ref) = pure $ "is_list(" ++ !(genExp i vs ref) ++ ")"
-  genGuard i vs (IsInteger ref) = pure $ "is_integer(" ++ !(genExp i vs ref) ++ ")"
   genGuard i vs (IsMap ref) = pure $ "is_map(" ++ !(genExp i vs ref) ++ ")"
   genGuard i vs (IsEq ref1 ref2) = pure $ !(genExp i vs ref1) ++ " =:= " ++ !(genExp i vs ref2)
   genGuard i vs (AndAlso g1 g2) = pure $ "(" ++ !(genGuard i vs g1) ++ " andalso " ++ !(genGuard i vs g2) ++ ")"

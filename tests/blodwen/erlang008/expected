@@ -27,6 +27,12 @@ testMInteger
 -42
 not found
 not found
+testMDouble
+42.0
+0.0
+-42.0
+not found
+not found
 testMString
 found string!
 not found
