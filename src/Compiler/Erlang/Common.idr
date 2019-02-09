@@ -126,6 +126,8 @@ genOp (Cast IntType CharType) [x] = op "blodwen_int_to_char" [x]
 
 genOp (Cast from to) [x] = "throw(\"Invalid cast " ++ show from ++ "->" ++ show to ++ "\")"
 
+genOp BelieveMe [_, _, x] = x
+
 public export
 data ExtPrim = CCall | PutStr | GetStr
              | FileOpen | FileClose | FileReadLine | FileWriteLine | FileEOF

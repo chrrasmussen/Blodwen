@@ -225,10 +225,9 @@ namespace IO
             IO ret
   erlCall ret fn args = primIO (prim__erlCall ret fn args)
 
-  -- TODO: Is `believe_me x` a better solution?
   export
   erlUnsafeCast : (to : Type) -> {auto prf : ErlType to} -> ErlTerm -> to
-  erlUnsafeCast to term = unsafePerformIO $ erlCall to "blodwen_id" [term]
+  erlUnsafeCast to term = believe_me term
 
 
 namespace Concurrency
@@ -281,9 +280,8 @@ namespace Maps
 -- CAST --
 ----------
 
--- TODO: Is `believe_me x` a better solution?
 toErlTerm : ErlType a => a -> ErlTerm
-toErlTerm x = unsafePerformIO $ erlCall ErlTerm "blodwen_id" [x]
+toErlTerm x = believe_me x
 
 -- Allow all supported Erlang types to be type erased
 ErlType a => Cast a ErlTerm where
