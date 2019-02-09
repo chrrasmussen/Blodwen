@@ -499,19 +499,24 @@ mutual
     throw (InternalError ("Expected a list of matchers " ++ show args))
 
   readClause : Int -> (local : Int) -> (global : Int) -> SVars vars -> CExp vars -> Core annot (ErlClause vars)
+  -- MExact
   readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MExact")) _ [_, _, _, matchValue, func]) = do
     let localRef = CRef (MN "C" global)
     let globalRef = CRef (MN "G" global)
     pure $ MkErlClause (local + 1) [matchValue] !(genExp i vs localRef) (IsEq localRef globalRef) (CApp func [matchValue])
+  -- MAny
   readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MAny")) _ [_, func]) = do
     let ref = CRef (MN "C" local)
     pure $ MkErlClause (local + 1) [] !(genExp i vs ref) IsAny (CApp func [ref])
+  -- MInteger
   readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MInteger")) _ [_, func]) = do
     let ref = CRef (MN "C" local)
     pure $ MkErlClause (local + 1) [] !(genExp i vs ref) (IsInteger ref) (CApp func [ref])
+  -- MString
   readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MString")) _ [_, func]) = do
     let ref = CRef (MN "C" local)
     pure $ MkErlClause (local + 1) [] !(genExp i vs ref) (OrElse (IsBinary ref) (IsList ref)) (CApp func [ref])
+  -- MErlTuple/A
   readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MErlTuple0")) _ [_, val]) = do
     pure $ MkErlClause local [] "{}" IsAny val
   readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MErlTuple1")) _ [_, _, func, m1]) = do
@@ -524,6 +529,7 @@ mutual
       ("{" ++ showSep ", " [pattern m1res, pattern m2res] ++ "}")
       (AndAlso (guard m1res) (guard m2res))
       (CApp (CApp func [body m1res]) [body m2res])
+  -- MErlMap
   readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MErlMap")) _ [_, func]) = do
     let ref = CRef (MN "C" local)
     pure $ MkErlClause (local + 1) [] !(genExp i vs ref) (IsMap ref) (CApp func [ref])
@@ -538,6 +544,7 @@ mutual
     let globalRef = CRef (MN "G" global)
     clause <- readClause i local (global + 1) vs valueMatcher
     pure $ MkErlClause (nextLocal clause) (key :: globals clause) (!(genExp i vs globalRef) ++ " := " ++ (pattern clause)) (guard clause) (body clause)
+  -- Other
   readClause i local global vs matcher =
     throw (InternalError ("Badly formed clause " ++ show matcher))
 
