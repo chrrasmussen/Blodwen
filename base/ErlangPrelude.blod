@@ -213,17 +213,17 @@ namespace CaseExpr
 
 
 namespace IO
-  %extern prim__erlCall : (ret : Type) -> String -> ErlList xs -> (1 x : %World) -> IORes ret
+  %extern prim__erlCall : (0 ret : Type) -> String -> ErlList xs -> (1 x : %World) -> IORes ret
 
   export %inline
-  erlCall : (ret : Type) -> {auto ret_prf : ErlType ret} ->
+  erlCall : (0 ret : Type) -> {auto ret_prf : ErlType ret} ->
             String ->
             ErlList xs -> {auto inp_prf : ErlTypes xs} ->
             IO ret
   erlCall ret fn args = primIO (prim__erlCall ret fn args)
 
   export
-  erlUnsafeCast : (to : Type) -> {auto prf : ErlType to} -> ErlTerm -> to
+  erlUnsafeCast : (0 to : Type) -> {auto prf : ErlType to} -> ErlTerm -> to
   erlUnsafeCast to term = believe_me term
 
 
@@ -258,7 +258,7 @@ namespace Maps
 
   -- TODO: Return type may not match the actual content
   export
-  unsafeLookup : ErlType key => key -> (ret : Type) -> {auto prf : ErlType ret} -> ErlMap -> Maybe ret
+  unsafeLookup : ErlType key => key -> (0 ret : Type) -> {auto prf : ErlType ret} -> ErlMap -> Maybe ret
   unsafeLookup key ty m = unsafePerformIO $ do
     result <- erlCall ErlTerm "maps:find" [key, m]
     pure $ erlCase Nothing [MTuple [MExact (MkErlAtom "ok") id, MAny id] (\ok, value => Just (erlUnsafeCast ty value))] result
