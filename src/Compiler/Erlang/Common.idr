@@ -436,11 +436,6 @@ mutual
   genExtPrim : Int -> SVars vars -> ExtPrim -> List (CExp vars) -> Core annot String
   genExtPrim i vs CCall [ret, fn, args, world]
       = throw (InternalError ("Can't compile C FFI calls to Erlang yet"))
-  genExtPrim i vs ErlCall [_, ret, CPrimVal (Str fn), args, world]
-      = do parameterList <- readArgs i vs args
-           pure $ mkWorld $ "(" ++ fn ++ "(" ++ showSep ", " parameterList ++ "))"
-  genExtPrim i vs ErlCall [_, ret, fn, args, world] -- TODO: Implement?
-      = do pure $ mkWorld "false"
   genExtPrim i vs PutStr [arg, world]
       = pure $ "(fun() -> io_unicode_put_str(" ++ !(genExp i vs arg) ++ "), " ++ mkWorld mkUnit ++ " end())"
   genExtPrim i vs GetStr [world]
@@ -468,6 +463,11 @@ mutual
       = pure $ mkWorld $ "(set-box! "
                             ++ !(genExp i vs ref) ++ " "
                             ++ !(genExp i vs val) ++ ")"
+  genExtPrim i vs ErlCall [_, ret, CPrimVal (Str fn), args, world]
+      = do parameterList <- readArgs i vs args
+           pure $ mkWorld $ "(" ++ fn ++ "(" ++ showSep ", " parameterList ++ "))"
+  genExtPrim i vs ErlCall [_, ret, fn, args, world] -- TODO: Implement?
+      = do pure $ mkWorld "false"
   genExtPrim i vs ErlCase [_, def, matchers@(CCon _ _ _), term] = do
     clauses <- readMatchers i 0 vs matchers
     genErlCase i vs def clauses term
