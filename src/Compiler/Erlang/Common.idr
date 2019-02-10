@@ -180,9 +180,10 @@ mkErased = "erased"
 mkUnit : String
 mkUnit = "{}"
 
+-- PrimIO.MkIORes : {0 a : Type} -> a -> (1 x : %World) -> IORes a
 export
 mkWorld : String -> String
-mkWorld res = genConstructor 0 [mkErased, res, "false"] -- PrimIO.MkIORes : {0 a : Type} -> a -> (1 x : %World) -> IORes a -- TODO: Is the `false`s necessary?
+mkWorld res = genConstructor 0 [mkErased, res, "false"]
 
 -- io_pure : {0 a : Type} -> a -> IO a
 -- io_pure {a} x = MkIO {a} (\1 w : %World => (MkIORes {a} x w))
