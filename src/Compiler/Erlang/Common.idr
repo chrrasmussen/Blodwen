@@ -132,7 +132,7 @@ public export
 data ExtPrim = CCall | PutStr | GetStr
              | FileOpen | FileClose | FileReadLine | FileWriteLine | FileEOF
              | NewIORef | ReadIORef | WriteIORef
-             | ErlCall | ErlCase
+             | ErlCall | ErlCase | ErlReceive
              | Unknown Name
 
 export
@@ -150,6 +150,7 @@ Show ExtPrim where
   show WriteIORef = "WriteIORef"
   show ErlCall = "ErlCall"
   show ErlCase = "ErlCase"
+  show ErlReceive = "ErlReceive"
   show (Unknown n) = "Unknown " ++ show n
 
 toPrim : Name -> ExtPrim
@@ -166,7 +167,8 @@ toPrim pn@(NS _ n)
             (n == UN "prim__readIORef", ReadIORef),
             (n == UN "prim__writeIORef", WriteIORef),
             (n == UN "prim__erlCall", ErlCall),
-            (n == UN "erlCase", ErlCase)
+            (n == UN "erlCase", ErlCase),
+            (n == UN "prim__erlReceive", ErlReceive)
             ]
            (Unknown pn)
 toPrim pn = Unknown pn
@@ -470,6 +472,11 @@ mutual
     genErlCase i vs def clauses term
   genExtPrim i vs ErlCase [_, def, matchers, tm] =
     pure $ mkWorld "false" -- TODO: Do I need to implement this to make `erlCase` work with variables?
+  genExtPrim i vs ErlReceive [_, timeout, def, matchers@(CCon _ _ _), world] = do
+    clauses <- readMatchers i 0 vs matchers
+    genErlReceive i vs timeout def clauses
+  genExtPrim i vs ErlReceive [_, timeout, def, matchers, world] =
+    pure $ mkWorld "false" -- TODO: Do I need to implement this to make `erlReceive` work with variables?
   genExtPrim i vs (Unknown n) args
       = throw (InternalError ("Can't compile unknown external primitive " ++ show n))
   genExtPrim i vs prim args
@@ -613,6 +620,17 @@ mutual
       "(fun " ++
       showSep "; " (clausesStr ++ [defStr]) ++
       " end(" ++ !(genExp i vs term) ++ "))" ++
+      " end(" ++ showSep ", " globalValues ++ "))"
+
+  genErlReceive : Int -> SVars vars -> (timeout : CExp vars) -> (def : CExp vars) -> List (ErlClause vars) -> Core annot String
+  genErlReceive i vs timeout def clauses = do
+    globalValues <- traverse (genExp i vs) (concatGlobals clauses)
+    let globalVars = take (length globalValues) $ (zipWith (\name, idx => name ++ show idx) (repeat "G_") [0..])
+    clausesStr <- traverse (genClause i vs) clauses
+    pure $ mkWorld $ "(fun(" ++ showSep ", " globalVars ++") -> " ++
+      "(receive " ++
+      showSep "; " clausesStr ++
+      " after " ++ !(genExp i vs timeout) ++ " -> " ++ !(genExp i vs def) ++ " end)" ++
       " end(" ++ showSep ", " globalValues ++ "))"
 
 genArglist : SVars ns -> String
