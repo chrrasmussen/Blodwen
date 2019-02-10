@@ -543,31 +543,31 @@ mutual
   readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MInteger")) _ [_, mapper]) = createGuardClause i local global vs mapper IsInteger
   readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MDouble")) _ [_, mapper]) = createGuardClause i local global vs mapper IsDouble
   readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MString")) _ [_, mapper]) = createGuardClause i local global vs mapper (\ref => OrElse (IsBinary ref) (IsList ref))
-  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MErlAtom")) _ [_, mapper]) = createGuardClause i local global vs mapper IsAtom
-  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MErlBinary")) _ [_, mapper]) = createGuardClause i local global vs mapper IsBinary
-  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MErlCharlist")) _ [_, mapper]) = createGuardClause i local global vs mapper IsList
-  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MErlMap")) _ [_, mapper]) = createGuardClause i local global vs mapper IsMap
-  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MErlPid")) _ [_, mapper]) = createGuardClause i local global vs mapper IsPid
-  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MErlRef")) _ [_, mapper]) = createGuardClause i local global vs mapper IsRef
-  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MErlPort")) _ [_, mapper]) = createGuardClause i local global vs mapper IsPort
-  -- MErlList
-  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MErlList")) _ [_, _, xs, mapper]) = do
+  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MAtom")) _ [_, mapper]) = createGuardClause i local global vs mapper IsAtom
+  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MBinary")) _ [_, mapper]) = createGuardClause i local global vs mapper IsBinary
+  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MCharlist")) _ [_, mapper]) = createGuardClause i local global vs mapper IsList
+  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MMap")) _ [_, mapper]) = createGuardClause i local global vs mapper IsMap
+  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MPid")) _ [_, mapper]) = createGuardClause i local global vs mapper IsPid
+  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MRef")) _ [_, mapper]) = createGuardClause i local global vs mapper IsRef
+  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MPort")) _ [_, mapper]) = createGuardClause i local global vs mapper IsPort
+  -- MList
+  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MList")) _ [_, _, xs, mapper]) = do
     clauses <- readClauseErlMatchers i local global vs xs mapper
     let nextLoc = maybe local nextLocal (last' clauses)
     pure $ MkErlClause nextLoc (concatGlobals clauses)
       ("[" ++ showSep ", " (map pattern clauses) ++ "]")
       (concatGuards clauses)
       (applyToArgs mapper (map body clauses))
-  -- MErlTuple
-  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MErlTuple")) _ [_, _, xs, mapper]) = do
+  -- MTuple
+  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MTuple")) _ [_, _, xs, mapper]) = do
     clauses <- readClauseErlMatchers i local global vs xs mapper
     let nextLoc = maybe local nextLocal (last' clauses)
     pure $ MkErlClause nextLoc (concatGlobals clauses)
       ("{" ++ showSep ", " (map pattern clauses) ++ "}")
       (concatGuards clauses)
       (applyToArgs mapper (map body clauses))
-  -- MErlMapSubset
-  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MErlMapSubset")) _ [_, _, xs, mapper]) = do
+  -- MMapSubset
+  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MMapSubset")) _ [_, _, xs, mapper]) = do
     clauses <- readClauseErlMatchers i local global vs xs mapper
     let nextLoc = maybe local nextLocal (last' clauses)
     pure $ MkErlClause nextLoc (concatGlobals clauses)

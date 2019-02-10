@@ -57,7 +57,7 @@ testErlCase = do
 testErlCaseInErlCase : IO ()
 testErlCaseInErlCase = do
   putStrLn "testErlCaseInErlCase"
-  putStrLn (erlCase "not found" [MErlTuple [MAny id] (\val => erlCase "inner not found" [MInteger show] val)] (cast (MkErlTuple1 42)))
+  putStrLn (erlCase "not found" [MTuple [MAny id] (\val => erlCase "inner not found" [MInteger show] val)] (cast (MkErlTuple1 42)))
   putStrLn (erlCase "not found" [MExact "find this" (\val => erlCase "inner not found" [MExact "find this" id] (cast val))] (cast "find this"))
 
 testMExact : IO ()
@@ -102,79 +102,79 @@ testMString = do
   putStrLn (erlCase "not found" [MString id] (cast 42))
   putStrLn (erlCase "not found" [MString id] (cast (MkErlAtom "ok")))
 
-testMErlAtom : IO ()
-testMErlAtom = do
-  putStrLn "testMErlAtom"
-  putStrLn (erlCase "not found" [MErlAtom show] (cast (MkErlAtom "ok")))
-  putStrLn (erlCase "not found" [MErlAtom show] (cast (MkErlAtom "error")))
-  putStrLn (erlCase "not found" [MErlAtom show] (cast "string is not an atom"))
+testMAtom : IO ()
+testMAtom = do
+  putStrLn "testMAtom"
+  putStrLn (erlCase "not found" [MAtom show] (cast (MkErlAtom "ok")))
+  putStrLn (erlCase "not found" [MAtom show] (cast (MkErlAtom "error")))
+  putStrLn (erlCase "not found" [MAtom show] (cast "string is not an atom"))
 
-testMErlBinary : IO ()
-testMErlBinary = do
-  putStrLn "testMErlBinary"
-  putStrLn (erlCase "not found" [MErlBinary show] (cast binaryEx))
-  putStrLn (erlCase "not found" [MErlBinary show] (cast 42))
+testMBinary : IO ()
+testMBinary = do
+  putStrLn "testMBinary"
+  putStrLn (erlCase "not found" [MBinary show] (cast binaryEx))
+  putStrLn (erlCase "not found" [MBinary show] (cast 42))
 
-testMErlCharlist : IO ()
-testMErlCharlist = do
-  putStrLn "testMErlCharlist"
-  putStrLn (erlCase "not found" [MErlCharlist show] (cast charlistEx))
-  putStrLn (erlCase "not found" [MErlCharlist show] (cast 42))
+testMCharlist : IO ()
+testMCharlist = do
+  putStrLn "testMCharlist"
+  putStrLn (erlCase "not found" [MCharlist show] (cast charlistEx))
+  putStrLn (erlCase "not found" [MCharlist show] (cast 42))
 
-testMErlMap : IO ()
-testMErlMap = do
-  putStrLn "testMErlMap"
-  putStrLn (erlCase "not found" [MErlMap (const "found map")] (cast mapEmpty))
-  putStrLn (erlCase "not found" [MErlMap (const "found map")] (cast mapEx1))
-  putStrLn (erlCase "not found" [MErlMap (const "found map")] (cast "not a map"))
+testMMap : IO ()
+testMMap = do
+  putStrLn "testMMap"
+  putStrLn (erlCase "not found" [MMap (const "found map")] (cast mapEmpty))
+  putStrLn (erlCase "not found" [MMap (const "found map")] (cast mapEx1))
+  putStrLn (erlCase "not found" [MMap (const "found map")] (cast "not a map"))
 
-testMErlPid : IO ()
-testMErlPid = do
-  putStrLn "testMErlPid"
-  putStrLn (erlCase "not found" [MErlPid (const "found pid")] (cast pidEx))
-  putStrLn (erlCase "not found" [MErlPid (const "found pid")] (cast "not a pid"))
+testMPid : IO ()
+testMPid = do
+  putStrLn "testMPid"
+  putStrLn (erlCase "not found" [MPid (const "found pid")] (cast pidEx))
+  putStrLn (erlCase "not found" [MPid (const "found pid")] (cast "not a pid"))
 
-testMErlRef : IO ()
-testMErlRef = do
-  putStrLn "testMErlRef"
-  putStrLn (erlCase "not found" [MErlRef (const "found ref")] (cast refEx))
-  putStrLn (erlCase "not found" [MErlRef (const "found ref")] (cast "not a ref"))
+testMRef : IO ()
+testMRef = do
+  putStrLn "testMRef"
+  putStrLn (erlCase "not found" [MRef (const "found ref")] (cast refEx))
+  putStrLn (erlCase "not found" [MRef (const "found ref")] (cast "not a ref"))
 
-testMErlPort : IO ()
-testMErlPort = do
-  putStrLn "testMErlPort"
-  putStrLn (erlCase "not found" [MErlPort (const "found port")] (cast portEx))
-  putStrLn (erlCase "not found" [MErlPort (const "found port")] (cast "not a port"))
+testMPort : IO ()
+testMPort = do
+  putStrLn "testMPort"
+  putStrLn (erlCase "not found" [MPort (const "found port")] (cast portEx))
+  putStrLn (erlCase "not found" [MPort (const "found port")] (cast "not a port"))
 
-testMErlList : IO ()
-testMErlList = do
-  putStrLn "testMErlList"
-  putStrLn (erlCase "not found" [MErlList [MString id] id] (cast $ (the (ErlList _) ["first item"])))
-  putStrLn (erlCase "not found" [MErlList [MString id, MInteger show] (++)] (cast $ (the (ErlList _) ["first item", 42])))
-  putStrLn (erlCase "not found" [MErlList [MString id] id] (cast $ (the (ErlList _) [])))
-  putStrLn (erlCase "not found" [MErlList [MString id] id] (cast $ (the (ErlList _) ["a", "b"])))
+testMList : IO ()
+testMList = do
+  putStrLn "testMList"
+  putStrLn (erlCase "not found" [MList [MString id] id] (cast $ (the (ErlList _) ["first item"])))
+  putStrLn (erlCase "not found" [MList [MString id, MInteger show] (++)] (cast $ (the (ErlList _) ["first item", 42])))
+  putStrLn (erlCase "not found" [MList [MString id] id] (cast $ (the (ErlList _) [])))
+  putStrLn (erlCase "not found" [MList [MString id] id] (cast $ (the (ErlList _) ["a", "b"])))
 
-testMErlTuple : IO ()
-testMErlTuple = do
-  putStrLn "testMErlTuple"
-  putStrLn (erlCase "not found" [MErlTuple [] "is empty tuple"] (cast MkErlTuple0))
-  putStrLn (erlCase "not found" [MErlTuple [] "is empty tuple"] (cast ()))
-  putStrLn (erlCase "not found" [MErlTuple [] "is empty tuple"] (cast "not an empty tuple"))
-  putStrLn (erlCase "not found" [MErlTuple [MAny (const "found any value")] id] (cast (MkErlTuple1 42)))
-  putStrLn (erlCase "not found" [MErlTuple [MInteger show] id] (cast (MkErlTuple1 42)))
-  putStrLn (erlCase "not found" [MErlTuple [MString id] id] (cast (MkErlTuple1 "string inside 1-element tuple")))
-  putStrLn (erlCase "not found" [MErlTuple [MAny (const "found any value")] id] (cast 42))
-  putStrLn (erlCase "not found" [MErlTuple [MString id, MString id] (\x, y => x ++ " & " ++ y)] (cast (MkErlTuple2 "first string" "second string")))
-  putStrLn (erlCase "not found" [MErlTuple [MExact (MkErlAtom "ok") id, MInteger show] (\x, y => y)] (cast (MkErlTuple2 (MkErlAtom "ok") 42)))
-  putStrLn (erlCase "not found" [MErlTuple [MExact (MkErlAtom "ok") id, MInteger show] (\x, y => y)] (cast (MkErlTuple3 (MkErlAtom "ok") 42 "too long tuple")))
+testMTuple : IO ()
+testMTuple = do
+  putStrLn "testMTuple"
+  putStrLn (erlCase "not found" [MTuple [] "is empty tuple"] (cast MkErlTuple0))
+  putStrLn (erlCase "not found" [MTuple [] "is empty tuple"] (cast ()))
+  putStrLn (erlCase "not found" [MTuple [] "is empty tuple"] (cast "not an empty tuple"))
+  putStrLn (erlCase "not found" [MTuple [MAny (const "found any value")] id] (cast (MkErlTuple1 42)))
+  putStrLn (erlCase "not found" [MTuple [MInteger show] id] (cast (MkErlTuple1 42)))
+  putStrLn (erlCase "not found" [MTuple [MString id] id] (cast (MkErlTuple1 "string inside 1-element tuple")))
+  putStrLn (erlCase "not found" [MTuple [MAny (const "found any value")] id] (cast 42))
+  putStrLn (erlCase "not found" [MTuple [MString id, MString id] (\x, y => x ++ " & " ++ y)] (cast (MkErlTuple2 "first string" "second string")))
+  putStrLn (erlCase "not found" [MTuple [MExact (MkErlAtom "ok") id, MInteger show] (\x, y => y)] (cast (MkErlTuple2 (MkErlAtom "ok") 42)))
+  putStrLn (erlCase "not found" [MTuple [MExact (MkErlAtom "ok") id, MInteger show] (\x, y => y)] (cast (MkErlTuple3 (MkErlAtom "ok") 42 "too long tuple")))
 
-testMErlMapSubset : IO ()
-testMErlMapSubset = do
-  putStrLn "testMErlMapSubset"
-  putStrLn (erlCase "not found" [MErlMapSubset ["first" := MString id] id] (cast mapEx1))
-  putStrLn (erlCase "not found" [MErlMapSubset ["first" := MString id] id] (cast mapEx2))
-  putStrLn (erlCase "not found" [MErlMapSubset ["first" := MString id, "second" := MInteger id] (\first, second => first ++ " & " ++ show second)] (cast mapEx1))
-  putStrLn (erlCase "not found" [MErlMapSubset ["first" := MString id, "second" := MInteger id] (\first, second => first ++ " & " ++ show second)] (cast mapEx2))
+testMMapSubset : IO ()
+testMMapSubset = do
+  putStrLn "testMMapSubset"
+  putStrLn (erlCase "not found" [MMapSubset ["first" := MString id] id] (cast mapEx1))
+  putStrLn (erlCase "not found" [MMapSubset ["first" := MString id] id] (cast mapEx2))
+  putStrLn (erlCase "not found" [MMapSubset ["first" := MString id, "second" := MInteger id] (\first, second => first ++ " & " ++ show second)] (cast mapEx1))
+  putStrLn (erlCase "not found" [MMapSubset ["first" := MString id, "second" := MInteger id] (\first, second => first ++ " & " ++ show second)] (cast mapEx2))
 
 main : IO ()
 main = do
@@ -185,13 +185,13 @@ main = do
   testMInteger
   testMDouble
   testMString
-  testMErlAtom
-  testMErlBinary
-  testMErlCharlist
-  testMErlMap
-  testMErlPid
-  testMErlRef
-  testMErlPort
-  testMErlList
-  testMErlTuple
-  testMErlMapSubset
+  testMAtom
+  testMBinary
+  testMCharlist
+  testMMap
+  testMPid
+  testMRef
+  testMPort
+  testMList
+  testMTuple
+  testMMapSubset

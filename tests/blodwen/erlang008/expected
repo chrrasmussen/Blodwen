@@ -37,35 +37,35 @@ testMString
 found string!
 not found
 not found
-testMErlAtom
+testMAtom
 'ok'
 'error'
 not found
-testMErlBinary
+testMBinary
 <<"hello">>
 not found
-testMErlCharlist
+testMCharlist
 [104, 101, 108, 108, 111]
 not found
-testMErlMap
+testMMap
 found map
 found map
 not found
-testMErlPid
+testMPid
 found pid
 not found
-testMErlRef
+testMRef
 found ref
 not found
-testMErlPort
+testMPort
 found port
 not found
-testMErlList
+testMList
 first item
 first item42
 not found
 not found
-testMErlTuple
+testMTuple
 is empty tuple
 is empty tuple
 not found
@@ -76,7 +76,7 @@ not found
 first string & second string
 42
 not found
-testMErlMapSubset
+testMMapSubset
 ex1
 ex2
 not found

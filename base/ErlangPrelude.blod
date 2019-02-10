@@ -178,16 +178,16 @@ namespace CaseExpr
       MInteger      : (Integer -> a)      -> ErlMatcher a
       MDouble       : (Double -> a)       -> ErlMatcher a
       MString       : (String -> a)       -> ErlMatcher a
-      MErlAtom      : (ErlAtom -> a)      -> ErlMatcher a
-      MErlBinary    : (ErlBinary -> a)    -> ErlMatcher a
-      MErlCharlist  : (ErlCharlist -> a)  -> ErlMatcher a
-      MErlMap       : (ErlMap -> a)       -> ErlMatcher a
-      MErlPid       : (ErlPid -> a)       -> ErlMatcher a
-      MErlRef       : (ErlRef -> a)       -> ErlMatcher a
-      MErlPort      : (ErlPort -> a)      -> ErlMatcher a
-      MErlList      : ErlMatchers ErlMatcher xs  -> TypesToFunc xs ret -> ErlMatcher ret
-      MErlTuple     : ErlMatchers ErlMatcher xs  -> TypesToFunc xs ret -> ErlMatcher ret
-      MErlMapSubset : ErlMatchers ErlMapEntry xs -> TypesToFunc xs ret -> ErlMatcher ret
+      MAtom         : (ErlAtom -> a)      -> ErlMatcher a
+      MBinary       : (ErlBinary -> a)    -> ErlMatcher a
+      MCharlist     : (ErlCharlist -> a)  -> ErlMatcher a
+      MMap          : (ErlMap -> a)       -> ErlMatcher a
+      MPid          : (ErlPid -> a)       -> ErlMatcher a
+      MRef          : (ErlRef -> a)       -> ErlMatcher a
+      MPort         : (ErlPort -> a)      -> ErlMatcher a
+      MList         : ErlMatchers ErlMatcher xs  -> TypesToFunc xs ret -> ErlMatcher ret
+      MTuple        : ErlMatchers ErlMatcher xs  -> TypesToFunc xs ret -> ErlMatcher ret
+      MMapSubset    : ErlMatchers ErlMapEntry xs -> TypesToFunc xs ret -> ErlMatcher ret
 
     public export
     data ErlMatchers : (Type -> Type) -> List Type -> Type where
@@ -261,7 +261,7 @@ namespace Maps
   unsafeLookup : ErlType key => key -> (ret : Type) -> {auto prf : ErlType ret} -> ErlMap -> Maybe ret
   unsafeLookup key ty m = unsafePerformIO $ do
     result <- erlCall ErlTerm "maps:find" [key, m]
-    pure $ erlCase Nothing [MErlTuple [MExact (MkErlAtom "ok") id, MAny id] (\ok, value => Just (erlUnsafeCast ty value))] result
+    pure $ erlCase Nothing [MTuple [MExact (MkErlAtom "ok") id, MAny id] (\ok, value => Just (erlUnsafeCast ty value))] result
 
   export
   insert : (ErlType key, ErlType value) => key -> value -> ErlMap -> ErlMap
