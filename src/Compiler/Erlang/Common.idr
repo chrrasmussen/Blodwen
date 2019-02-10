@@ -167,7 +167,7 @@ toPrim pn@(NS _ n)
             (n == UN "prim__readIORef", ReadIORef),
             (n == UN "prim__writeIORef", WriteIORef),
             (n == UN "prim__erlCall", ErlCall),
-            (n == UN "erlCase", ErlCase),
+            (n == UN "prim__erlCase", ErlCase),
             (n == UN "prim__erlReceive", ErlReceive)
             ]
            (Unknown pn)

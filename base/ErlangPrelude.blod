@@ -205,9 +205,11 @@ namespace CaseExpr
     (:=) : ErlType key => key -> ErlMatcher value -> ErlMapEntry value
     (:=) = MkErlMapEntry
 
-  %extern
-  export
+  %extern prim__erlCase : a -> List (ErlMatcher a) -> ErlTerm -> a
+
+  export %inline
   erlCase : a -> List (ErlMatcher a) -> ErlTerm -> a
+  erlCase = prim__erlCase
 
 
 namespace IO
