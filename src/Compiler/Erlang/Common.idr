@@ -17,9 +17,10 @@ genString : String -> String
 genString s = concatMap okchar (unpack s)
   where
     okchar : Char -> String
-    okchar c = if isAlphaNum c || c == '_'
-                  then cast c
-                  else "C" ++ show (cast {to=Int} c) ++ "_"
+    okchar c =
+      if isAlphaNum c || c == '_'
+        then cast c
+        else "C" ++ show (cast {to=Int} c) ++ "_"
 
 mutual
   genName : Name -> String
@@ -42,8 +43,8 @@ mutual
 -- names are the same but refer to different bindings in the scope)
 public export
 data SVars : List Name -> Type where
-     Nil : SVars []
-     (::) : (svar : String) -> SVars ns -> SVars (n :: ns)
+  Nil : SVars []
+  (::) : (svar : String) -> SVars ns -> SVars (n :: ns)
 
 extendSVars : (xs : List Name) -> SVars ns -> SVars (xs ++ ns)
 extendSVars {ns} xs vs = extSVars' (cast (length ns)) xs vs
@@ -129,11 +130,12 @@ genOp (Cast from to) [x] = "throw(\"Invalid cast " ++ show from ++ "->" ++ show 
 genOp BelieveMe [_, _, x] = x
 
 public export
-data ExtPrim = CCall | PutStr | GetStr
-             | FileOpen | FileClose | FileReadLine | FileWriteLine | FileEOF
-             | NewIORef | ReadIORef | WriteIORef
-             | ErlCall | ErlCase | ErlReceive
-             | Unknown Name
+data ExtPrim
+  = CCall | PutStr | GetStr
+  | FileOpen | FileClose | FileReadLine | FileWriteLine | FileEOF
+  | NewIORef | ReadIORef | WriteIORef
+  | ErlCall | ErlCase | ErlReceive
+  | Unknown Name
 
 export
 Show ExtPrim where
@@ -154,23 +156,23 @@ Show ExtPrim where
   show (Unknown n) = "Unknown " ++ show n
 
 toPrim : Name -> ExtPrim
-toPrim pn@(NS _ n)
-    = cond [(n == UN "prim__cCall", CCall),
-            (n == UN "prim__putStr", PutStr),
-            (n == UN "prim__getStr", GetStr),
-            (n == UN "prim__open", FileOpen),
-            (n == UN "prim__close", FileClose),
-            (n == UN "prim__readLine", FileReadLine),
-            (n == UN "prim__writeLine", FileWriteLine),
-            (n == UN "prim__eof", FileEOF),
-            (n == UN "prim__newIORef", NewIORef),
-            (n == UN "prim__readIORef", ReadIORef),
-            (n == UN "prim__writeIORef", WriteIORef),
-            (n == UN "prim__erlCall", ErlCall),
-            (n == UN "prim__erlCase", ErlCase),
-            (n == UN "prim__erlReceive", ErlReceive)
-            ]
-           (Unknown pn)
+toPrim pn@(NS _ n) = cond [
+  (n == UN "prim__cCall", CCall),
+  (n == UN "prim__putStr", PutStr),
+  (n == UN "prim__getStr", GetStr),
+  (n == UN "prim__open", FileOpen),
+  (n == UN "prim__close", FileClose),
+  (n == UN "prim__readLine", FileReadLine),
+  (n == UN "prim__writeLine", FileWriteLine),
+  (n == UN "prim__eof", FileEOF),
+  (n == UN "prim__newIORef", NewIORef),
+  (n == UN "prim__readIORef", ReadIORef),
+  (n == UN "prim__writeIORef", WriteIORef),
+  (n == UN "prim__erlCall", ErlCall),
+  (n == UN "prim__erlCase", ErlCase),
+  (n == UN "prim__erlReceive", ErlReceive)
+  ]
+  (Unknown pn)
 toPrim pn = Unknown pn
 
 
@@ -387,42 +389,47 @@ mutual
   genExp : Int -> SVars vars -> CExp vars -> Core annot String
   genExp i vs (CLocal el) = pure $ lookupSVar el vs
   genExp i vs (CRef n) = pure $ genName n
-  genExp i vs (CLam x sc)
-      = do let vs' = extendSVars [x] vs
-           sc' <- genExp i vs' sc
-           pure $ "fun(" ++ lookupSVar Here vs' ++ ") -> " ++ sc' ++ " end"
-  genExp i vs (CLet x val sc)
-      = do let vs' = extendSVars [x] vs
-           val' <- genExp i vs val
-           sc' <- genExp i vs' sc
-           pure $ "(fun(" ++ lookupSVar Here vs' ++ ") -> " ++ sc' ++ " end(" ++ val' ++ "))"
-  genExp i vs (CApp x args)
-      = pure $ "(" ++ !(genExp i vs x) ++ "(" ++ showSep ", " !(traverse (genExp i vs) args) ++ "))"
-  genExp i vs con@(CCon x tag args)
-      = genCon i vs con
-  genExp i vs (COp op args)
-      = pure $ genOp op !(genArgs i vs args)
-  genExp i vs (CExtPrim p args)
-      = genExtPrim i vs (toPrim p) args
-  genExp i vs (CForce t) = pure $ "(" ++ !(genExp i vs t) ++ "())" -- TODO: Should use another mechanism to avoid evaluating delayed computation multiple times
-  genExp i vs (CDelay t) = pure $ "fun() -> " ++ !(genExp i vs t) ++ " end"
-  genExp i vs (CConCase sc alts def)
-      = do tcode <- genExp i vs sc
-           defc <- maybe (pure Nothing) (\v => pure (Just !(genExp i vs v))) def
-           conAlts <- traverse (genConAlt i vs) alts
-           pure $ "(fun "
-                   ++ showSep "; " (conAlts ++ genCaseDef defc)
-                   ++ " end(" ++ tcode ++ "))"
-  genExp i vs (CConstCase sc alts def)
-      = do defc <- maybe (pure Nothing) (\v => pure (Just !(genExp i vs v))) def
-           tcode <- genExp i vs sc
-           constAlts <- traverse (genConstAlt i vs) alts
-           pure $ "(fun "
-                   ++ showSep "; " (constAlts ++ genCaseDef defc)
-                   ++ " end(blodwen_normalize_value(" ++ tcode ++ ")))"
-  genExp i vs (CPrimVal c) = pure $ genConstant c
-  genExp i vs CErased = pure mkErased
-  genExp i vs (CCrash msg) = pure $ "throw(\"" ++ msg ++ "\")"
+  genExp i vs (CLam x sc) = do
+    let vs' = extendSVars [x] vs
+    sc' <- genExp i vs' sc
+    pure $ "fun(" ++ lookupSVar Here vs' ++ ") -> " ++ sc' ++ " end"
+  genExp i vs (CLet x val sc) = do
+    let vs' = extendSVars [x] vs
+    val' <- genExp i vs val
+    sc' <- genExp i vs' sc
+    pure $ "(fun(" ++ lookupSVar Here vs' ++ ") -> " ++ sc' ++ " end(" ++ val' ++ "))"
+  genExp i vs (CApp x args) =
+    pure $ "(" ++ !(genExp i vs x) ++ "(" ++ showSep ", " !(traverse (genExp i vs) args) ++ "))"
+  genExp i vs con@(CCon x tag args) =
+    genCon i vs con
+  genExp i vs (COp op args) =
+    pure $ genOp op !(genArgs i vs args)
+  genExp i vs (CExtPrim p args) =
+    genExtPrim i vs (toPrim p) args
+  genExp i vs (CForce t) =
+    pure $ "(" ++ !(genExp i vs t) ++ "())" -- TODO: Should use another mechanism to avoid evaluating delayed computation multiple times
+  genExp i vs (CDelay t) =
+    pure $ "fun() -> " ++ !(genExp i vs t) ++ " end"
+  genExp i vs (CConCase sc alts def) = do
+    tcode <- genExp i vs sc
+    defc <- maybe (pure Nothing) (\v => pure (Just !(genExp i vs v))) def
+    conAlts <- traverse (genConAlt i vs) alts
+    pure $ "(fun " ++
+      showSep "; " (conAlts ++ genCaseDef defc) ++
+      " end(" ++ tcode ++ "))"
+  genExp i vs (CConstCase sc alts def) = do
+    defc <- maybe (pure Nothing) (\v => pure (Just !(genExp i vs v))) def
+    tcode <- genExp i vs sc
+    constAlts <- traverse (genConstAlt i vs) alts
+    pure $ "(fun " ++
+      showSep "; " (constAlts ++ genCaseDef defc) ++
+      " end(blodwen_normalize_value(" ++ tcode ++ ")))"
+  genExp i vs (CPrimVal c) =
+    pure $ genConstant c
+  genExp i vs CErased =
+    pure mkErased
+  genExp i vs (CCrash msg) =
+    pure $ "throw(\"" ++ msg ++ "\")"
 
   -- Evaluate the outer `ErlList` to figure out the arity of the function call
   readArgs : Int -> SVars vars -> CExp vars -> Core annot (List String)
@@ -434,40 +441,33 @@ mutual
   -- overridden)
   export
   genExtPrim : Int -> SVars vars -> ExtPrim -> List (CExp vars) -> Core annot String
-  genExtPrim i vs CCall [ret, fn, args, world]
-      = throw (InternalError ("Can't compile C FFI calls to Erlang yet"))
-  genExtPrim i vs PutStr [arg, world]
-      = pure $ "(fun() -> io_unicode_put_str(" ++ !(genExp i vs arg) ++ "), " ++ mkWorld mkUnit ++ " end())"
-  genExtPrim i vs GetStr [world]
-      = pure $ mkWorld "io_unicode_get_str(\"\")"
-  genExtPrim i vs FileOpen [file, mode, bin, world]
-      = pure $ mkWorld $ "blodwen_open("
-                                      ++ !(genExp i vs file) ++ ", "
-                                      ++ !(genExp i vs mode) ++ ", "
-                                      ++ !(genExp i vs bin) ++ ")"
-  genExtPrim i vs FileClose [file, world]
-      = pure $ "(fun() -> blodwen_close(" ++ !(genExp i vs file) ++ "), " ++ mkWorld mkUnit ++ " end())"
-  genExtPrim i vs FileReadLine [file, world]
-      = pure $ mkWorld $ "blodwen_read_line(" ++ !(genExp i vs file) ++ ")"
-  genExtPrim i vs FileWriteLine [file, str, world]
-      = pure $ mkWorld $ "blodwen_write_line("
-                                        ++ !(genExp i vs file) ++ ", "
-                                        ++ !(genExp i vs str) ++ ")"
-  genExtPrim i vs FileEOF [file, world]
-      = pure $ mkWorld $ "blodwen_eof(" ++ !(genExp i vs file) ++ ")"
-  genExtPrim i vs NewIORef [_, val, world]
-      = pure $ mkWorld $ "(box " ++ !(genExp i vs val) ++ ")"
-  genExtPrim i vs ReadIORef [_, ref, world]
-      = pure $ mkWorld $ "(unbox " ++ !(genExp i vs ref) ++ ")"
-  genExtPrim i vs WriteIORef [_, ref, val, world]
-      = pure $ mkWorld $ "(set-box! "
-                            ++ !(genExp i vs ref) ++ " "
-                            ++ !(genExp i vs val) ++ ")"
-  genExtPrim i vs ErlCall [_, ret, CPrimVal (Str fn), args, world]
-      = do parameterList <- readArgs i vs args
-           pure $ mkWorld $ "(" ++ fn ++ "(" ++ showSep ", " parameterList ++ "))"
-  genExtPrim i vs ErlCall [_, ret, fn, args, world] -- TODO: Implement?
-      = do pure $ mkWorld "false"
+  genExtPrim i vs CCall [ret, fn, args, world] =
+    throw (InternalError ("Can't compile C FFI calls to Erlang yet"))
+  genExtPrim i vs PutStr [arg, world] =
+    pure $ "(fun() -> io_unicode_put_str(" ++ !(genExp i vs arg) ++ "), " ++ mkWorld mkUnit ++ " end())"
+  genExtPrim i vs GetStr [world] =
+    pure $ mkWorld "io_unicode_get_str(\"\")"
+  genExtPrim i vs FileOpen [file, mode, bin, world] =
+    pure $ mkWorld $ "blodwen_open(" ++ !(genExp i vs file) ++ ", " ++ !(genExp i vs mode) ++ ", " ++ !(genExp i vs bin) ++ ")"
+  genExtPrim i vs FileClose [file, world] =
+    pure $ "(fun() -> blodwen_close(" ++ !(genExp i vs file) ++ "), " ++ mkWorld mkUnit ++ " end())"
+  genExtPrim i vs FileReadLine [file, world] =
+    pure $ mkWorld $ "blodwen_read_line(" ++ !(genExp i vs file) ++ ")"
+  genExtPrim i vs FileWriteLine [file, str, world] =
+    pure $ mkWorld $ "blodwen_write_line(" ++ !(genExp i vs file) ++ ", " ++ !(genExp i vs str) ++ ")"
+  genExtPrim i vs FileEOF [file, world] =
+    pure $ mkWorld $ "blodwen_eof(" ++ !(genExp i vs file) ++ ")"
+  genExtPrim i vs NewIORef [_, val, world] =
+    pure $ mkWorld $ "(box " ++ !(genExp i vs val) ++ ")"
+  genExtPrim i vs ReadIORef [_, ref, world] =
+    pure $ mkWorld $ "(unbox " ++ !(genExp i vs ref) ++ ")"
+  genExtPrim i vs WriteIORef [_, ref, val, world] =
+    pure $ mkWorld $ "(set-box! " ++ !(genExp i vs ref) ++ " " ++ !(genExp i vs val) ++ ")"
+  genExtPrim i vs ErlCall [_, ret, CPrimVal (Str fn), args, world] = do
+    parameterList <- readArgs i vs args
+    pure $ mkWorld $ "(" ++ fn ++ "(" ++ showSep ", " parameterList ++ "))"
+  genExtPrim i vs ErlCall [_, ret, fn, args, world] =
+    pure $ mkWorld "false" -- TODO: Implement?
   genExtPrim i vs ErlCase [_, def, matchers@(CCon _ _ _), term] = do
     clauses <- readMatchers i 0 vs matchers
     genErlCase i vs def clauses term
@@ -478,11 +478,10 @@ mutual
     genErlReceive i vs timeout def clauses
   genExtPrim i vs ErlReceive [_, timeout, def, matchers, world] =
     pure $ mkWorld "false" -- TODO: Do I need to implement this to make `erlReceive` work with variables?
-  genExtPrim i vs (Unknown n) args
-      = throw (InternalError ("Can't compile unknown external primitive " ++ show n))
-  genExtPrim i vs prim args
-      = throw (InternalError ("Badly formed external primitive " ++ show prim
-                                ++ " " ++ show args))
+  genExtPrim i vs (Unknown n) args =
+    throw (InternalError ("Can't compile unknown external primitive " ++ show n))
+  genExtPrim i vs prim args =
+    throw (InternalError ("Badly formed external primitive " ++ show prim ++ " " ++ show args))
 
   data ErlGuard : List Name -> Type where
     IsAny     : ErlGuard vars
@@ -640,13 +639,13 @@ genArglist [x] = x
 genArglist (x :: xs) = x ++ ", " ++ genArglist xs
 
 genDef : Name -> CDef -> Core annot String
-genDef n (MkFun args exp)
-    = let vs = initSVars args in
-          pure $ genName n ++ "(" ++ genArglist vs ++ ") -> "
-                    ++ !(genExp 0 vs exp) ++ ".\n"
-genDef n (MkError exp)
-    = pure $ genName n ++ "() -> " ++ !(genExp 0 [] exp) ++ ".\n"
-genDef n (MkCon t a) = pure "" -- Nothing to compile here
+genDef n (MkFun args exp) =
+  let vs = initSVars args in
+   pure $ genName n ++ "(" ++ genArglist vs ++ ") -> " ++ !(genExp 0 vs exp) ++ ".\n"
+genDef n (MkError exp) =
+  pure $ genName n ++ "() -> " ++ !(genExp 0 [] exp) ++ ".\n"
+genDef n (MkCon t a) =
+  pure "" -- Nothing to compile here
 
 -- Convert the name to Erlang code
 -- (There may be no code generated, for example if it's a constructor)

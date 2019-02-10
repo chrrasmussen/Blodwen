@@ -32,19 +32,19 @@ findEscript : IO String
 findEscript = pure "/usr/bin/env escript"
 
 compileToErlang : Opts -> Ref Ctxt Defs -> ClosedTerm -> (outfile : String) -> Core annot ()
-compileToErlang (MkOpts moduleName) c tm outfile
-    = do ds <- getDirectives Erlang
-         (ns, tags) <- findUsedNames tm
-         defs <- get Ctxt
-         compdefs <- traverse (getErlang defs) ns
-         let code = concat compdefs
-         main <- genExp 0 [] !(compileExp tags tm)
-         support <- readDataFile "erlang/support.erl"
-         let scm = header ++ unlines ds ++ support ++ code ++ "main(Args) -> " ++ main ++ ".\n"
-         Right () <- coreLift $ writeFile outfile scm
-            | Left err => throw (FileErr outfile err)
-         coreLift $ chmod outfile 0o755
-         pure ()
+compileToErlang (MkOpts moduleName) c tm outfile = do
+    ds <- getDirectives Erlang
+    (ns, tags) <- findUsedNames tm
+    defs <- get Ctxt
+    compdefs <- traverse (getErlang defs) ns
+    let code = concat compdefs
+    main <- genExp 0 [] !(compileExp tags tm)
+    support <- readDataFile "erlang/support.erl"
+    let scm = header ++ unlines ds ++ support ++ code ++ "main(Args) -> " ++ main ++ ".\n"
+    Right () <- coreLift $ writeFile outfile scm
+      | Left err => throw (FileErr outfile err)
+    coreLift $ chmod outfile 0o755
+    pure ()
   where
     header : String
     header = "-module('" ++ moduleName ++ "').\n" ++
@@ -88,8 +88,7 @@ generateBeam c tm outfile = do
 -- TODO: generateEscript : Ref Ctxt Defs -> ClosedTerm -> (outfile : String) -> Core annot (Maybe String)
 
 -- TODO: Validate `outfile`
-compileExpr : Ref Ctxt Defs ->
-              ClosedTerm -> (outfile : String) -> Core annot (Maybe String)
+compileExpr : Ref Ctxt Defs -> ClosedTerm -> (outfile : String) -> Core annot (Maybe String)
 compileExpr c tm outfile =
   case extension outfile of
     Just "erl" => generateErl c tm outfile
