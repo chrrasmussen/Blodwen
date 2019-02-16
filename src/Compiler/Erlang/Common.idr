@@ -531,10 +531,10 @@ mutual
 
   readClause : Int -> (local : Int) -> (global : Int) -> SVars vars -> CExp vars -> Core annot (ErlClause vars)
   -- MExact
-  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MExact")) _ [_, _, _, matchValue, mapper]) = do
+  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MExact")) _ [_, _, _, matchValue, returnValue]) = do
     let localRef = CRef (MN "C" global)
     let globalRef = CRef (MN "G" global)
-    pure $ MkErlClause (local + 1) [matchValue] !(genExp i vs localRef) (IsEq localRef globalRef) (CApp mapper [matchValue])
+    pure $ MkErlClause (local + 1) [matchValue] !(genExp i vs localRef) (IsEq localRef globalRef) returnValue
   -- MAny
   readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MAny")) _ [_, mapper]) = do
     let ref = CRef (MN "C" local)

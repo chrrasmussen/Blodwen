@@ -58,17 +58,17 @@ testErlCaseInErlCase : IO ()
 testErlCaseInErlCase = do
   putStrLn "testErlCaseInErlCase"
   putStrLn (erlCase "not found" [MTuple [MAny id] (\val => erlCase "inner not found" [MInteger show] val)] (cast (MkErlTuple1 42)))
-  putStrLn (erlCase "not found" [MExact "find this" (\val => erlCase "inner not found" [MExact "find this" id] (cast val))] (cast "find this"))
+  putStrLn (erlCase "not found" [MString (\str => erlCase "inner not found" [MExact "find this" "find this"] (cast str))] (cast "find this"))
 
 testMExact : IO ()
 testMExact = do
   putStrLn "testMExact"
-  putStrLn (erlCase "not found" [MExact "match me" id] (cast "match me"))
-  putStrLn (erlCase "not found" [MExact "match me" id] (cast "something else"))
-  putStrLn (erlCase "not found" [MExact (MkErlAtom "ok") show] (cast (MkErlAtom "ok")))
-  putStrLn (erlCase "not found" [MExact (MkErlAtom "ok") show] (cast "ok"))
-  putStrLn (erlCase "not found" [MExact 42 show] (cast 42))
-  putStrLn (erlCase "not found" [MExact 42 show] (cast (the Double 42)))
+  putStrLn (erlCase "not found" [MExact "match me" "match me"] (cast "match me"))
+  putStrLn (erlCase "not found" [MExact "match me" "match me"] (cast "something else"))
+  putStrLn (erlCase "not found" [MExact (MkErlAtom "ok") "'ok'"] (cast (MkErlAtom "ok")))
+  putStrLn (erlCase "not found" [MExact (MkErlAtom "ok") "'ok'"] (cast "ok"))
+  putStrLn (erlCase "not found" [MExact 42 "42"] (cast 42))
+  putStrLn (erlCase "not found" [MExact 42 "42"] (cast (the Double 42)))
 
 testMAny : IO ()
 testMAny = do
@@ -165,8 +165,8 @@ testMTuple = do
   putStrLn (erlCase "not found" [MTuple [MString id] id] (cast (MkErlTuple1 "string inside 1-element tuple")))
   putStrLn (erlCase "not found" [MTuple [MAny (const "found any value")] id] (cast 42))
   putStrLn (erlCase "not found" [MTuple [MString id, MString id] (\x, y => x ++ " & " ++ y)] (cast (MkErlTuple2 "first string" "second string")))
-  putStrLn (erlCase "not found" [MTuple [MExact (MkErlAtom "ok") id, MInteger show] (\x, y => y)] (cast (MkErlTuple2 (MkErlAtom "ok") 42)))
-  putStrLn (erlCase "not found" [MTuple [MExact (MkErlAtom "ok") id, MInteger show] (\x, y => y)] (cast (MkErlTuple3 (MkErlAtom "ok") 42 "too long tuple")))
+  putStrLn (erlCase "not found" [MTuple [MExact (MkErlAtom "ok") (), MInteger show] (\x, y => y)] (cast (MkErlTuple2 (MkErlAtom "ok") 42)))
+  putStrLn (erlCase "not found" [MTuple [MExact (MkErlAtom "ok") (), MInteger show] (\x, y => y)] (cast (MkErlTuple3 (MkErlAtom "ok") 42 "too long tuple")))
 
 testMMapSubset : IO ()
 testMMapSubset = do
