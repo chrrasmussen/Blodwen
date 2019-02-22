@@ -216,11 +216,16 @@ namespace IO
   %extern prim__erlCall : (0 ret : Type) -> String -> ErlList xs -> (1 x : %World) -> IORes ret
 
   export %inline
-  erlCall : (0 ret : Type) -> {auto ret_prf : ErlType ret} ->
-            String ->
-            ErlList xs -> {auto inp_prf : ErlTypes xs} ->
-            IO ret
-  erlCall ret fn args = primIO (prim__erlCall ret fn args)
+  erlUnsafeCall : (0 ret : Type) -> {auto ret_prf : ErlType ret} ->
+                  String ->
+                  ErlList xs -> {auto inp_prf : ErlTypes xs} ->
+                  IO ret
+  erlUnsafeCall ret fn args = primIO (prim__erlCall ret fn args)
+
+  -- TODO: Validate `fn` as well? (Space and special characters make syntax invalid)
+  export %inline
+  erlCall : String -> ErlList xs -> {auto prf : ErlTypes xs} -> IO ErlTerm
+  erlCall fn args = primIO (prim__erlCall ErlTerm fn args)
 
   export
   erlUnsafeCast : (0 to : Type) -> {auto prf : ErlType to} -> ErlTerm -> to
@@ -230,17 +235,17 @@ namespace IO
 namespace Concurrency
   export
   erlSelf : IO ErlPid
-  erlSelf = erlCall ErlPid "erlang:self" []
+  erlSelf = erlUnsafeCall ErlPid "erlang:self" []
 
   export
   erlSpawn : IO () -> IO ErlPid
-  erlSpawn action = erlCall ErlPid "erlang:spawn_link" [MkErlIO0 action]
+  erlSpawn action = erlUnsafeCall ErlPid "erlang:spawn_link" [MkErlIO0 action]
 
   -- TODO: Support more receivers than just `ErlPid`
   export
   erlSend : ErlType a => ErlPid -> a -> IO ()
   erlSend receiver value = do
-    erlCall ErlTerm "erlang:send" [receiver, value]
+    erlCall "erlang:send" [receiver, value]
     pure ()
 
   %extern prim__erlReceive : (ms : Int) -> a -> List (ErlMatcher a) -> (1 x : %World) -> IORes a
@@ -254,25 +259,25 @@ namespace Concurrency
 namespace Maps
   export
   empty : ErlMap
-  empty = unsafePerformIO $ erlCall ErlMap "maps:new" []
+  empty = unsafePerformIO $ erlUnsafeCall ErlMap "maps:new" []
 
   -- TODO: Return type may not match the actual content
   export
   unsafeLookup : ErlType key => key -> (0 ret : Type) -> {auto prf : ErlType ret} -> ErlMap -> Maybe ret
   unsafeLookup key ty m = unsafePerformIO $ do
-    result <- erlCall ErlTerm "maps:find" [key, m]
+    result <- erlUnsafeCall ErlTerm "maps:find" [key, m]
     pure $ erlCase Nothing [MTuple [MExact (MkErlAtom "ok") (), MAny id] (\ok, value => Just (erlUnsafeCast ty value))] result
 
   export
   insert : (ErlType key, ErlType value) => key -> value -> ErlMap -> ErlMap
-  insert key value m = unsafePerformIO $ erlCall ErlMap "maps:put" [key, value, m]
+  insert key value m = unsafePerformIO $ erlUnsafeCall ErlMap "maps:put" [key, value, m]
 
   export
   delete : ErlType key => key -> ErlMap -> ErlMap
-  delete key m = unsafePerformIO $ erlCall ErlMap "maps:remove" [key, m]
+  delete key m = unsafePerformIO $ erlUnsafeCall ErlMap "maps:remove" [key, m]
 
   size : ErlMap -> Integer
-  size m = unsafePerformIO $ erlCall Integer "maps:size" [m]
+  size m = unsafePerformIO $ erlUnsafeCall Integer "maps:size" [m]
 
 
 ----------

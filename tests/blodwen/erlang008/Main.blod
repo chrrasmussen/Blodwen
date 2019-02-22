@@ -16,28 +16,28 @@ get_charlist() -> "hello".
 -- Wrappers around Erlang functions
 
 mapEmpty : ErlMap
-mapEmpty = unsafePerformIO $ erlCall ErlMap "get_map_empty" []
+mapEmpty = unsafePerformIO $ erlUnsafeCall ErlMap "get_map_empty" []
 
 mapEx1 : ErlMap
-mapEx1 = unsafePerformIO $ erlCall ErlMap "get_map_ex1" []
+mapEx1 = unsafePerformIO $ erlUnsafeCall ErlMap "get_map_ex1" []
 
 mapEx2 : ErlMap
-mapEx2 = unsafePerformIO $ erlCall ErlMap "get_map_ex2" []
+mapEx2 = unsafePerformIO $ erlUnsafeCall ErlMap "get_map_ex2" []
 
 pidEx : ErlPid
-pidEx = unsafePerformIO $ erlCall ErlPid "get_pid" []
+pidEx = unsafePerformIO $ erlUnsafeCall ErlPid "get_pid" []
 
 refEx : ErlRef
-refEx = unsafePerformIO $ erlCall ErlRef "get_ref" []
+refEx = unsafePerformIO $ erlUnsafeCall ErlRef "get_ref" []
 
 portEx : ErlPort
-portEx = unsafePerformIO $ erlCall ErlPort "get_port" []
+portEx = unsafePerformIO $ erlUnsafeCall ErlPort "get_port" []
 
 binaryEx : ErlBinary
-binaryEx = unsafePerformIO $ erlCall ErlBinary "get_binary" []
+binaryEx = unsafePerformIO $ erlUnsafeCall ErlBinary "get_binary" []
 
 charlistEx : ErlCharlist
-charlistEx = unsafePerformIO $ erlCall ErlCharlist "get_charlist" []
+charlistEx = unsafePerformIO $ erlUnsafeCall ErlCharlist "get_charlist" []
 
 
 -- Tests
