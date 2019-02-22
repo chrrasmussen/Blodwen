@@ -134,7 +134,7 @@ data ExtPrim
   = CCall | PutStr | GetStr
   | FileOpen | FileClose | FileReadLine | FileWriteLine | FileEOF
   | NewIORef | ReadIORef | WriteIORef
-  | ErlCall | ErlCase | ErlReceive
+  | ErlUnsafeCall | ErlCase | ErlReceive
   | Unknown Name
 
 export
@@ -150,7 +150,7 @@ Show ExtPrim where
   show NewIORef = "NewIORef"
   show ReadIORef = "ReadIORef"
   show WriteIORef = "WriteIORef"
-  show ErlCall = "ErlCall"
+  show ErlUnsafeCall = "ErlUnsafeCall"
   show ErlCase = "ErlCase"
   show ErlReceive = "ErlReceive"
   show (Unknown n) = "Unknown " ++ show n
@@ -168,7 +168,7 @@ toPrim pn@(NS _ n) = cond [
   (n == UN "prim__newIORef", NewIORef),
   (n == UN "prim__readIORef", ReadIORef),
   (n == UN "prim__writeIORef", WriteIORef),
-  (n == UN "prim__erlCall", ErlCall),
+  (n == UN "prim__erlUnsafeCall", ErlUnsafeCall),
   (n == UN "prim__erlCase", ErlCase),
   (n == UN "prim__erlReceive", ErlReceive)
   ]
@@ -463,10 +463,10 @@ mutual
     pure $ mkWorld $ "(unbox " ++ !(genExp i vs ref) ++ ")"
   genExtPrim i vs WriteIORef [_, ref, val, world] =
     pure $ mkWorld $ "(set-box! " ++ !(genExp i vs ref) ++ " " ++ !(genExp i vs val) ++ ")"
-  genExtPrim i vs ErlCall [_, ret, CPrimVal (Str fn), args, world] = do
+  genExtPrim i vs ErlUnsafeCall [_, ret, CPrimVal (Str fn), args, world] = do
     parameterList <- readArgs i vs args
     pure $ mkWorld $ "(" ++ fn ++ "(" ++ showSep ", " parameterList ++ "))"
-  genExtPrim i vs ErlCall [_, ret, fn, args, world] =
+  genExtPrim i vs ErlUnsafeCall [_, ret, fn, args, world] =
     pure $ mkWorld "false" -- TODO: Implement?
   genExtPrim i vs ErlCase [_, def, matchers@(CCon _ _ _), term] = do
     clauses <- readMatchers i 0 vs matchers

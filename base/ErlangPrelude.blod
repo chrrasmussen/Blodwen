@@ -213,19 +213,19 @@ namespace CaseExpr
 
 
 namespace IO
-  %extern prim__erlCall : (0 ret : Type) -> String -> ErlList xs -> (1 x : %World) -> IORes ret
+  %extern prim__erlUnsafeCall : (0 ret : Type) -> String -> ErlList xs -> (1 x : %World) -> IORes ret
 
   export %inline
   erlUnsafeCall : (0 ret : Type) -> {auto ret_prf : ErlType ret} ->
                   String ->
                   ErlList xs -> {auto inp_prf : ErlTypes xs} ->
                   IO ret
-  erlUnsafeCall ret fn args = primIO (prim__erlCall ret fn args)
+  erlUnsafeCall ret fn args = primIO (prim__erlUnsafeCall ret fn args)
 
   -- TODO: Validate `fn` as well? (Space and special characters make syntax invalid)
   export %inline
   erlCall : String -> ErlList xs -> {auto prf : ErlTypes xs} -> IO ErlTerm
-  erlCall fn args = primIO (prim__erlCall ErlTerm fn args)
+  erlCall fn args = primIO (prim__erlUnsafeCall ErlTerm fn args)
 
   export
   erlUnsafeCast : (0 to : Type) -> {auto prf : ErlType to} -> ErlTerm -> to
