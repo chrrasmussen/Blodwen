@@ -4,7 +4,7 @@ import ErlangPrelude
 
 erlPrintLn : ErlType a => a -> IO ()
 erlPrintLn x = do
-  erlCall "io:format" ["~p~n", the (List _) [x]]
+  erlCall "io" "format" ["~p~n", the (List _) [x]]
   pure ()
 
 

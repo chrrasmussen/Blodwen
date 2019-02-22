@@ -213,7 +213,11 @@ namespace CaseExpr
 
 
 namespace IO
+  -- Creates an Erlang function call similar to: `fn`(`args...`)
   %extern prim__erlUnsafeCall : (0 ret : Type) -> String -> ErlList xs -> (1 x : %World) -> IORes ret
+
+  -- Creates an Erlang function call similar to: catch (binary_to_atom(`mod`)):(binary_to_atom(`fn`))(`args...`)
+  %extern prim__erlCall : String -> String -> ErlList xs -> (1 x : %World) -> IORes ErlTerm
 
   export %inline
   erlUnsafeCall : (0 ret : Type) -> {auto ret_prf : ErlType ret} ->
@@ -222,10 +226,9 @@ namespace IO
                   IO ret
   erlUnsafeCall ret fn args = primIO (prim__erlUnsafeCall ret fn args)
 
-  -- TODO: Validate `fn` as well? (Space and special characters make syntax invalid)
   export %inline
-  erlCall : String -> ErlList xs -> {auto prf : ErlTypes xs} -> IO ErlTerm
-  erlCall fn args = primIO (prim__erlUnsafeCall ErlTerm fn args)
+  erlCall : String -> String -> ErlList xs -> {auto prf : ErlTypes xs} -> IO ErlTerm
+  erlCall modName fnName args = primIO (prim__erlCall modName fnName args)
 
   export
   erlUnsafeCast : (0 to : Type) -> {auto prf : ErlType to} -> ErlTerm -> to
@@ -245,7 +248,7 @@ namespace Concurrency
   export
   erlSend : ErlType a => ErlPid -> a -> IO ()
   erlSend receiver value = do
-    erlCall "erlang:send" [receiver, value]
+    erlCall "erlang" "send" [receiver, value]
     pure ()
 
   %extern prim__erlReceive : (ms : Int) -> a -> List (ErlMatcher a) -> (1 x : %World) -> IORes a

@@ -134,7 +134,7 @@ data ExtPrim
   = CCall | PutStr | GetStr
   | FileOpen | FileClose | FileReadLine | FileWriteLine | FileEOF
   | NewIORef | ReadIORef | WriteIORef
-  | ErlUnsafeCall | ErlCase | ErlReceive
+  | ErlUnsafeCall | ErlCall | ErlCase | ErlReceive
   | Unknown Name
 
 export
@@ -151,6 +151,7 @@ Show ExtPrim where
   show ReadIORef = "ReadIORef"
   show WriteIORef = "WriteIORef"
   show ErlUnsafeCall = "ErlUnsafeCall"
+  show ErlCall = "ErlCall"
   show ErlCase = "ErlCase"
   show ErlReceive = "ErlReceive"
   show (Unknown n) = "Unknown " ++ show n
@@ -169,6 +170,7 @@ toPrim pn@(NS _ n) = cond [
   (n == UN "prim__readIORef", ReadIORef),
   (n == UN "prim__writeIORef", WriteIORef),
   (n == UN "prim__erlUnsafeCall", ErlUnsafeCall),
+  (n == UN "prim__erlCall", ErlCall),
   (n == UN "prim__erlCase", ErlCase),
   (n == UN "prim__erlReceive", ErlReceive)
   ]
@@ -202,6 +204,8 @@ mkCurriedFun (x :: xs) body = "fun(" ++ x ++ ") -> " ++ mkCurriedFun xs body ++ 
 mkUncurriedFun : List String -> String -> String
 mkUncurriedFun xs body = "fun(" ++ showSep ", " xs ++ ") -> " ++ body ++ " end"
 
+mkStringToAtom : String -> String
+mkStringToAtom str = "(binary_to_atom(unicode:characters_to_binary(" ++ str ++ "), utf8))"
 
 genConstant : Constant -> String
 genConstant (I x) = show x
@@ -347,7 +351,7 @@ mutual
   genCon i vs (CCon (NS ["Prelude"] (UN "Nil")) _ _) = pure "[]"
   genCon i vs (CCon (NS ["Prelude"] (UN "::")) _ [_, x, xs]) = pure $ "[" ++ !(genExp i vs x) ++ " | " ++ !(genExp i vs xs) ++ "]"
   -- ErlAtom
-  genCon i vs (CCon (NS ["Atoms", "ErlangPrelude"] (UN "MkErlAtom")) _ [x]) = pure $ "binary_to_atom(unicode:characters_to_binary(" ++ !(genExp i vs x) ++ "), utf8)"
+  genCon i vs (CCon (NS ["Atoms", "ErlangPrelude"] (UN "MkErlAtom")) _ [x]) = pure $ mkStringToAtom !(genExp i vs x)
   -- ErlBinary
   genCon i vs (CCon (NS ["Strings", "ErlangPrelude"] (UN "MkErlBinary")) _ [x]) = pure $ "unicode:characters_to_binary(" ++ !(genExp i vs x) ++ ")"
   -- ErlCharlist
@@ -467,6 +471,11 @@ mutual
     parameterList <- readArgs i vs args
     pure $ mkWorld $ "(" ++ fn ++ "(" ++ showSep ", " parameterList ++ "))"
   genExtPrim i vs ErlUnsafeCall [_, ret, fn, args, world] =
+    pure $ mkWorld "false" -- TODO: Implement?
+  genExtPrim i vs ErlCall [_, modName, fnName, args@(CCon _ _ _), world] = do
+    parameterList <- readArgs i vs args
+    pure $ mkWorld $ "(catch " ++ mkStringToAtom !(genExp i vs modName) ++ ":" ++ mkStringToAtom !(genExp i vs fnName) ++ "(" ++ showSep ", " parameterList ++ "))"
+  genExtPrim i vs ErlCall [_, modName, fnName, args, world] =
     pure $ mkWorld "false" -- TODO: Implement?
   genExtPrim i vs ErlCase [_, def, matchers@(CCon _ _ _), term] = do
     clauses <- readMatchers i 0 vs matchers
