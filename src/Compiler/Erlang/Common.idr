@@ -563,10 +563,8 @@ mutual
   -- Simple guards
   readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MInteger")) _ [_, mapper]) = createGuardClause i local global vs mapper IsInteger
   readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MDouble")) _ [_, mapper]) = createGuardClause i local global vs mapper IsDouble
-  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MString")) _ [_, mapper]) = createGuardClause i local global vs mapper (\ref => OrElse (IsBinary ref) (IsList ref))
   readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MAtom")) _ [_, mapper]) = createGuardClause i local global vs mapper IsAtom
   readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MBinary")) _ [_, mapper]) = createGuardClause i local global vs mapper IsBinary
-  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MCharlist")) _ [_, mapper]) = createGuardClause i local global vs mapper IsList
   readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MMap")) _ [_, mapper]) = createGuardClause i local global vs mapper IsMap
   readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MPid")) _ [_, mapper]) = createGuardClause i local global vs mapper IsPid
   readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MRef")) _ [_, mapper]) = createGuardClause i local global vs mapper IsRef

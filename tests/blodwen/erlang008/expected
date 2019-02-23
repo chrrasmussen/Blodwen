@@ -33,19 +33,12 @@ testMDouble
 -42.0
 not found
 not found
-testMString
-found string!
-not found
-not found
 testMAtom
 'ok'
 'error'
 not found
 testMBinary
 <<"hello">>
-not found
-testMCharlist
-[104, 101, 108, 108, 111]
 not found
 testMMap
 found map

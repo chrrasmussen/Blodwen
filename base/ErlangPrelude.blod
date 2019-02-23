@@ -187,10 +187,8 @@ namespace CaseExpr
       MAny          : (ErlTerm -> a)      -> ErlMatcher a
       MInteger      : (Integer -> a)      -> ErlMatcher a
       MDouble       : (Double -> a)       -> ErlMatcher a
-      MString       : (String -> a)       -> ErlMatcher a
       MAtom         : (ErlAtom -> a)      -> ErlMatcher a
       MBinary       : (ErlBinary -> a)    -> ErlMatcher a
-      MCharlist     : (ErlCharlist -> a)  -> ErlMatcher a
       MMap          : (ErlMap -> a)       -> ErlMatcher a
       MPid          : (ErlPid -> a)       -> ErlMatcher a
       MRef          : (ErlRef -> a)       -> ErlMatcher a

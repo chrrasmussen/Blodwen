@@ -10,7 +10,6 @@ get_pid() -> list_to_pid("<0.4.1>").
 get_ref() -> list_to_ref("#Ref<0.4192537678.4073193475.71181>").
 get_port() -> list_to_port("#Port<0.4>").
 get_binary() -> <<"hello">>.
-get_charlist() -> "hello".
 """
 
 -- Wrappers around Erlang functions
@@ -36,8 +35,11 @@ portEx = unsafePerformIO $ erlUnsafeCall ErlPort "get_port" []
 binaryEx : ErlBinary
 binaryEx = unsafePerformIO $ erlUnsafeCall ErlBinary "get_binary" []
 
-charlistEx : ErlCharlist
-charlistEx = unsafePerformIO $ erlUnsafeCall ErlCharlist "get_charlist" []
+
+-- Helper functions
+
+unwrapBinary : ErlBinary -> String
+unwrapBinary (MkErlBinary str) = str
 
 
 -- Tests
@@ -48,17 +50,17 @@ testErlCase = do
   putStrLn (erlCase "not found" [] (cast "any value"))
   putStrLn (erlCase "not found" [] (cast 1))
   putStrLn (erlCase "not found" [MInteger show] (cast "string is not an integer"))
-  putStrLn (erlCase "not found" [MInteger show, MString id] (cast "string matches on second try"))
+  putStrLn (erlCase "not found" [MInteger show, MBinary unwrapBinary] (cast "string matches on second try"))
   printLn (erlCase (-1) [MInteger id] (cast 42))
   printLn (erlCase (-1) [MInteger id] (cast "string is not an integer"))
-  printLn (erlCase Nothing [MString Just] (cast "val"))
-  printLn (erlCase Nothing [MString Just] (cast 0))
+  printLn (erlCase Nothing [MBinary (Just . unwrapBinary)] (cast "val"))
+  printLn (erlCase Nothing [MBinary (Just . unwrapBinary)] (cast 0))
 
 testErlCaseInErlCase : IO ()
 testErlCaseInErlCase = do
   putStrLn "testErlCaseInErlCase"
   putStrLn (erlCase "not found" [MTuple [MAny id] (\val => erlCase "inner not found" [MInteger show] val)] (cast (MkErlTuple1 42)))
-  putStrLn (erlCase "not found" [MString (\str => erlCase "inner not found" [MExact "find this" "find this"] (cast str))] (cast "find this"))
+  putStrLn (erlCase "not found" [MBinary (\str => erlCase "inner not found" [MExact "find this" "find this"] (cast str))] (cast "find this"))
 
 testMExact : IO ()
 testMExact = do
@@ -95,13 +97,6 @@ testMDouble = do
   putStrLn (erlCase "not found" [MDouble show] (cast "string is not an double"))
   putStrLn (erlCase "not found" [MDouble show] (cast 42))
 
-testMString : IO ()
-testMString = do
-  putStrLn "testMString"
-  putStrLn (erlCase "not found" [MString (++ "!")] (cast "found string"))
-  putStrLn (erlCase "not found" [MString id] (cast 42))
-  putStrLn (erlCase "not found" [MString id] (cast (MkErlAtom "ok")))
-
 testMAtom : IO ()
 testMAtom = do
   putStrLn "testMAtom"
@@ -114,12 +109,6 @@ testMBinary = do
   putStrLn "testMBinary"
   putStrLn (erlCase "not found" [MBinary show] (cast binaryEx))
   putStrLn (erlCase "not found" [MBinary show] (cast 42))
-
-testMCharlist : IO ()
-testMCharlist = do
-  putStrLn "testMCharlist"
-  putStrLn (erlCase "not found" [MCharlist show] (cast charlistEx))
-  putStrLn (erlCase "not found" [MCharlist show] (cast 42))
 
 testMMap : IO ()
 testMMap = do
@@ -155,19 +144,19 @@ testMNil = do
 testMCons : IO ()
 testMCons = do
   putStrLn "testMCons"
-  putStrLn (erlCase "not found" [MCons (MString id) (MString id) (++)] (cast (the (ErlCons String String) ("a" :: "b"))))
-  putStrLn (erlCase "not found" [MCons (MString id) (MString id) (++)] (cast "not a list cons"))
-  putStrLn (erlCase "not found" [MCons (MString id) (MInteger show) (++)] (cast (the (ErlCons String Integer) ("a" :: 42))))
-  putStrLn (erlCase "not found" [MCons (MString id) (MNil ()) (\x, y => x)] (cast (the (ErlCons String ErlNil) ["a"])))
-  putStrLn (erlCase "not found" [MCons (MString id) (MCons (MInteger show) (MNil ()) (\x, y => x)) (++)] (cast (the (ErlCons String (ErlCons Integer ErlNil)) ["a", 42])))
+  putStrLn (erlCase "not found" [MCons (MBinary unwrapBinary) (MBinary unwrapBinary) (++)] (cast (the (ErlCons String String) ("a" :: "b"))))
+  putStrLn (erlCase "not found" [MCons (MBinary unwrapBinary) (MBinary unwrapBinary) (++)] (cast "not a list cons"))
+  putStrLn (erlCase "not found" [MCons (MBinary unwrapBinary) (MInteger show) (++)] (cast (the (ErlCons String Integer) ("a" :: 42))))
+  putStrLn (erlCase "not found" [MCons (MBinary unwrapBinary) (MNil ()) (\x, y => x)] (cast (the (ErlCons String ErlNil) ["a"])))
+  putStrLn (erlCase "not found" [MCons (MBinary unwrapBinary) (MCons (MInteger show) (MNil ()) (\x, y => x)) (++)] (cast (the (ErlCons String (ErlCons Integer ErlNil)) ["a", 42])))
 
 testMList : IO ()
 testMList = do
   putStrLn "testMList"
-  putStrLn (erlCase "not found" [MList [MString id] id] (cast (the (ErlList _) ["first item"])))
-  putStrLn (erlCase "not found" [MList [MString id, MInteger show] (++)] (cast (the (ErlList _) ["first item", 42])))
-  putStrLn (erlCase "not found" [MList [MString id] id] (cast (the (ErlList _) [])))
-  putStrLn (erlCase "not found" [MList [MString id] id] (cast (the (ErlList _) ["a", "b"])))
+  putStrLn (erlCase "not found" [MList [MBinary unwrapBinary] id] (cast (the (ErlList _) ["first item"])))
+  putStrLn (erlCase "not found" [MList [MBinary unwrapBinary, MInteger show] (++)] (cast (the (ErlList _) ["first item", 42])))
+  putStrLn (erlCase "not found" [MList [MBinary unwrapBinary] id] (cast (the (ErlList _) [])))
+  putStrLn (erlCase "not found" [MList [MBinary unwrapBinary] id] (cast (the (ErlList _) ["a", "b"])))
 
 testMTuple : IO ()
 testMTuple = do
@@ -177,19 +166,19 @@ testMTuple = do
   putStrLn (erlCase "not found" [MTuple [] "is empty tuple"] (cast "not an empty tuple"))
   putStrLn (erlCase "not found" [MTuple [MAny (const "found any value")] id] (cast (MkErlTuple1 42)))
   putStrLn (erlCase "not found" [MTuple [MInteger show] id] (cast (MkErlTuple1 42)))
-  putStrLn (erlCase "not found" [MTuple [MString id] id] (cast (MkErlTuple1 "string inside 1-element tuple")))
+  putStrLn (erlCase "not found" [MTuple [MBinary unwrapBinary] id] (cast (MkErlTuple1 "string inside 1-element tuple")))
   putStrLn (erlCase "not found" [MTuple [MAny (const "found any value")] id] (cast 42))
-  putStrLn (erlCase "not found" [MTuple [MString id, MString id] (\x, y => x ++ " & " ++ y)] (cast (MkErlTuple2 "first string" "second string")))
+  putStrLn (erlCase "not found" [MTuple [MBinary unwrapBinary, MBinary unwrapBinary] (\x, y => x ++ " & " ++ y)] (cast (MkErlTuple2 "first string" "second string")))
   putStrLn (erlCase "not found" [MTuple [MExact (MkErlAtom "ok") (), MInteger show] (\x, y => y)] (cast (MkErlTuple2 (MkErlAtom "ok") 42)))
   putStrLn (erlCase "not found" [MTuple [MExact (MkErlAtom "ok") (), MInteger show] (\x, y => y)] (cast (MkErlTuple3 (MkErlAtom "ok") 42 "too long tuple")))
 
 testMMapSubset : IO ()
 testMMapSubset = do
   putStrLn "testMMapSubset"
-  putStrLn (erlCase "not found" [MMapSubset ["first" := MString id] id] (cast mapEx1))
-  putStrLn (erlCase "not found" [MMapSubset ["first" := MString id] id] (cast mapEx2))
-  putStrLn (erlCase "not found" [MMapSubset ["first" := MString id, "second" := MInteger id] (\first, second => first ++ " & " ++ show second)] (cast mapEx1))
-  putStrLn (erlCase "not found" [MMapSubset ["first" := MString id, "second" := MInteger id] (\first, second => first ++ " & " ++ show second)] (cast mapEx2))
+  putStrLn (erlCase "not found" [MMapSubset ["first" := MBinary unwrapBinary] id] (cast mapEx1))
+  putStrLn (erlCase "not found" [MMapSubset ["first" := MBinary unwrapBinary] id] (cast mapEx2))
+  putStrLn (erlCase "not found" [MMapSubset ["first" := MBinary unwrapBinary, "second" := MInteger id] (\first, second => first ++ " & " ++ show second)] (cast mapEx1))
+  putStrLn (erlCase "not found" [MMapSubset ["first" := MBinary unwrapBinary, "second" := MInteger id] (\first, second => first ++ " & " ++ show second)] (cast mapEx2))
 
 main : IO ()
 main = do
@@ -199,10 +188,8 @@ main = do
   testMAny
   testMInteger
   testMDouble
-  testMString
   testMAtom
   testMBinary
-  testMCharlist
   testMMap
   testMPid
   testMRef
