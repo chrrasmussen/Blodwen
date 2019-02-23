@@ -321,7 +321,7 @@ namespace StringConversions
         (MAny (\tailTerm => isValidSubstring (assert_smaller term tailTerm)))
         (\x, y => x && y),
       MBinary (const True),
-      MInteger (const True)
+      MInteger (const True) -- NOTE: Integers are only valid in substrings
     ] term
 
   export
