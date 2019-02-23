@@ -13,6 +13,8 @@ lists() -> [[], ["a", "b", "c"]].
 erl_atoms() -> ['', ok, a42].
 erl_binaries() -> [<<"">>, <<"ok">>, <<"a42">>].
 erl_charlists() -> [[], "ok", "a42"].
+erl_nil() -> [].
+erl_cons() -> {[1 | 2], [1 | <<"a">>], [1], [1, 2]}.
 erl_lists() -> {[], [<<"a">>, 10, $c]}.
 erl_tuples() -> {{}, {1}, {1, 2}, {1, 2, 3}, {1, 2, 3, 4}}.
 """
@@ -86,6 +88,18 @@ erlCharlistTest = do
   tuple <- erlUnsafeCall (List ErlCharlist) "erl_charlists" []
   printLn tuple
 
+erlNilTest : IO ()
+erlNilTest = do
+  putStrLn "erlNilTest"
+  nil <- erlUnsafeCall ErlNil "erl_nil" []
+  printLn nil
+
+erlConsTest : IO ()
+erlConsTest = do
+  putStrLn "erlConsTest"
+  tuple <- erlUnsafeCall (ErlTuple4 (ErlCons Integer Integer) (ErlCons Integer String) (ErlCons Integer ErlNil) (ErlCons Integer (ErlCons Integer ErlNil))) "erl_cons" []
+  printLn tuple
+
 erlListTest : IO ()
 erlListTest = do
   putStrLn "erlListTest"
@@ -111,5 +125,7 @@ main = do
   erlAtomTest
   erlBinaryTest
   erlCharlistTest
+  erlNilTest
+  erlConsTest
   erlListTest
   erlTuplesTest

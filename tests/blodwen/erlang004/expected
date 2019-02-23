@@ -37,6 +37,13 @@ erlCharlistTest
 []
 "ok"
 "a42"
+erlNilTest
+[]
+erlConsTest
+[1|2]
+[1|<<"a">>]
+[1]
+[1,2]
 erlListTest
 []
 [<<"a">>,10,99]

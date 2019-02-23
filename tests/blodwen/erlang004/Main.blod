@@ -82,6 +82,19 @@ erlCharlistTest = do
   erlPrintLn (MkErlCharlist "ok")
   erlPrintLn (MkErlCharlist ("a" ++ show 42))
 
+erlNilTest : IO ()
+erlNilTest = do
+  putStrLn "erlNilTest"
+  erlPrintLn (the ErlNil [])
+
+erlConsTest : IO ()
+erlConsTest = do
+  putStrLn "erlConsTest"
+  erlPrintLn (the (ErlCons Integer Integer) (1 :: 2))
+  erlPrintLn (the (ErlCons Integer String) (1 :: "a"))
+  erlPrintLn (the (ErlCons Integer ErlNil) [1])
+  erlPrintLn (the (ErlCons Integer (ErlCons Integer ErlNil)) [1, 2])
+
 erlListTest : IO ()
 erlListTest = do
   putStrLn "erlListTest"
@@ -111,5 +124,7 @@ main = do
   erlAtomTest
   erlBinaryTest
   erlCharlistTest
+  erlNilTest
+  erlConsTest
   erlListTest
   erlTuplesTest

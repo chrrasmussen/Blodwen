@@ -19,6 +19,14 @@ namespace Strings
   data ErlCharlist = MkErlCharlist String
 
 
+namespace Lists
+  public export
+  data ErlNil = Nil
+
+  public export
+  data ErlCons a b = (::) a b
+
+
 namespace ProperLists
   public export
   data ErlList : List Type -> Type where
@@ -134,6 +142,8 @@ mutual
     ETErlAtom       : ErlType ErlAtom
     ETErlBinary     : ErlType ErlBinary
     ETErlCharlist   : ErlType ErlCharlist
+    ETErlNil        : ErlType ErlNil
+    ETErlCons       : (ErlType a, ErlType b) => ErlType (ErlCons a b)
     ETErlList       : ErlTypes xs => ErlType (ErlList xs)
     ETErlMap        : ErlType ErlMap
     ETErlPid        : ErlType ErlPid
@@ -350,6 +360,12 @@ Show ErlBinary where
 
 Show ErlCharlist where
   show (MkErlCharlist x) = show (erlUnsafeCast (List Int) (cast x))
+
+Show ErlNil where
+  show [] = "[]"
+
+(Show a, Show b) => Show (ErlCons a b) where
+  show (x :: y) = "[" ++ show x ++ " | " ++ show y ++ "]"
 
 Show (ErlList []) where
   show [] = "[]"

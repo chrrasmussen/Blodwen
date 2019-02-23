@@ -291,6 +291,14 @@ mutual
   genConAlt i vs (MkConAlt (NS ["Strings", "ErlangPrelude"] (UN "MkErlCharlist")) tag args sc) = do
     let vs' = extendSVars args vs
     pure $ "(" ++ !(expectArgAtIndex 0 (bindArgs 1 args vs')) ++ ") -> " ++ !(genExp i vs' sc)
+  -- ErlNil
+  genConAlt i vs (MkConAlt (NS ["Lists", "ErlangPrelude"] (UN "Nil")) tag args sc) = do
+    let vs' = extendSVars args vs
+    pure $ "([]) -> " ++ !(genExp i vs' sc)
+  -- ErlCons
+  genConAlt i vs (MkConAlt (NS ["Lists", "ErlangPrelude"] (UN "::")) tag args sc) = do
+    let vs' = extendSVars args vs
+    pure $ "([" ++ showSep " | " (drop 2 $ bindArgs 1 args vs') ++ "]) -> " ++ !(genExp i vs' sc)
   -- ErlList
   genConAlt i vs (MkConAlt (NS ["ProperLists", "ErlangPrelude"] (UN "Nil")) tag args sc) = do
     let vs' = extendSVars args vs
@@ -356,6 +364,10 @@ mutual
   genCon i vs (CCon (NS ["Strings", "ErlangPrelude"] (UN "MkErlBinary")) _ [x]) = pure $ "unicode:characters_to_binary(" ++ !(genExp i vs x) ++ ")"
   -- ErlCharlist
   genCon i vs (CCon (NS ["Strings", "ErlangPrelude"] (UN "MkErlCharlist")) _ [x]) = pure $ "unicode:characters_to_list(" ++ !(genExp i vs x) ++ ")"
+  -- ErlNil
+  genCon i vs (CCon (NS ["Lists", "ErlangPrelude"] (UN "Nil")) _ []) = pure "[]"
+  -- ErlCons
+  genCon i vs (CCon (NS ["Lists", "ErlangPrelude"] (UN "::")) _ [_, _, x, y]) = pure $ "[" ++ !(genExp i vs x) ++ " | " ++ !(genExp i vs y) ++ "]"
   -- ErlList
   genCon i vs (CCon (NS ["ProperLists", "ErlangPrelude"] (UN "Nil")) _ []) = pure "[]"
   genCon i vs (CCon (NS ["ProperLists", "ErlangPrelude"] (UN "::")) _ [_, _, x, xs]) = pure $ "[" ++ !(genExp i vs x) ++ " | " ++ !(genExp i vs xs) ++ "]"
