@@ -292,10 +292,10 @@ mutual
     let vs' = extendSVars args vs
     pure $ "(" ++ !(expectArgAtIndex 0 (bindArgs 1 args vs')) ++ ") -> " ++ !(genExp i vs' sc)
   -- ErlList
-  genConAlt i vs (MkConAlt (NS ["Lists", "ErlangPrelude"] (UN "Nil")) tag args sc) = do
+  genConAlt i vs (MkConAlt (NS ["ProperLists", "ErlangPrelude"] (UN "Nil")) tag args sc) = do
     let vs' = extendSVars args vs
     pure $ "([]) -> " ++ !(genExp i vs' sc)
-  genConAlt i vs (MkConAlt (NS ["Lists", "ErlangPrelude"] (UN "::")) tag args sc) = do
+  genConAlt i vs (MkConAlt (NS ["ProperLists", "ErlangPrelude"] (UN "::")) tag args sc) = do
     let vs' = extendSVars args vs
     pure $ "([" ++ showSep " | " (drop 2 $ bindArgs 1 args vs') ++ "]) -> " ++ !(genExp i vs' sc)
   -- ErlTuple/A
@@ -357,8 +357,8 @@ mutual
   -- ErlCharlist
   genCon i vs (CCon (NS ["Strings", "ErlangPrelude"] (UN "MkErlCharlist")) _ [x]) = pure $ "unicode:characters_to_list(" ++ !(genExp i vs x) ++ ")"
   -- ErlList
-  genCon i vs (CCon (NS ["Lists", "ErlangPrelude"] (UN "Nil")) _ []) = pure "[]"
-  genCon i vs (CCon (NS ["Lists", "ErlangPrelude"] (UN "::")) _ [_, _, x, xs]) = pure $ "[" ++ !(genExp i vs x) ++ " | " ++ !(genExp i vs xs) ++ "]"
+  genCon i vs (CCon (NS ["ProperLists", "ErlangPrelude"] (UN "Nil")) _ []) = pure "[]"
+  genCon i vs (CCon (NS ["ProperLists", "ErlangPrelude"] (UN "::")) _ [_, _, x, xs]) = pure $ "[" ++ !(genExp i vs x) ++ " | " ++ !(genExp i vs xs) ++ "]"
   -- ErlTuple/A
   genCon i vs (CCon (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple0")) _ []) = genConTuple i vs []
   genCon i vs (CCon (NS ["Tuples", "ErlangPrelude"] (UN "MkErlTuple1")) _ args) = genConTuple i vs (drop 1 args)
@@ -437,8 +437,8 @@ mutual
 
   -- Evaluate the outer `ErlList` to figure out the arity of the function call
   readArgs : Int -> SVars vars -> CExp vars -> Core annot (List String)
-  readArgs i vs (CCon (NS ["Lists", "ErlangPrelude"] (UN "Nil")) _ []) = pure []
-  readArgs i vs (CCon (NS ["Lists", "ErlangPrelude"] (UN "::")) _ [_, _, x, xs]) = pure $ !(genExp i vs x) :: !(readArgs i vs xs)
+  readArgs i vs (CCon (NS ["ProperLists", "ErlangPrelude"] (UN "Nil")) _ []) = pure []
+  readArgs i vs (CCon (NS ["ProperLists", "ErlangPrelude"] (UN "::")) _ [_, _, x, xs]) = pure $ !(genExp i vs x) :: !(readArgs i vs xs)
   readArgs i vs tm = throw (InternalError ("Unknown argument to foreign call: " ++ show tm))
 
   -- External primitives which are common to the scheme codegens (they can be

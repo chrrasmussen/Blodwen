@@ -19,7 +19,7 @@ namespace Strings
   data ErlCharlist = MkErlCharlist String
 
 
-namespace Lists
+namespace ProperLists
   public export
   data ErlList : List Type -> Type where
     Nil : ErlList []
