@@ -293,6 +293,28 @@ namespace Maps
   size m = unsafePerformIO $ erlUnsafeCall Integer "maps:size" [m]
 
 
+namespace ListConversions
+  export
+  ListToErlCons : {a : Type} -> List a -> Type
+  ListToErlCons [] = ErlNil
+  ListToErlCons (_ :: xs) = ErlCons a (ListToErlCons xs)
+
+  export
+  listToErlCons : (xs : List a) -> ListToErlCons xs
+  listToErlCons [] = []
+  listToErlCons (x :: xs) = x :: listToErlCons xs
+
+  export
+  ListToTypes : {a : Type} -> List a -> List Type
+  ListToTypes [] = []
+  ListToTypes (_ :: xs) = a :: ListToTypes xs
+
+  export
+  listToErlList : (xs : List a) -> ErlList (ListToTypes xs)
+  listToErlList [] = []
+  listToErlList (x :: xs) = x :: listToErlList xs
+
+
 ----------
 -- CAST --
 ----------
@@ -317,11 +339,43 @@ Cast Bool ErlAtom where
   cast False = MkErlAtom "false"
 
 
-ErlType a => Cast (List a) (ErlList []) where
+-- ErlNil/ErlCons -> List
+
+Cast ErlNil (List a) where
   cast [] = []
 
-(ErlType a, Cast (List a) (ErlList as)) => Cast (List a) (ErlList (a :: as)) where
-  cast (x :: xs) = (x :: cast xs)
+Cast b (List a) => Cast (ErlCons a b) (List a) where
+  cast (x :: y) = x :: cast y
+
+
+-- ErlNil/ErlCons -> ErlList
+
+Cast ErlNil (ErlList []) where
+  cast [] = []
+
+Cast b (ErlList bs) => Cast (ErlCons a b) (ErlList (a :: bs)) where
+  cast (x :: y) = x :: cast y
+
+
+-- ErlList -> List
+
+Cast (ErlList []) (List a) where
+  cast [] = []
+
+Cast (ErlList as) (List a) => Cast (ErlList (a :: as)) (List a) where
+  cast (x :: xs) = x :: cast xs
+
+
+-- ErlList -> ErlNil/ErlCons
+
+Cast (ErlList []) ErlNil where
+  cast [] = []
+
+Cast (ErlList [a]) (ErlCons a ErlNil) where
+  cast (x :: xs) = x :: cast xs
+
+Cast (ErlList as) (ErlCons b c) => Cast (ErlList (a :: as)) (ErlCons a (ErlCons b c)) where
+  cast (x :: xs) = x :: cast xs
 
 
 ----------
