@@ -295,6 +295,57 @@ namespace Maps
   size m = unsafePerformIO $ erlUnsafeCall Integer "maps:size" [m]
 
 
+namespace StringConversions
+  export
+  isValidCharlist : ErlTerm -> Bool
+  isValidCharlist term =
+    erlCase False [
+      MNil True,
+      MCons
+        (MInteger id)
+        (MAny (\tailTerm => isValidCharlist (assert_smaller term tailTerm)))
+        (\x, y => y)
+    ] term
+
+  export
+  erlTermToCharlist : ErlTerm -> Maybe ErlCharlist
+  erlTermToCharlist term =
+    if isValidCharlist term
+      then Just (erlUnsafeCast ErlCharlist term)
+      else Nothing
+
+  isValidSubstring : ErlTerm -> Bool
+  isValidSubstring term =
+    erlCase False [
+      MNil True,
+      MCons
+        (MAny (\headTerm => isValidSubstring (assert_smaller term headTerm)))
+        (MAny (\tailTerm => isValidSubstring (assert_smaller term tailTerm)))
+        (\x, y => x && y),
+      MBinary (const True),
+      MInteger (const True)
+    ] term
+
+  export
+  isValidString : ErlTerm -> Bool
+  isValidString term =
+    erlCase False [
+      MNil True,
+      MCons
+        (MAny (\headTerm => isValidSubstring (assert_smaller term headTerm)))
+        (MAny (\tailTerm => isValidSubstring (assert_smaller term tailTerm)))
+        (\x, y => x && y),
+      MBinary (const True)
+    ] term
+
+  export
+  erlTermToString : ErlTerm -> Maybe String
+  erlTermToString term =
+    if isValidString term
+      then Just (erlUnsafeCast String term)
+      else Nothing
+
+
 namespace ListConversions
   export
   ListToErlCons : {a : Type} -> List a -> Type
