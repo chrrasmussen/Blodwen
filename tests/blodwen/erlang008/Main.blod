@@ -164,10 +164,10 @@ testMCons = do
 testMList : IO ()
 testMList = do
   putStrLn "testMList"
-  putStrLn (erlCase "not found" [MList [MString id] id] (cast $ (the (ErlList _) ["first item"])))
-  putStrLn (erlCase "not found" [MList [MString id, MInteger show] (++)] (cast $ (the (ErlList _) ["first item", 42])))
-  putStrLn (erlCase "not found" [MList [MString id] id] (cast $ (the (ErlList _) [])))
-  putStrLn (erlCase "not found" [MList [MString id] id] (cast $ (the (ErlList _) ["a", "b"])))
+  putStrLn (erlCase "not found" [MList [MString id] id] (cast (the (ErlList _) ["first item"])))
+  putStrLn (erlCase "not found" [MList [MString id, MInteger show] (++)] (cast (the (ErlList _) ["first item", 42])))
+  putStrLn (erlCase "not found" [MList [MString id] id] (cast (the (ErlList _) [])))
+  putStrLn (erlCase "not found" [MList [MString id] id] (cast (the (ErlList _) ["a", "b"])))
 
 testMTuple : IO ()
 testMTuple = do
