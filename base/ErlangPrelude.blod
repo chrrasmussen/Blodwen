@@ -195,6 +195,8 @@ namespace CaseExpr
       MPid          : (ErlPid -> a)       -> ErlMatcher a
       MRef          : (ErlRef -> a)       -> ErlMatcher a
       MPort         : (ErlPort -> a)      -> ErlMatcher a
+      MNil          : a                   -> ErlMatcher a
+      MCons         : ErlMatcher a -> ErlMatcher b -> (a -> b -> ret)  -> ErlMatcher ret
       MList         : ErlMatchers ErlMatcher xs  -> TypesToFunc xs ret -> ErlMatcher ret
       MTuple        : ErlMatchers ErlMatcher xs  -> TypesToFunc xs ret -> ErlMatcher ret
       MMapSubset    : ErlMatchers ErlMapEntry xs -> TypesToFunc xs ret -> ErlMatcher ret

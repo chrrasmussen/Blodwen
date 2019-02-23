@@ -60,6 +60,15 @@ not found
 testMPort
 found port
 not found
+testMNil
+found nil
+not found
+testMCons
+ab
+not found
+a42
+a
+a42
 testMList
 first item
 first item42

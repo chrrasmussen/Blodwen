@@ -146,6 +146,21 @@ testMPort = do
   putStrLn (erlCase "not found" [MPort (const "found port")] (cast portEx))
   putStrLn (erlCase "not found" [MPort (const "found port")] (cast "not a port"))
 
+testMNil : IO ()
+testMNil = do
+  putStrLn "testMNil"
+  putStrLn (erlCase "not found" [MNil "found nil"] (cast (the ErlNil [])))
+  putStrLn (erlCase "not found" [MNil "found nil"] (cast "not an empty list"))
+
+testMCons : IO ()
+testMCons = do
+  putStrLn "testMCons"
+  putStrLn (erlCase "not found" [MCons (MString id) (MString id) (++)] (cast (the (ErlCons String String) ("a" :: "b"))))
+  putStrLn (erlCase "not found" [MCons (MString id) (MString id) (++)] (cast "not a list cons"))
+  putStrLn (erlCase "not found" [MCons (MString id) (MInteger show) (++)] (cast (the (ErlCons String Integer) ("a" :: 42))))
+  putStrLn (erlCase "not found" [MCons (MString id) (MNil ()) (\x, y => x)] (cast (the (ErlCons String ErlNil) ["a"])))
+  putStrLn (erlCase "not found" [MCons (MString id) (MCons (MInteger show) (MNil ()) (\x, y => x)) (++)] (cast (the (ErlCons String (ErlCons Integer ErlNil)) ["a", 42])))
+
 testMList : IO ()
 testMList = do
   putStrLn "testMList"
@@ -192,6 +207,8 @@ main = do
   testMPid
   testMRef
   testMPort
+  testMNil
+  testMCons
   testMList
   testMTuple
   testMMapSubset

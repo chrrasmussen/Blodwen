@@ -571,6 +571,17 @@ mutual
   readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MPid")) _ [_, mapper]) = createGuardClause i local global vs mapper IsPid
   readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MRef")) _ [_, mapper]) = createGuardClause i local global vs mapper IsRef
   readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MPort")) _ [_, mapper]) = createGuardClause i local global vs mapper IsPort
+  -- MNil
+  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MNil")) _ [_, returnValue]) =
+    pure $ MkErlClause local [] "[]" IsAny returnValue
+  -- MCons
+  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MCons")) _ [_, _, _, headMatcher, tailMatcher, mapper]) = do
+    headClause <- readClause i local global vs headMatcher
+    tailClause <- readClause i (nextLocal headClause) (nextGlobal global [headClause]) vs tailMatcher
+    pure $ MkErlClause (nextLocal tailClause) (concatGlobals [headClause, tailClause])
+      ("[" ++ pattern headClause ++ " | " ++ pattern tailClause ++ "]")
+      (concatGuards [headClause, tailClause])
+      (CApp (CApp mapper [body headClause]) [body tailClause])
   -- MList
   readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MList")) _ [_, _, xs, mapper]) = do
     clauses <- readClauseErlMatchers i local global vs xs mapper
