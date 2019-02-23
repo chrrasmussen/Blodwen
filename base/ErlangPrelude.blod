@@ -330,8 +330,8 @@ namespace StringConversions
     erlCase False [
       MNil True,
       MCons
-        (MAny (\headTerm => isValidSubstring (assert_smaller term headTerm)))
-        (MAny (\tailTerm => isValidSubstring (assert_smaller term tailTerm)))
+        (MAny isValidSubstring)
+        (MAny isValidSubstring)
         (\x, y => x && y),
       MBinary (const True)
     ] term
