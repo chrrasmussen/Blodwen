@@ -319,13 +319,14 @@ namespace ListConversions
 -- CAST --
 ----------
 
-toErlTerm : ErlType a => a -> ErlTerm
-toErlTerm x = believe_me x
+-- ErlType a -> ErlTerm
+-- (Allow all supported Erlang types to be type erased)
 
--- Allow all supported Erlang types to be type erased
 ErlType a => Cast a ErlTerm where
-  cast x = toErlTerm x
+  cast x = believe_me x
 
+
+-- Unit <-> ErlTuple0
 
 Cast () ErlTuple0 where
   cast MkUnit = MkErlTuple0
@@ -333,6 +334,8 @@ Cast () ErlTuple0 where
 Cast ErlTuple0 () where
   cast MkErlTuple0 = MkUnit
 
+
+-- Bool -> ErlAtom
 
 Cast Bool ErlAtom where
   cast True = MkErlAtom "true"
