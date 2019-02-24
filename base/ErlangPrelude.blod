@@ -318,19 +318,18 @@ namespace StringConversions
 
   -- http://erlang.org/doc/reference_manual/typespec.html
   -- iolist() :: binary() | maybe_improper_list(char() | iolist(), binary() | [])
+  -- maybe_improper_list(X, Y) :: [X | maybe_improper_list(X, Y)]
   mutual
     isValidStringHead : ErlTerm -> Bool
     isValidStringHead term =
       erlCase False [
-        MChar (const True),
-        MAny (\subTerm => isValidString (assert_smaller term subTerm))
-      ] term
-
-    isValidStringTail : ErlTerm -> Bool
-    isValidStringTail term =
-      erlCase False [
+        MChar (const True), -- NOTE: Chars are only valid in head position in an IO list
+        MBinary (const True),
         MNil True,
-        MBinary (const True)
+        MCons
+          (MAny (\subTerm => isValidStringHead (assert_smaller term subTerm)))
+          (MAny (\subTerm => isValidString (assert_smaller term subTerm)))
+          (\x, y => x && y)
       ] term
 
     export
@@ -341,7 +340,7 @@ namespace StringConversions
         MNil True,
         MCons
           (MAny (\subTerm => isValidStringHead (assert_smaller term subTerm)))
-          (MAny isValidStringTail)
+          (MAny (\subTerm => isValidString (assert_smaller term subTerm)))
           (\x, y => x && y)
       ] term
 
