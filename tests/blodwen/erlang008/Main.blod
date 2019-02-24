@@ -79,6 +79,15 @@ testMAny = do
   putStrLn (erlCase "not found" [MAny (const "matched on atom")] (cast (MkErlAtom "ok")))
   putStrLn (erlCase "not found" [MAny (const "matched on integer")] (cast 42))
 
+testMChar : IO ()
+testMChar = do
+  putStrLn "testMChar"
+  putStrLn (erlCase "not found" [MChar show] (cast 97))
+  putStrLn (erlCase "not found" [MChar show] (cast (-1))) -- NOTE: Min char value is 0
+  putStrLn (erlCase "not found" [MChar show] (cast 1114112)) -- NOTE: Max char value is 0x10FFFF (1114111 in decimal number)
+  putStrLn (erlCase "not found" [MChar show] (cast "string is not a char"))
+  putStrLn (erlCase "not found" [MChar show] (cast (the Double 42)))
+
 testMInteger : IO ()
 testMInteger = do
   putStrLn "testMInteger"
@@ -186,6 +195,7 @@ main = do
   testErlCaseInErlCase
   testMExact
   testMAny
+  testMChar
   testMInteger
   testMDouble
   testMAtom

@@ -21,6 +21,12 @@ testMAny
 matched on string
 matched on atom
 matched on integer
+testMChar
+'a'
+not found
+not found
+not found
+not found
 testMInteger
 42
 0

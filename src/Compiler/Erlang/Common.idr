@@ -504,6 +504,8 @@ mutual
   genExtPrim i vs prim args =
     throw (InternalError ("Badly formed external primitive " ++ show prim ++ " " ++ show args))
 
+  data GuardBinOp = LTE | LT | EQ | GT | GTE
+
   data ErlGuard : List Name -> Type where
     IsAny     : ErlGuard vars
     IsInteger : CExp vars -> ErlGuard vars
@@ -515,7 +517,7 @@ mutual
     IsPid     : CExp vars -> ErlGuard vars
     IsRef     : CExp vars -> ErlGuard vars
     IsPort    : CExp vars -> ErlGuard vars
-    IsEq      : CExp vars -> CExp vars -> ErlGuard vars
+    IsBinOp   : GuardBinOp -> CExp vars -> CExp vars -> ErlGuard vars
     AndAlso   : ErlGuard vars -> ErlGuard vars -> ErlGuard vars
     OrElse    : ErlGuard vars -> ErlGuard vars -> ErlGuard vars
 
@@ -555,12 +557,14 @@ mutual
   readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MExact")) _ [_, _, _, matchValue, returnValue]) = do
     let localRef = CRef (MN "C" global)
     let globalRef = CRef (MN "G" global)
-    pure $ MkErlClause (local + 1) [matchValue] !(genExp i vs localRef) (IsEq localRef globalRef) returnValue
+    pure $ MkErlClause (local + 1) [matchValue] !(genExp i vs localRef) (IsBinOp EQ localRef globalRef) returnValue
   -- MAny
   readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MAny")) _ [_, mapper]) = do
     let ref = CRef (MN "C" local)
     pure $ MkErlClause (local + 1) [] !(genExp i vs ref) IsAny (CApp mapper [ref])
   -- Simple guards
+  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MChar")) _ [_, mapper]) = createGuardClause i local global vs mapper
+    (\val => AndAlso (IsInteger val) (AndAlso (IsBinOp GTE val (CPrimVal (BI 0))) (IsBinOp LTE val (CPrimVal (BI 0x10FFFF)))))
   readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MInteger")) _ [_, mapper]) = createGuardClause i local global vs mapper IsInteger
   readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MDouble")) _ [_, mapper]) = createGuardClause i local global vs mapper IsDouble
   readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MAtom")) _ [_, mapper]) = createGuardClause i local global vs mapper IsAtom
@@ -632,7 +636,11 @@ mutual
   genGuard i vs (IsPid ref) = pure $ "is_pid(" ++ !(genExp i vs ref) ++ ")"
   genGuard i vs (IsRef ref) = pure $ "is_reference(" ++ !(genExp i vs ref) ++ ")"
   genGuard i vs (IsPort ref) = pure $ "is_port(" ++ !(genExp i vs ref) ++ ")"
-  genGuard i vs (IsEq ref1 ref2) = pure $ !(genExp i vs ref1) ++ " =:= " ++ !(genExp i vs ref2)
+  genGuard i vs (IsBinOp LTE ref1 ref2) = pure $ !(genExp i vs ref1) ++ " =< " ++ !(genExp i vs ref2)
+  genGuard i vs (IsBinOp LT ref1 ref2) = pure $ !(genExp i vs ref1) ++ " < " ++ !(genExp i vs ref2)
+  genGuard i vs (IsBinOp EQ ref1 ref2) = pure $ !(genExp i vs ref1) ++ " =:= " ++ !(genExp i vs ref2)
+  genGuard i vs (IsBinOp GT ref1 ref2) = pure $ !(genExp i vs ref1) ++ " > " ++ !(genExp i vs ref2)
+  genGuard i vs (IsBinOp GTE ref1 ref2) = pure $ !(genExp i vs ref1) ++ " >= " ++ !(genExp i vs ref2)
   genGuard i vs (AndAlso g1 g2) = pure $ "(" ++ !(genGuard i vs g1) ++ " andalso " ++ !(genGuard i vs g2) ++ ")"
   genGuard i vs (OrElse g1 g2) = pure $ "(" ++ !(genGuard i vs g1) ++ " orelse " ++ !(genGuard i vs g2) ++ ")"
 
