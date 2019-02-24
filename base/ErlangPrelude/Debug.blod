@@ -1,0 +1,16 @@
+module ErlangPrelude.Debug
+
+-- TODO: Is this okay? Should ErlangPrelude be moved into modules in this folder?
+import ErlangPrelude
+
+export
+erlPrintLn : ErlType a => a -> IO ()
+erlPrintLn x = do
+  erlCall "io" "format" ["~p~n", the (List _) [x]]
+  pure ()
+
+export
+erlInspect : ErlType a => a -> a
+erlInspect x = unsafePerformIO $ do
+  erlPrintLn x
+  pure x
