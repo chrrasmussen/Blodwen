@@ -303,7 +303,7 @@ namespace StringConversions
     erlCase False [
       MNil True,
       MCons
-        (MInteger id)
+        (MChar id)
         (MAny (\tailTerm => isValidCharlist (assert_smaller term tailTerm)))
         (\x, y => y)
     ] term
@@ -322,7 +322,7 @@ namespace StringConversions
     isValidStringHead : ErlTerm -> Bool
     isValidStringHead term =
       erlCase False [
-        MInteger (const True),
+        MChar (const True),
         MAny (\subTerm => isValidString (assert_smaller term subTerm))
       ] term
 
