@@ -294,6 +294,8 @@ namespace Maps
 
 
 namespace StringConversions
+  -- http://erlang.org/doc/reference_manual/typespec.html
+  -- string() :: [char()]
   export
   isValidCharlist : ErlTerm -> Bool
   isValidCharlist term =
@@ -312,29 +314,35 @@ namespace StringConversions
       then Just (erlUnsafeCast ErlCharlist term)
       else Nothing
 
-  isValidSubstring : ErlTerm -> Bool
-  isValidSubstring term =
-    erlCase False [
-      MNil True,
-      MCons
-        (MAny (\headTerm => isValidSubstring (assert_smaller term headTerm)))
-        (MAny (\tailTerm => isValidSubstring (assert_smaller term tailTerm)))
-        (\x, y => x && y),
-      MBinary (const True),
-      MInteger (const True) -- NOTE: Integers are only valid in substrings
-    ] term
 
-  export
-  isValidString : ErlTerm -> Bool
-  isValidString term =
-    erlCase False [
-      MNil True,
-      MCons
-        (MAny isValidSubstring)
-        (MAny isValidSubstring)
-        (\x, y => x && y),
-      MBinary (const True)
-    ] term
+  -- http://erlang.org/doc/reference_manual/typespec.html
+  -- iolist() :: binary() | maybe_improper_list(char() | iolist(), binary() | [])
+  mutual
+    isValidStringHead : ErlTerm -> Bool
+    isValidStringHead term =
+      erlCase False [
+        MInteger (const True),
+        MAny (\subTerm => isValidString (assert_smaller term subTerm))
+      ] term
+
+    isValidStringTail : ErlTerm -> Bool
+    isValidStringTail term =
+      erlCase False [
+        MNil True,
+        MBinary (const True)
+      ] term
+
+    export
+    isValidString : ErlTerm -> Bool
+    isValidString term =
+      erlCase False [
+        MBinary (const True),
+        MNil True,
+        MCons
+          (MAny (\subTerm => isValidStringHead (assert_smaller term subTerm)))
+          (MAny isValidStringTail)
+          (\x, y => x && y)
+      ] term
 
   export
   erlTermToString : ErlTerm -> Maybe String
