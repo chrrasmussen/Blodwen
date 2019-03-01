@@ -10,7 +10,7 @@ debug_inspect(Val) ->
 % NOTE: This function assume that any lists are IO lists
 % If this assumption changes in the future, one possible solution
 % is to wrap IO lists in a tuple, e.g. `{str, IoList}`
-blodwen_normalize_value(X) when is_list(X) -> list_to_binary(X);
+blodwen_normalize_value(X) when is_list(X) -> unicode:characters_to_binary(X, utf8);
 blodwen_normalize_value(X) -> X.
 
 
