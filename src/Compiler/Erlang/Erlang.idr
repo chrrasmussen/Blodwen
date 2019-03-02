@@ -40,7 +40,7 @@ compileToErlang (MkOpts moduleName) c tm outfile = do
     let code = concat compdefs
     main <- genExp 0 [] !(compileExp tags tm)
     support <- readDataFile "erlang/support.erl"
-    let scm = header ++ unlines ds ++ support ++ code ++ "main(Args) -> " ++ main ++ ".\n"
+    let scm = header ++ unlines ds ++ support ++ code ++ "main(Args) -> " ++ mainInit ++ ", " ++ main ++ ".\n"
     Right () <- coreLift $ writeFile outfile scm
       | Left err => throw (FileErr outfile err)
     coreLift $ chmod outfile 0o755
@@ -52,6 +52,8 @@ compileToErlang (MkOpts moduleName) c tm outfile = do
       "-compile([nowarn_unused_function, nowarn_unused_vars]).\n" ++
       "-export([main/1]).\n" ++
       "\n"
+    mainInit : String
+    mainInit = "io:setopts([{encoding, unicode}])"
 
 
 erlangModuleName : String -> Maybe String
