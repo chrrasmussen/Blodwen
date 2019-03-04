@@ -129,20 +129,20 @@ testMMap = do
 testMPid : IO ()
 testMPid = do
   putStrLn "testMPid"
-  putStrLn (erlCase "not found" [MPid (const "found pid")] (cast pidEx))
-  putStrLn (erlCase "not found" [MPid (const "found pid")] (cast "not a pid"))
+  putStrLn (erlCase "not found" [MPid show] (cast pidEx))
+  putStrLn (erlCase "not found" [MPid show] (cast "not a pid"))
 
 testMRef : IO ()
 testMRef = do
   putStrLn "testMRef"
-  putStrLn (erlCase "not found" [MRef (const "found ref")] (cast refEx))
-  putStrLn (erlCase "not found" [MRef (const "found ref")] (cast "not a ref"))
+  putStrLn (erlCase "not found" [MRef show] (cast refEx))
+  putStrLn (erlCase "not found" [MRef show] (cast "not a ref"))
 
 testMPort : IO ()
 testMPort = do
   putStrLn "testMPort"
-  putStrLn (erlCase "not found" [MPort (const "found port")] (cast portEx))
-  putStrLn (erlCase "not found" [MPort (const "found port")] (cast "not a port"))
+  putStrLn (erlCase "not found" [MPort show] (cast portEx))
+  putStrLn (erlCase "not found" [MPort show] (cast "not a port"))
 
 testMNil : IO ()
 testMNil = do

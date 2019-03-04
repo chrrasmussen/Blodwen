@@ -51,13 +51,13 @@ found map
 found map
 not found
 testMPid
-found pid
+#Pid<0.4.1>
 not found
 testMRef
-found ref
+#Ref<0.4192537678.4073193475.71181>
 not found
 testMPort
-found port
+#Port<0.4>
 not found
 testMNil
 found nil

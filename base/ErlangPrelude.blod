@@ -450,23 +450,23 @@ showSep sep [x] = x
 showSep sep (x :: xs) = x ++ sep ++ showSep sep xs
 
 
--- OPAQUE ERLANG TYPES
--- (Idris should not know its content)
-
 Show ErlTerm where
   show _ = "<Erlang Term>"
 
 Show ErlPid where
-  show _ = "<Erlang Pid>"
+  show x = unsafePerformIO $ do
+    MkErlCharlist str <- erlUnsafeCall ErlCharlist "pid_to_list" [x]
+    pure ("#Pid" ++ str)
 
 Show ErlRef where
-  show _ = "<Erlang Ref>"
+  show x = unsafePerformIO $ do
+    MkErlCharlist str <- erlUnsafeCall ErlCharlist "ref_to_list" [x]
+    pure str
 
 Show ErlPort where
-  show _ = "<Erlang Port>"
-
-
--- NORMAL ERLANG TYPES
+  show x = unsafePerformIO $ do
+    MkErlCharlist str <- erlUnsafeCall ErlCharlist "port_to_list" [x]
+    pure str
 
 Show ErlAtom where
   show (MkErlAtom x) = "'" ++ x ++ "'"
