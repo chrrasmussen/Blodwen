@@ -295,8 +295,8 @@ namespace Maps
 
 
 namespace StringConversions
-  -- http://erlang.org/doc/reference_manual/typespec.html
-  -- string() :: [char()]
+  -- http://erlang.org/doc/man/unicode.html
+  -- charlist() = [char()]
   export
   isValidCharlist : ErlTerm -> Bool
   isValidCharlist term =
@@ -316,9 +316,10 @@ namespace StringConversions
       else Nothing
 
 
-  -- http://erlang.org/doc/reference_manual/typespec.html
-  -- iolist() :: binary() | maybe_improper_list(char() | iolist(), binary() | [])
-  -- maybe_improper_list(X, Y) :: [X | maybe_improper_list(X, Y)]
+  -- http://erlang.org/doc/man/unicode.html#type-chardata
+  -- chardata() = charlist() | unicode_binary()
+  -- charlist() = maybe_improper_list(char() | unicode_binary() | charlist(), unicode_binary() | [])
+  -- maybe_improper_list(X, Y) = [X | maybe_improper_list(X, Y)]
   mutual
     isValidStringHead : ErlTerm -> Bool
     isValidStringHead term =
