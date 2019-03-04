@@ -563,7 +563,7 @@ mutual
     let ref = CRef (MN "C" local)
     pure $ MkErlClause (local + 1) [] !(genExp i vs ref) IsAny (CApp mapper [ref])
   -- Simple guards
-  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MChar")) _ [_, mapper]) = createGuardClause i local global vs mapper
+  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MCodepoint")) _ [_, mapper]) = createGuardClause i local global vs mapper
     (\val => AndAlso (IsInteger val) (AndAlso (IsBinOp GTE val (CPrimVal (BI 0))) (IsBinOp LTE val (CPrimVal (BI 0x10FFFF)))))
   readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MInteger")) _ [_, mapper]) = createGuardClause i local global vs mapper IsInteger
   readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MDouble")) _ [_, mapper]) = createGuardClause i local global vs mapper IsDouble

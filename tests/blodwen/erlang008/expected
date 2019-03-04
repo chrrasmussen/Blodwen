@@ -21,7 +21,7 @@ testMAny
 matched on string
 matched on atom
 matched on integer
-testMChar
+testMCodepoint
 'a'
 not found
 not found
