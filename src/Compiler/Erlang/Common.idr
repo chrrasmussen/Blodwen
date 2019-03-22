@@ -251,13 +251,13 @@ mutual
     pure $ "({" ++ showSep ", " (drop arity $ bindArgs 1 args vs') ++ "}) -> " ++ !(genExp i vs' sc)
 
   -- Given an Erlang function `ErlangFunc` with arity 2:
-  -- 1. Curries this function according to arity: fun(X_1) -> fun(X_2) -> ErlangFunc(X_1, X_2) end end
-  -- 2. Transform the inner result with a user-defined function: fun(X_1) -> fun(X_2) -> `Transformer`(ErlangFunc(X_1, X_2)) end end
+  -- 1. Curries this function according to arity: fun(X_0) -> fun(X_1) -> ErlangFunc(X_0, X_1) end end
+  -- 2. Transform the inner result with a user-defined function: fun(X_0) -> fun(X_1) -> `Transformer`(ErlangFunc(X_0, X_1)) end end
   -- The transformer is specifically used to lift the value into the IO monad
   genConAltFun : Int -> SVars vars -> (args : List Name) -> CExp (args ++ vars) -> (arity : Nat) -> (String -> String) -> Core annot String
   genConAltFun i vs args sc arity transformer = do
     let vs' = extendSVars args vs
-    let tempVars = take arity $ zipWith (\name, idx => name ++ show idx) (repeat "X_") [1..]
+    let tempVars = take arity $ zipWith (\name, idx => name ++ show idx) (repeat "X_") [0..]
     pure  $ "(Func) -> " ++ mkUncurriedFun (drop (S arity) $ bindArgs 1 args vs') !(genExp i vs' sc) ++ "(" ++ mkCurriedFun tempVars (transformer ("Func(" ++ showSep ", " tempVars ++ ")")) ++ ")"
 
   genConAlt : Int -> SVars vars -> CConAlt vars -> Core annot String
@@ -339,13 +339,13 @@ mutual
   genConTuple i vs args = pure $ "{" ++ showSep ", " !(traverse (genExp i vs) args) ++ "}"
 
   -- Given an Idris function `idrisFun` with arity 2:
-  -- 1. Uncurries this function according to arity: fun(X_1, X_2) -> (idrisFun(X1))(X_2) end
-  -- 2. Transform the inner result with a user-defined function: fun(X_1, X_2) -> `transform`((idrisFun(X1))(X_2)) end
+  -- 1. Uncurries this function according to arity: fun(X_0, X_1) -> (idrisFun(X_0))(X_1) end
+  -- 2. Transform the inner result with a user-defined function: fun(X_0, X_1) -> `transform`((idrisFun(X_0))(X_1)) end
   -- The transformer is specifically used to perform the side-effects of the result (using `unsafePerformIO`)
   genConFun : Int -> SVars vars -> (arity : Nat) -> CExp vars -> (CExp vars -> CExp vars) -> Core annot String
   genConFun i vs arity func transformer = do
-    let tempVars = take arity $ zipWith (\name, idx => name ++ show idx) (repeat "X_") [1..]
-    let tempCRefs = take arity $ zipWith (\name, idx => CRef (MN name idx)) (repeat "X") [1..]
+    let tempVars = take arity $ zipWith (\name, idx => name ++ show idx) (repeat "X_") [0..]
+    let tempCRefs = take arity $ zipWith (\name, idx => CRef (MN name idx)) (repeat "X") [0..]
     let body = transformer (applyToArgs func tempCRefs)
     pure $ mkUncurriedFun tempVars !(genExp i vs body)
 
