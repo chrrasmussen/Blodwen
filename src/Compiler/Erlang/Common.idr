@@ -240,6 +240,22 @@ expectArgAtIndex n xs =
     Nothing => throw (InternalError ("Missing expected argument at index " ++ show n ++ " in list"))
 
 
+ioPureCExp : CExp vars -> CExp vars
+ioPureCExp ref =
+  CCon (NS ["PrimIO"] (UN "MkIO")) 0 [CErased, CLam (MN "World" 0) (CCon (NS ["PrimIO"] (UN "MkIORes")) 0 [CErased, weaken ref, CLocal Here])]
+
+curryCExp : List Name -> ({innerVars : List Name} -> CExp innerVars -> CExp innerVars) -> CExp vars -> CExp vars
+curryCExp allNames transformer expr = wrapLambda allNames (transformer (CApp (weakenNs allNames expr) (reverse (args allNames))))
+  where
+    wrapLambda : (names : List Name) -> CExp (names ++ vars) -> CExp vars
+    wrapLambda []        innerExpr = innerExpr
+    wrapLambda (x :: xs) innerExpr = wrapLambda xs (CLam x innerExpr)
+
+    args : (names : List Name) -> List (CExp (names ++ vars))
+    args [] = []
+    args (x :: xs) = CLocal Here :: map weaken (args xs)
+
+
 mutual
   bindArgs : Int -> (ns : List Name) -> SVars (ns ++ vars) -> List String
   bindArgs i [] vs = []
@@ -517,6 +533,7 @@ mutual
     IsPid     : CExp vars -> ErlGuard vars
     IsRef     : CExp vars -> ErlGuard vars
     IsPort    : CExp vars -> ErlGuard vars
+    IsFun     : Nat -> CExp vars -> ErlGuard vars
     IsBinOp   : GuardBinOp -> CExp vars -> CExp vars -> ErlGuard vars
     AndAlso   : ErlGuard vars -> ErlGuard vars -> ErlGuard vars
     OrElse    : ErlGuard vars -> ErlGuard vars -> ErlGuard vars
@@ -546,6 +563,14 @@ mutual
     pure (first :: rest)
   readMatchers i global vs args =
     throw (InternalError ("Expected a list of matchers " ++ show args))
+
+  readListLength : Int -> SVars vars -> CExp vars -> Core annot Nat
+  readListLength i vs (CCon (NS ["Prelude"] (UN "Nil")) _ _) = pure 0
+  readListLength i vs (CCon (NS ["Prelude"] (UN "::")) _ [_, x, xs]) = do
+    tailLength <- readListLength i vs xs
+    pure (1 + tailLength)
+  readListLength i vs args =
+    throw (InternalError ("Expected a list of types " ++ show args))
 
   createGuardClause : Int -> (local : Int) -> (global : Int) -> SVars vars -> (mapper : CExp vars) -> (createGuard : CExp vars -> ErlGuard vars) -> Core annot (ErlClause vars)
   createGuardClause i local global vs mapper createGuard = do
@@ -612,6 +637,12 @@ mutual
     let globalRef = CRef (MN "G" global)
     clause <- readClause i local (global + 1) vs valueMatcher
     pure $ MkErlClause (nextLocal clause) (key :: globals clause) (!(genExp i vs globalRef) ++ " := " ++ (pattern clause)) (guard clause) (body clause)
+  -- MIO
+  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MIO")) _ [types]) = do
+    let ref = CRef (MN "C" local)
+    arity <- readListLength i vs types
+    let tempVars = take arity $ zipWith (\name, idx => MN name idx) (repeat "M") [0..]
+    pure $ MkErlClause local [] !(genExp i vs ref) (IsFun arity ref) (curryCExp tempVars ioPureCExp ref)
   -- Other
   readClause i local global vs matcher =
     throw (InternalError ("Badly formed clause " ++ show matcher))
@@ -636,6 +667,7 @@ mutual
   genGuard i vs (IsPid ref) = pure $ "is_pid(" ++ !(genExp i vs ref) ++ ")"
   genGuard i vs (IsRef ref) = pure $ "is_reference(" ++ !(genExp i vs ref) ++ ")"
   genGuard i vs (IsPort ref) = pure $ "is_port(" ++ !(genExp i vs ref) ++ ")"
+  genGuard i vs (IsFun arity ref) = pure $ "is_function(" ++ !(genExp i vs ref) ++ ", " ++ show arity ++ ")"
   genGuard i vs (IsBinOp LTE ref1 ref2) = pure $ !(genExp i vs ref1) ++ " =< " ++ !(genExp i vs ref2)
   genGuard i vs (IsBinOp LT ref1 ref2) = pure $ !(genExp i vs ref1) ++ " < " ++ !(genExp i vs ref2)
   genGuard i vs (IsBinOp EQ ref1 ref2) = pure $ !(genExp i vs ref1) ++ " =:= " ++ !(genExp i vs ref2)
