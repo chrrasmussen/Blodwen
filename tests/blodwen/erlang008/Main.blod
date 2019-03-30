@@ -10,6 +10,10 @@ get_pid() -> list_to_pid("<0.4.1>").
 get_ref() -> list_to_ref("#Ref<0.4192537678.4073193475.71181>").
 get_port() -> list_to_port("#Port<0.4>").
 get_binary() -> <<"hello">>.
+get_fun0() -> fun() -> 42 end.
+get_fun1() -> fun(X) -> X end.
+get_fun2() -> fun(X, Y) -> X + Y end.
+get_fun_div() -> fun(X) -> 42.0 / X end.
 """
 
 -- Wrappers around Erlang functions
@@ -34,6 +38,18 @@ portEx = unsafePerformIO $ erlUnsafeCall ErlPort "get_port" []
 
 binaryEx : ErlBinary
 binaryEx = unsafePerformIO $ erlUnsafeCall ErlBinary "get_binary" []
+
+fun0Ex : ErlTerm
+fun0Ex = unsafePerformIO $ erlUnsafeCall ErlTerm "get_fun0" []
+
+fun1Ex : ErlTerm
+fun1Ex = unsafePerformIO $ erlUnsafeCall ErlTerm "get_fun1" []
+
+fun2Ex : ErlTerm
+fun2Ex = unsafePerformIO $ erlUnsafeCall ErlTerm "get_fun2" []
+
+funDivEx : ErlTerm
+funDivEx = unsafePerformIO $ erlUnsafeCall ErlTerm "get_fun_div" []
 
 
 -- Helper functions
@@ -189,6 +205,29 @@ testMMapSubset = do
   putStrLn (erlCase "not found" [MMapSubset ["first" := MBinary unwrapBinary, "second" := MInteger id] (\first, second => first ++ " & " ++ show second)] (cast mapEx1))
   putStrLn (erlCase "not found" [MMapSubset ["first" := MBinary unwrapBinary, "second" := MInteger id] (\first, second => first ++ " & " ++ show second)] (cast mapEx2))
 
+testMIO : IO ()
+testMIO = do
+  putStrLn "testMIO"
+  let fun0 = erlCase (pure $ cast {to=ErlTerm} (-1)) [MIO []] fun0Ex
+  fun0_res <- fun0
+  putStrLn (erlCase "not an integer" [MInteger show] fun0_res)
+  let fun0_notFound = erlCase (pure $ cast {to=ErlTerm} (-1)) [MIO []] (cast {to=ErlTerm} "not a function")
+  fun0_notFound_res <- fun0_notFound
+  putStrLn (erlCase "not an integer" [MInteger show] fun0_notFound_res)
+  let fun1 = erlCase (\x => pure $ cast {to=ErlTerm} (-1)) [MIO [Int]] fun1Ex
+  fun1_res <- fun1 42
+  putStrLn (erlCase "not an integer" [MInteger show] fun1_res)
+  let fun2 = erlCase (\x, y => pure $ cast {to=ErlTerm} (-1)) [MIO [Int, Int]] fun2Ex
+  fun2_res <- fun2 42 37
+  putStrLn (erlCase "not an integer" [MInteger show] fun2_res)
+  let funDiv_works = erlCase (\x => pure $ cast {to=ErlTerm} (-1.0)) [MIO [Double]] funDivEx
+  funDiv_works_res <- funDiv_works 1.0
+  putStrLn (erlCase "not a double" [MDouble show] funDiv_works_res)
+  let funDiv_crashes = erlCase (\x => pure $ cast {to=ErlTerm} (-1.0)) [MIO [Double]] funDivEx
+  funDiv_crashes_res <- funDiv_crashes 0.0
+  putStrLn (erlCase "not a double" [MDouble show] funDiv_crashes_res)
+
+
 main : IO ()
 main = do
   testErlCase
@@ -209,3 +248,4 @@ main = do
   testMList
   testMTuple
   testMMapSubset
+  testMIO
