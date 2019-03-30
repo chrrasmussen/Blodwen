@@ -135,6 +135,7 @@ data ExtPrim
   | FileOpen | FileClose | FileReadLine | FileWriteLine | FileEOF
   | NewIORef | ReadIORef | WriteIORef
   | ErlUnsafeCall | ErlCall | ErlCase | ErlReceive
+  | InternalTryCatch
   | Unknown Name
 
 export
@@ -154,6 +155,7 @@ Show ExtPrim where
   show ErlCall = "ErlCall"
   show ErlCase = "ErlCase"
   show ErlReceive = "ErlReceive"
+  show InternalTryCatch = "InternalTryCatch"
   show (Unknown n) = "Unknown " ++ show n
 
 toPrim : Name -> ExtPrim
@@ -172,7 +174,8 @@ toPrim pn@(NS _ n) = cond [
   (n == UN "prim__erlUnsafeCall", ErlUnsafeCall),
   (n == UN "prim__erlCall", ErlCall),
   (n == UN "prim__erlCase", ErlCase),
-  (n == UN "prim__erlReceive", ErlReceive)
+  (n == UN "prim__erlReceive", ErlReceive),
+  (n == UN "internal__tryCatch", InternalTryCatch)
   ]
   (Unknown pn)
 toPrim pn = Unknown pn
@@ -206,6 +209,10 @@ mkUncurriedFun xs body = "fun(" ++ showSep ", " xs ++ ") -> " ++ body ++ " end"
 
 mkStringToAtom : String -> String
 mkStringToAtom str = "(binary_to_atom(unicode:characters_to_binary(" ++ str ++ "), utf8))"
+
+mkTryCatch : String -> String
+mkTryCatch str = "(fun() -> try " ++ str ++ " of Result -> Result catch Class:Reason:Stacktrace -> {'$blodwen_rts', {Class, Reason, Stacktrace}} end end())"
+
 
 genConstant : Constant -> String
 genConstant (I x) = show x
@@ -241,8 +248,12 @@ expectArgAtIndex n xs =
 
 
 ioPureCExp : CExp vars -> CExp vars
-ioPureCExp ref =
-  CCon (NS ["PrimIO"] (UN "MkIO")) 0 [CErased, CLam (MN "World" 0) (CCon (NS ["PrimIO"] (UN "MkIORes")) 0 [CErased, weaken ref, CLocal Here])]
+ioPureCExp expr =
+  CCon (NS ["PrimIO"] (UN "MkIO")) 0 [CErased, CLam (MN "World" 0) (CCon (NS ["PrimIO"] (UN "MkIORes")) 0 [CErased, weaken expr, CLocal Here])]
+
+tryCatchCExp : CExp vars -> CExp vars
+tryCatchCExp expr =
+  CExtPrim (NS [] (UN "internal__tryCatch")) [expr]
 
 curryCExp : List Name -> ({innerVars : List Name} -> CExp innerVars -> CExp innerVars) -> CExp vars -> CExp vars
 curryCExp allNames transformer expr = wrapLambda allNames (transformer (CApp (weakenNs allNames expr) (reverse (args allNames))))
@@ -515,6 +526,8 @@ mutual
     genErlReceive i vs timeout def clauses
   genExtPrim i vs ErlReceive [_, timeout, def, matchers, world] =
     pure $ mkWorld "false" -- TODO: Do I need to implement this to make `erlReceive` work with variables?
+  genExtPrim i vs InternalTryCatch [expr] =
+    pure $ mkTryCatch !(genExp i vs expr)
   genExtPrim i vs (Unknown n) args =
     throw (InternalError ("Can't compile unknown external primitive " ++ show n))
   genExtPrim i vs prim args =
@@ -642,7 +655,7 @@ mutual
     let ref = CRef (MN "C" local)
     arity <- readListLength i vs types
     let tempVars = take arity $ zipWith (\name, idx => MN name idx) (repeat "M") [0..]
-    pure $ MkErlClause local [] !(genExp i vs ref) (IsFun arity ref) (curryCExp tempVars ioPureCExp ref)
+    pure $ MkErlClause local [] !(genExp i vs ref) (IsFun arity ref) (curryCExp tempVars (ioPureCExp . tryCatchCExp) ref)
   -- Other
   readClause i local global vs matcher =
     throw (InternalError ("Badly formed clause " ++ show matcher))
