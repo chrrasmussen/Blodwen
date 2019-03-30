@@ -513,7 +513,7 @@ mutual
     pure $ mkWorld "false" -- TODO: Implement?
   genExtPrim i vs ErlCall [_, modName, fnName, args@(CCon _ _ _), world] = do
     parameterList <- readArgs i vs args
-    pure $ mkWorld $ "(catch " ++ mkStringToAtom !(genExp i vs modName) ++ ":" ++ mkStringToAtom !(genExp i vs fnName) ++ "(" ++ showSep ", " parameterList ++ "))"
+    pure $ mkWorld $ mkTryCatch $ "(" ++ mkStringToAtom !(genExp i vs modName) ++ ":" ++ mkStringToAtom !(genExp i vs fnName) ++ "(" ++ showSep ", " parameterList ++ "))"
   genExtPrim i vs ErlCall [_, modName, fnName, args, world] =
     pure $ mkWorld "false" -- TODO: Implement?
   genExtPrim i vs ErlCase [_, def, matchers@(CCon _ _ _), term] = do
