@@ -181,6 +181,9 @@ toPrim pn@(NS _ n) = cond [
 toPrim pn = Unknown pn
 
 
+mkBlodwenRtsAtom : String
+mkBlodwenRtsAtom = "'$blodwen_rts'"
+
 mkErased : String
 mkErased = "erased"
 
@@ -211,7 +214,7 @@ mkStringToAtom : String -> String
 mkStringToAtom str = "(binary_to_atom(unicode:characters_to_binary(" ++ str ++ "), utf8))"
 
 mkTryCatch : String -> String
-mkTryCatch str = "(fun() -> try " ++ str ++ " of Result -> Result catch Class:Reason:Stacktrace -> {'$blodwen_rts', {Class, Reason, Stacktrace}} end end())"
+mkTryCatch str = "(fun() -> try " ++ str ++ " of Result -> Result catch Class:Reason:Stacktrace -> {" ++ mkBlodwenRtsAtom ++ ", {Class, Reason, Stacktrace}} end end())"
 
 
 genConstant : Constant -> String
@@ -660,6 +663,10 @@ mutual
     arity <- readListLength i vs types
     let tempVars = take arity $ zipWith (\name, idx => MN name idx) (repeat "M") [0..]
     pure $ MkErlClause local [] !(genExp i vs ref) (IsFun arity ref) (curryCExp tempVars (ioPureCExp . tryCatchCExp) ref)
+  -- MError
+  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MError")) _ [_, matcher]) = do
+    clause <- readClause i local global vs matcher
+    pure $ MkErlClause (nextLocal clause) (globals clause) ("{" ++ mkBlodwenRtsAtom ++ ", " ++ pattern clause ++ "}") (guard clause) (body clause)
   -- MMapper
   readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MMapper")) _ [_, _, matcher, mapper]) = do
     clause <- readClause i local global vs matcher
