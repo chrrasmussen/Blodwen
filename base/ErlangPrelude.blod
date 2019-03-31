@@ -183,23 +183,24 @@ namespace CaseExpr
   mutual
     public export
     data ErlMatcher : Type -> Type where
-      MExact        : ErlType a => a -> b -> ErlMatcher b
-      MAny          : (ErlTerm -> a)      -> ErlMatcher a
-      MCodepoint    : (Char -> a)         -> ErlMatcher a
-      MInteger      : (Integer -> a)      -> ErlMatcher a
-      MDouble       : (Double -> a)       -> ErlMatcher a
-      MAtom         : (ErlAtom -> a)      -> ErlMatcher a
-      MBinary       : (ErlBinary -> a)    -> ErlMatcher a
-      MMap          : (ErlMap -> a)       -> ErlMatcher a
-      MPid          : (ErlPid -> a)       -> ErlMatcher a
-      MRef          : (ErlRef -> a)       -> ErlMatcher a
-      MPort         : (ErlPort -> a)      -> ErlMatcher a
-      MNil          : a                   -> ErlMatcher a
+      MExact        : ErlType a => a -> ErlMatcher ()
+      MAny          : ErlMatcher ErlTerm
+      MCodepoint    : ErlMatcher Char
+      MInteger      : ErlMatcher Integer
+      MDouble       : ErlMatcher Double
+      MAtom         : ErlMatcher ErlAtom
+      MBinary       : ErlMatcher ErlBinary
+      MMap          : ErlMatcher ErlMap
+      MPid          : ErlMatcher ErlPid
+      MRef          : ErlMatcher ErlRef
+      MPort         : ErlMatcher ErlPort
+      MNil          : ErlMatcher ()
       MCons         : ErlMatcher a -> ErlMatcher b -> (a -> b -> ret)  -> ErlMatcher ret
       MList         : ErlMatchers ErlMatcher xs  -> TypesToFunc xs ret -> ErlMatcher ret
       MTuple        : ErlMatchers ErlMatcher xs  -> TypesToFunc xs ret -> ErlMatcher ret
       MMapSubset    : ErlMatchers ErlMapEntry xs -> TypesToFunc xs ret -> ErlMatcher ret
       MIO           : (xs : List Type) -> ErlMatcher (TypesToFunc xs (IO ErlTerm))
+      MMapper       : ErlMatcher a -> (a -> b) -> ErlMatcher b
 
     public export
     data ErlMatchers : (Type -> Type) -> List Type -> Type where
@@ -222,6 +223,11 @@ namespace CaseExpr
   export %inline
   erlCase : a -> List (ErlMatcher a) -> ErlTerm -> a
   erlCase = prim__erlCase
+
+  -- TODO: I would prefer to have Functor implementation for ErlMatcher instead, but at the moment this function needs to be inlined
+  export %inline
+  map : (a -> b) -> ErlMatcher a -> ErlMatcher b
+  map func matcher = MMapper matcher func
 
 
 namespace IO
@@ -281,7 +287,7 @@ namespace Maps
   unsafeLookup : ErlType key => key -> (0 ret : Type) -> {auto prf : ErlType ret} -> ErlMap -> Maybe ret
   unsafeLookup key ty m = unsafePerformIO $ do
     result <- erlUnsafeCall ErlTerm "maps:find" [key, m]
-    pure $ erlCase Nothing [MTuple [MExact (MkErlAtom "ok") (), MAny id] (\ok, value => Just (erlUnsafeCast ty value))] result
+    pure $ erlCase Nothing [MTuple [MExact (MkErlAtom "ok"), MAny] (\ok, value => Just (erlUnsafeCast ty value))] result
 
   export
   insert : (ErlType key, ErlType value) => key -> value -> ErlMap -> ErlMap
@@ -302,11 +308,8 @@ namespace StringConversions
   isValidCharlist : ErlTerm -> Bool
   isValidCharlist term =
     erlCase False [
-      MNil True,
-      MCons
-        (MCodepoint id)
-        (MAny (\tailTerm => isValidCharlist (assert_smaller term tailTerm)))
-        (\x, y => y)
+      map (const True) MNil,
+      MCons MCodepoint MAny (\x, y => isValidCharlist (assert_smaller term y))
     ] term
 
   export
@@ -325,25 +328,19 @@ namespace StringConversions
     isValidStringHead : ErlTerm -> Bool
     isValidStringHead term =
       erlCase False [
-        MCodepoint (const True), -- NOTE: Codepoints are only valid in head position in an IO list
-        MBinary (const True),
-        MNil True,
-        MCons
-          (MAny (\subTerm => isValidStringHead (assert_smaller term subTerm)))
-          (MAny (\subTerm => isValidString (assert_smaller term subTerm)))
-          (\x, y => x && y)
+        map (const True) MCodepoint, -- NOTE: Codepoints are only valid in head position in an IO list
+        map (const True) MBinary,
+        map (const True) MNil,
+        MCons MAny MAny (\x, y => isValidStringHead (assert_smaller term x) && isValidString (assert_smaller term y))
       ] term
 
     export
     isValidString : ErlTerm -> Bool
     isValidString term =
       erlCase False [
-        MBinary (const True),
-        MNil True,
-        MCons
-          (MAny (\subTerm => isValidStringHead (assert_smaller term subTerm)))
-          (MAny (\subTerm => isValidString (assert_smaller term subTerm)))
-          (\x, y => x && y)
+        map (const True) MBinary,
+        map (const True) MNil,
+        MCons MAny MAny (\x, y => isValidStringHead (assert_smaller term x) && isValidString (assert_smaller term y))
       ] term
 
   export

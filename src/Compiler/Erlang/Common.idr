@@ -247,6 +247,10 @@ expectArgAtIndex n xs =
     Nothing => throw (InternalError ("Missing expected argument at index " ++ show n ++ " in list"))
 
 
+unitCExp : CExp vars
+unitCExp =
+  CCon (NS ["Builtin"] (UN "MkUnit")) 0 []
+
 ioPureCExp : CExp vars -> CExp vars
 ioPureCExp expr =
   CCon (NS ["PrimIO"] (UN "MkIO")) 0 [CErased, CLam (MN "World" 0) (CCon (NS ["PrimIO"] (UN "MkIORes")) 0 [CErased, weaken expr, CLocal Here])]
@@ -585,35 +589,35 @@ mutual
   readListLength i vs args =
     throw (InternalError ("Expected a list of types " ++ show args))
 
-  createGuardClause : Int -> (local : Int) -> (global : Int) -> SVars vars -> (mapper : CExp vars) -> (createGuard : CExp vars -> ErlGuard vars) -> Core annot (ErlClause vars)
-  createGuardClause i local global vs mapper createGuard = do
+  createGuardClause : Int -> (local : Int) -> (global : Int) -> SVars vars -> (createGuard : CExp vars -> ErlGuard vars) -> Core annot (ErlClause vars)
+  createGuardClause i local global vs createGuard = do
     let ref = CRef (MN "C" local)
-    pure $ MkErlClause (local + 1) [] !(genExp i vs ref) (createGuard ref) (CApp mapper [ref])
+    pure $ MkErlClause (local + 1) [] !(genExp i vs ref) (createGuard ref) ref
 
   readClause : Int -> (local : Int) -> (global : Int) -> SVars vars -> CExp vars -> Core annot (ErlClause vars)
   -- MExact
-  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MExact")) _ [_, _, _, matchValue, returnValue]) = do
+  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MExact")) _ [_, _, matchValue]) = do
     let localRef = CRef (MN "C" global)
     let globalRef = CRef (MN "G" global)
-    pure $ MkErlClause (local + 1) [matchValue] !(genExp i vs localRef) (IsBinOp EQ localRef globalRef) returnValue
+    pure $ MkErlClause (local + 1) [matchValue] !(genExp i vs localRef) (IsBinOp EQ localRef globalRef) unitCExp
   -- MAny
-  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MAny")) _ [_, mapper]) = do
+  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MAny")) _ []) = do
     let ref = CRef (MN "C" local)
-    pure $ MkErlClause (local + 1) [] !(genExp i vs ref) IsAny (CApp mapper [ref])
+    pure $ MkErlClause (local + 1) [] !(genExp i vs ref) IsAny ref
   -- Simple guards
-  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MCodepoint")) _ [_, mapper]) = createGuardClause i local global vs mapper
+  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MCodepoint")) _ []) = createGuardClause i local global vs
     (\val => AndAlso (IsInteger val) (AndAlso (IsBinOp GTE val (CPrimVal (BI 0))) (IsBinOp LTE val (CPrimVal (BI 0x10FFFF)))))
-  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MInteger")) _ [_, mapper]) = createGuardClause i local global vs mapper IsInteger
-  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MDouble")) _ [_, mapper]) = createGuardClause i local global vs mapper IsDouble
-  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MAtom")) _ [_, mapper]) = createGuardClause i local global vs mapper IsAtom
-  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MBinary")) _ [_, mapper]) = createGuardClause i local global vs mapper IsBinary
-  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MMap")) _ [_, mapper]) = createGuardClause i local global vs mapper IsMap
-  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MPid")) _ [_, mapper]) = createGuardClause i local global vs mapper IsPid
-  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MRef")) _ [_, mapper]) = createGuardClause i local global vs mapper IsRef
-  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MPort")) _ [_, mapper]) = createGuardClause i local global vs mapper IsPort
+  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MInteger")) _ []) = createGuardClause i local global vs IsInteger
+  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MDouble")) _ []) = createGuardClause i local global vs IsDouble
+  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MAtom")) _ []) = createGuardClause i local global vs IsAtom
+  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MBinary")) _ []) = createGuardClause i local global vs IsBinary
+  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MMap")) _ []) = createGuardClause i local global vs IsMap
+  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MPid")) _ []) = createGuardClause i local global vs IsPid
+  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MRef")) _ []) = createGuardClause i local global vs IsRef
+  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MPort")) _ []) = createGuardClause i local global vs IsPort
   -- MNil
-  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MNil")) _ [_, returnValue]) =
-    pure $ MkErlClause local [] "[]" IsAny returnValue
+  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MNil")) _ []) =
+    pure $ MkErlClause local [] "[]" IsAny unitCExp
   -- MCons
   readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MCons")) _ [_, _, _, headMatcher, tailMatcher, mapper]) = do
     headClause <- readClause i local global vs headMatcher
@@ -656,6 +660,10 @@ mutual
     arity <- readListLength i vs types
     let tempVars = take arity $ zipWith (\name, idx => MN name idx) (repeat "M") [0..]
     pure $ MkErlClause local [] !(genExp i vs ref) (IsFun arity ref) (curryCExp tempVars (ioPureCExp . tryCatchCExp) ref)
+  -- MMapper
+  readClause i local global vs (CCon (NS ["CaseExpr", "ErlangPrelude"] (UN "MMapper")) _ [_, _, matcher, mapper]) = do
+    clause <- readClause i local global vs matcher
+    pure $ MkErlClause (nextLocal clause) (globals clause) (pattern clause) (guard clause) (CApp mapper [body clause])
   -- Other
   readClause i local global vs matcher =
     throw (InternalError ("Badly formed clause " ++ show matcher))
