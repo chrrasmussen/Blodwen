@@ -748,10 +748,10 @@ genDef n (MkCon t a) =
 -- Convert the name to Erlang code
 -- (There may be no code generated, for example if it's a constructor)
 export
-getErlang : Defs -> Name -> Core annot String
-getErlang defs name = do
-  let Just def = lookupGlobalExact name (gamma defs)
+genErlang : Defs -> Name -> Core annot String
+genErlang defs name = do
+  let Just globalDef = lookupGlobalExact name (gamma defs)
     | throw (InternalError ("Compiling undefined name " ++ show name))
-  let Just expr = compexpr def
+  let Just expr = compexpr globalDef
     | throw (InternalError ("No compiled definition for " ++ show name))
   genDef name expr

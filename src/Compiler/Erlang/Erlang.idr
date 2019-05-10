@@ -36,7 +36,7 @@ compileToErlang (MkOpts moduleName) c tm outfile = do
     ds <- getDirectives Erlang
     (ns, tags) <- findUsedNames tm
     defs <- get Ctxt
-    compdefs <- traverse (getErlang defs) ns
+    compdefs <- traverse (genErlang defs) ns
     let code = concat compdefs
     main <- genExp 0 [] !(compileExp tags tm)
     support <- readDataFile "erlang/support.erl"
