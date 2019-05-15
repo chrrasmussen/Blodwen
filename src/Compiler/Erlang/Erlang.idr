@@ -31,8 +31,8 @@ findErlangCompiler = pure "/usr/bin/env erlc"
 findEscript : IO String
 findEscript = pure "/usr/bin/env escript"
 
-compileToErlang : Opts -> Ref Ctxt Defs -> ClosedTerm -> (outfile : String) -> Core annot ()
-compileToErlang (MkOpts moduleName) c tm outfile = do
+compileToErlang : Opts -> Ref Ctxt Defs -> ClosedTerm -> (libEntrypoint : Maybe String) -> (outfile : String) -> Core annot ()
+compileToErlang (MkOpts moduleName) c tm _ outfile = do
     ds <- getDirectives Erlang
     (names, tags) <- findUsedNames tm
     defs <- get Ctxt
@@ -60,18 +60,18 @@ erlangModuleName : String -> Maybe String
 erlangModuleName path = rootname !(basename path)
 
 -- TODO: Add error handling
-generateErl : Ref Ctxt Defs -> ClosedTerm -> (outfile : String) -> Core annot (Maybe String)
-generateErl c tm outfile = do
+generateErl : Ref Ctxt Defs -> ClosedTerm -> (libEntrypoint : Maybe String) -> (outfile : String) -> Core annot (Maybe String)
+generateErl c tm libEntrypoint outfile = do
   let Just modName = erlangModuleName outfile
     | throw (InternalError ("Invalid module name: " ++ outfile))
   let opts = MkOpts modName
-  compileToErlang opts c tm outfile
+  compileToErlang opts c tm libEntrypoint outfile
   pure (Just outfile)
 
 -- TODO: Add error handling
 -- TODO: Add options to `erlc`
-generateBeam : Ref Ctxt Defs -> ClosedTerm -> (outfile : String) -> Core annot (Maybe String)
-generateBeam c tm outfile = do
+generateBeam : Ref Ctxt Defs -> ClosedTerm -> (libEntrypoint : Maybe String) -> (outfile : String) -> Core annot (Maybe String)
+generateBeam c tm libEntrypoint outfile = do
   let Just modName = erlangModuleName outfile
     | throw (InternalError ("Invalid module name: " ++ outfile))
   let targetDir : String =
@@ -83,18 +83,18 @@ generateBeam c tm outfile = do
   coreLift $ system ("mkdir -p " ++ quoted tmpDir)
   let generatedFile = tmpDir ++ "/" ++ modName ++ ".erl"
   let opts = MkOpts modName
-  compileToErlang opts c tm generatedFile
+  compileToErlang opts c tm libEntrypoint generatedFile
   coreLift $ system (erlc ++ " -W0 -o " ++ quoted targetDir ++ " " ++ quoted generatedFile)
   pure (Just outfile)
 
 -- TODO: generateEscript : Ref Ctxt Defs -> ClosedTerm -> (outfile : String) -> Core annot (Maybe String)
 
 -- TODO: Validate `outfile`
-compileExpr : Ref Ctxt Defs -> ClosedTerm -> (outfile : String) -> Core annot (Maybe String)
-compileExpr c tm outfile =
+compileExpr : Ref Ctxt Defs -> ClosedTerm -> (libEntrypoint : Maybe String) -> (outfile : String) -> Core annot (Maybe String)
+compileExpr c tm libEntrypoint outfile =
   case extension outfile of
-    Just "erl" => generateErl c tm outfile
-    Just "beam" => generateBeam c tm outfile
+    Just "erl" => generateErl c tm libEntrypoint outfile
+    Just "beam" => generateBeam c tm libEntrypoint outfile
     _ => throw (InternalError ("Unknown file type: " ++ outfile))
 
 -- TODO: Add error handling
@@ -107,7 +107,7 @@ executeExpr c tm = do
   let generatedFile = tmpDir ++ "/main.erl"
   let compiledFile = tmpDir ++ "/main.beam"
   let opts = MkOpts "main"
-  compileToErlang opts c tm generatedFile
+  compileToErlang opts c tm Nothing generatedFile
   coreLift $ system (erlc ++ " -W0 -o " ++ quoted tmpDir ++ " " ++ quoted generatedFile)
   coreLift $ system (escript ++ " " ++ quoted compiledFile)
   pure ()

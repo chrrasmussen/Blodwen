@@ -118,8 +118,8 @@ compileToSS c tm outfile
 
 ||| Chez Scheme implementation of the `compileExpr` interface.
 compileExpr : Ref Ctxt Defs ->
-              ClosedTerm -> (outfile : String) -> Core annot (Maybe String)
-compileExpr c tm outfile
+              ClosedTerm -> (libEntrypoint : Maybe String) -> (outfile : String) -> Core annot (Maybe String)
+compileExpr c tm _ outfile
     = do let outn = outfile ++ ".ss"
          compileToSS c tm outn
          -- TODO: Compile to .so too?

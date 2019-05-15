@@ -18,7 +18,7 @@ record Codegen annot where
   constructor MkCG
   ||| Compile a Blodwen expression, saving it to a file.
   compileExpr : Ref Ctxt Defs ->
-                ClosedTerm -> (outfile : String) -> Core annot (Maybe String)
+                ClosedTerm -> (libEntrypoint : Maybe String) -> (outfile : String) -> Core annot (Maybe String)
   ||| Execute a Blodwen expression directly.
   executeExpr : Ref Ctxt Defs -> ClosedTerm -> Core annot ()
 
@@ -28,7 +28,7 @@ record Codegen annot where
 export
 compile : {auto c : Ref Ctxt Defs} ->
           Codegen annot ->
-          ClosedTerm -> (outfile : String) -> Core annot (Maybe String)
+          ClosedTerm -> (libEntrypoint : Maybe String) -> (outfile : String) -> Core annot (Maybe String)
 compile {c} cg = compileExpr cg c
 
 ||| execute

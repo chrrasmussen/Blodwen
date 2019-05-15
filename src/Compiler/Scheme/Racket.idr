@@ -60,8 +60,8 @@ compileToRKT c tm outfile
          pure ()
 
 compileExpr : Ref Ctxt Defs ->
-              ClosedTerm -> (outfile : String) -> Core annot (Maybe String)
-compileExpr c tm outfile
+              ClosedTerm -> (libEntrypoint : Maybe String) -> (outfile : String) -> Core annot (Maybe String)
+compileExpr c tm _ outfile
     = do tmp <- coreLift $ tmpName
          let outn = tmp ++ ".rkt"
          compileToRKT c tm outn

@@ -226,7 +226,20 @@ execExp ctm
          (tm, _, ty) <- inferTerm elabTop False (UN "[input]") 
                                [] (MkNested []) NONE InExpr ttimp 
          execute !findCG tm
-         
+
+export
+genLib : {auto c : Ref Ctxt Defs} ->
+          {auto u : Ref UST (UState FC)} ->
+          {auto s : Ref Syn SyntaxInfo} ->
+          {auto m : Ref Meta (Metadata FC)} ->
+          String -> String -> Core FC ()
+genLib libEntrypoint outfile = do
+  i <- newRef ImpST (initImpState {annot = FC})
+  ttimp <- desugar AnyExpr [] (PRef (MkFC "(script)" (0, 0) (0, 0)) (UN libEntrypoint))
+  (_, tm, ty) <- inferTerm elabTop False (UN "[input]") [] (MkNested []) NONE InExpr ttimp
+  ok <- compile !findCG tm (Just libEntrypoint) outfile
+  pure ()
+
 anyAt : (FC -> Bool) -> FC -> a -> Bool
 anyAt p loc y = p loc
 
@@ -455,7 +468,7 @@ process (Compile ctm outfile)
          ttimp <- desugar AnyExpr [] (PApp replFC (PRef replFC (UN "unsafePerformIO")) ctm)
          (_, tm, ty) <- inferTerm elabTop False (UN "[input]") 
                                [] (MkNested []) NONE InExpr ttimp 
-         ok <- compile !findCG tm outfile
+         ok <- compile !findCG tm Nothing outfile
          maybe (pure ())
                (\fname => iputStrLn (outfile ++ " written"))
                ok
