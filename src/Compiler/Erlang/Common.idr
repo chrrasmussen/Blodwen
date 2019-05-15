@@ -216,6 +216,11 @@ mkStringToAtom str = "(binary_to_atom(unicode:characters_to_binary(" ++ str ++ "
 mkTryCatch : String -> String
 mkTryCatch str = "(fun() -> try " ++ str ++ " of Result -> Result catch Class:Reason:Stacktrace -> {" ++ mkBlodwenRtsAtom ++ ", {Class, Reason, Stacktrace}} end end())"
 
+-- TODO: Not a great workaround :-/
+-- Will fail if the input string is not a string literal
+stripErlangString : String -> String
+stripErlangString str =
+  pack (reverse (drop 8 (reverse (drop 3 (unpack str)))))
 
 genConstant : Constant -> String
 genConstant (I x) = show x
@@ -383,6 +388,11 @@ mutual
     let body = transformer (applyToArgs func tempCRefs)
     pure $ mkUncurriedFun tempVars !(genExp i vs body)
 
+  readExports : Int -> SVars vars -> CExp vars -> Core annot (List String)
+  readExports i vs (CCon (NS ["Prelude"] (UN "Nil")) _ _) = pure []
+  readExports i vs (CCon (NS ["Prelude"] (UN "::")) _ [_, funcExport, xs]) = pure $ !(genExp i vs funcExport) :: !(readExports i vs xs)
+  readExports i vs tm = throw (InternalError ("Unknown argument to export definition: " ++ show tm))
+
   genCon : Int -> SVars vars -> CExp vars -> Core annot String
   -- Unit
   genCon i vs (CCon (NS ["Builtin"] (UN "MkUnit")) _ _) = pure mkUnit
@@ -426,6 +436,14 @@ mutual
   genCon i vs (CCon (NS ["Functions", "ErlangPrelude"] (UN "MkErlIO3")) _ args) = genConFun i vs 3 !(expectArgAtIndex 4 args) applyUnsafePerformIO
   genCon i vs (CCon (NS ["Functions", "ErlangPrelude"] (UN "MkErlIO4")) _ args) = genConFun i vs 4 !(expectArgAtIndex 5 args) applyUnsafePerformIO
   genCon i vs (CCon (NS ["Functions", "ErlangPrelude"] (UN "MkErlIO5")) _ args) = genConFun i vs 5 !(expectArgAtIndex 6 args) applyUnsafePerformIO
+  -- Unit
+  -- TODO: Fix namespace
+  genCon i vs (CCon (NS _ (UN "Exports")) _ [exports]) = do
+    funcExports <- readExports i vs exports
+    pure $ showSep "\n" funcExports ++ "\n"
+  genCon i vs (CCon (NS _ (UN "Fun")) _ [_, name, expr]) = do
+    --coreLift $ printLn args
+    pure $ stripErlangString !(genExp i vs name) ++ "() -> " ++ !(genExp i vs expr) ++ "."
   -- Other
   genCon i vs (CCon x tag args) = pure $ genConstructor tag !(traverse (genExp i vs) args)
   genCon i vs tm = throw (InternalError ("Invalid constructor: " ++ show tm))
@@ -745,13 +763,27 @@ genDef n (MkError exp) =
 genDef n (MkCon t a) =
   pure "" -- Nothing to compile here
 
+getCompileExpr : Defs -> Name -> Core annot CDef
+getCompileExpr defs name = do
+  let Just globalDef = lookupGlobalExact name (gamma defs)
+    | throw (InternalError ("Compiling undefined name " ++ show name))
+  let Just expr = compexpr globalDef
+    | throw (InternalError ("No compiled definition for " ++ show name))
+  pure expr
+
 -- Convert the name to Erlang code
 -- (There may be no code generated, for example if it's a constructor)
 export
 genErlang : Defs -> Name -> Core annot String
 genErlang defs name = do
-  let Just globalDef = lookupGlobalExact name (gamma defs)
-    | throw (InternalError ("Compiling undefined name " ++ show name))
-  let Just expr = compexpr globalDef
-    | throw (InternalError ("No compiled definition for " ++ show name))
+  expr <- getCompileExpr defs name
   genDef name expr
+
+export
+genErlangExports : Defs -> Name -> Core annot (String, String)
+genErlangExports defs name = do
+  expr <- getCompileExpr defs name
+  -- TODO: Implement exportDirectives and exportFuncs
+  let exportDirectives = "-export([foo/1]).\n"
+  exportFuncs <- genDef name expr
+  pure (exportDirectives, exportFuncs)

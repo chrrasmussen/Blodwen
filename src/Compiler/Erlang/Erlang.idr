@@ -31,8 +31,8 @@ findErlangCompiler = pure "/usr/bin/env erlc"
 findEscript : IO String
 findEscript = pure "/usr/bin/env escript"
 
-compileToErlang : Opts -> Ref Ctxt Defs -> ClosedTerm -> (libEntrypoint : Maybe String) -> (outfile : String) -> Core annot ()
-compileToErlang (MkOpts moduleName) c tm _ outfile = do
+compileToErlangExecutable : Opts -> Ref Ctxt Defs -> ClosedTerm -> (outfile : String) -> Core annot ()
+compileToErlangExecutable (MkOpts moduleName) c tm outfile = do
     ds <- getDirectives Erlang
     (names, tags) <- findUsedNames tm
     defs <- get Ctxt
@@ -55,6 +55,34 @@ compileToErlang (MkOpts moduleName) c tm _ outfile = do
     mainInit : String
     mainInit = "io:setopts([{encoding, unicode}])"
 
+compileToErlangLibrary : Opts -> Ref Ctxt Defs -> ClosedTerm -> (libEntrypoint : String) -> (outfile : String) -> Core annot ()
+compileToErlangLibrary (MkOpts moduleName) c tm libEntrypoint outfile = do
+    ds <- getDirectives Erlang
+    (names, tags) <- findUsedNames tm
+    defs <- get Ctxt
+    -- TODO: Need to find module name automatically
+    let exportsFuncName = NS ["Main"] (UN libEntrypoint)
+    compdefs <- traverse (genErlang defs) (filter (/= exportsFuncName) names)
+    let code = concat compdefs
+    (exportDirectives, exportFuncs) <- genErlangExports defs exportsFuncName
+    support <- readDataFile "erlang/support.erl"
+    let scm = header ++ exportDirectives ++ unlines ds ++ support ++ code ++ exportFuncs ++ "\n"
+    Right () <- coreLift $ writeFile outfile scm
+      | Left err => throw (FileErr outfile err)
+    coreLift $ chmod outfile 0o755
+    pure ()
+  where
+    header : String
+    header = "-module('" ++ moduleName ++ "').\n" ++
+      -- "-mode(compile).\n" ++ -- TODO: Make mode into a flag
+      "-compile([nowarn_unused_function, nowarn_unused_vars]).\n" ++
+      "\n"
+
+compileToErlang : Opts -> Ref Ctxt Defs -> ClosedTerm -> (libEntrypoint : Maybe String) -> (outfile : String) -> Core annot ()
+compileToErlang opts c tm libEntrypoint outfile =
+  case libEntrypoint of
+    Just entrypoint => compileToErlangLibrary opts c tm entrypoint outfile
+    Nothing => compileToErlangExecutable opts c tm outfile
 
 erlangModuleName : String -> Maybe String
 erlangModuleName path = rootname !(basename path)
