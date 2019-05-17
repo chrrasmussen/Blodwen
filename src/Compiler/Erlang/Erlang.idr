@@ -34,9 +34,9 @@ findEscript = pure "/usr/bin/env escript"
 compileToErlang : Opts -> Ref Ctxt Defs -> ClosedTerm -> (outfile : String) -> Core annot ()
 compileToErlang (MkOpts moduleName) c tm outfile = do
     ds <- getDirectives Erlang
-    (ns, tags) <- findUsedNames tm
+    (names, tags) <- findUsedNames tm
     defs <- get Ctxt
-    compdefs <- traverse (genErlang defs) ns
+    compdefs <- traverse (genErlang defs) names
     let code = concat compdefs
     main <- genExp 0 [] !(compileExp tags tm)
     support <- readDataFile "erlang/support.erl"
