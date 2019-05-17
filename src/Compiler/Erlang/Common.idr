@@ -737,9 +737,9 @@ genArglist [x] = x
 genArglist (x :: xs) = x ++ ", " ++ genArglist xs
 
 genDef : Name -> CDef -> Core annot String
-genDef n (MkFun args exp) =
-  let vs = initSVars args in
-   pure $ genName n ++ "(" ++ genArglist vs ++ ") -> " ++ !(genExp 0 vs exp) ++ ".\n"
+genDef n (MkFun args exp) = do
+  let vs = initSVars args
+  pure $ genName n ++ "(" ++ genArglist vs ++ ") -> " ++ !(genExp 0 vs exp) ++ ".\n"
 genDef n (MkError exp) =
   pure $ genName n ++ "() -> " ++ !(genExp 0 [] exp) ++ ".\n"
 genDef n (MkCon t a) =
