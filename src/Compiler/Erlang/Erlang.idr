@@ -31,6 +31,20 @@ findErlangCompiler = pure "/usr/bin/env erlc"
 findEscript : IO String
 findEscript = pure "/usr/bin/env escript"
 
+data ExportMainFunc = IncludeMain | ExcludeMain
+
+header : String -> ExportMainFunc -> String
+header moduleName exportMainFunc = do
+  let exportDirective =
+    case exportMainFunc of
+      IncludeMain => "-export([main/1]).\n"
+      ExcludeMain => ""
+  "-module('" ++ moduleName ++ "').\n" ++
+    -- "-mode(compile).\n" ++ -- TODO: Make mode into a flag
+    "-compile([nowarn_unused_function, nowarn_unused_vars]).\n" ++
+    exportDirective ++
+    "\n"
+
 compileToErlangExecutable : Opts -> Ref Ctxt Defs -> ClosedTerm -> (outfile : String) -> Core annot ()
 compileToErlangExecutable (MkOpts moduleName) c tm outfile = do
     ds <- getDirectives Erlang
@@ -40,18 +54,12 @@ compileToErlangExecutable (MkOpts moduleName) c tm outfile = do
     let code = concat compdefs
     main <- genExp 0 [] !(compileExp tags tm)
     support <- readDataFile "erlang/support.erl"
-    let scm = header ++ unlines ds ++ support ++ code ++ "main(Args) -> " ++ mainInit ++ ", " ++ main ++ ".\n"
+    let scm = header moduleName IncludeMain ++ unlines ds ++ support ++ code ++ "main(Args) -> " ++ mainInit ++ ", " ++ main ++ ".\n"
     Right () <- coreLift $ writeFile outfile scm
       | Left err => throw (FileErr outfile err)
     coreLift $ chmod outfile 0o755
     pure ()
   where
-    header : String
-    header = "-module('" ++ moduleName ++ "').\n" ++
-      -- "-mode(compile).\n" ++ -- TODO: Make mode into a flag
-      "-compile([nowarn_unused_function, nowarn_unused_vars]).\n" ++
-      "-export([main/1]).\n" ++
-      "\n"
     mainInit : String
     mainInit = "io:setopts([{encoding, unicode}])"
 
@@ -67,17 +75,11 @@ compileToErlangLibrary (MkOpts moduleName) c tm libEntrypoint outfile = do
     -- NOTE: The main function is not used, but (for some reason) it is referenced by the generated code.
     main <- genErlang defs exportsFuncName
     support <- readDataFile "erlang/support.erl"
-    let scm = header ++ exportDirectives ++ unlines ds ++ support ++ code ++ main ++ exportFuncs ++ "\n"
+    let scm = header moduleName ExcludeMain ++ exportDirectives ++ unlines ds ++ support ++ code ++ main ++ exportFuncs ++ "\n"
     Right () <- coreLift $ writeFile outfile scm
       | Left err => throw (FileErr outfile err)
     coreLift $ chmod outfile 0o755
     pure ()
-  where
-    header : String
-    header = "-module('" ++ moduleName ++ "').\n" ++
-      -- "-mode(compile).\n" ++ -- TODO: Make mode into a flag
-      "-compile([nowarn_unused_function, nowarn_unused_vars]).\n" ++
-      "\n"
 
 compileToErlang : Opts -> Ref Ctxt Defs -> ClosedTerm -> (libEntrypoint : Maybe String) -> (outfile : String) -> Core annot ()
 compileToErlang opts c tm libEntrypoint outfile =
