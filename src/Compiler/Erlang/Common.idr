@@ -750,11 +750,41 @@ genDef n (MkError exp) =
 genDef n (MkCon t a) =
   pure "" -- Nothing to compile here
 
--- TODO: Fix namespace
-genExports : Int -> SVars vars -> CExp vars -> Core annot String
-genExports i vs (CCon (NS _ (UN "Fun")) _ [_, exprTy, name, expr]) =
-  pure $ stripErlangString !(genExp i vs name) ++ "() -> " ++ !(genExp i vs expr) ++ ".\n"
-genExports i vs (CCon (NS _ (UN "Combine")) _ [exports1, exports2]) =
+data InternalArity = Value | Arity Nat
+
+internalArity : CExp vars -> InternalArity
+internalArity (CCon (NS ["ErlangPrelude"] (UN "ETFun")) _ _) = Arity 1
+internalArity (CCon (NS ["ErlangPrelude"] (UN "ETErlFun0")) _ _) = Arity 0
+internalArity (CCon (NS ["ErlangPrelude"] (UN "ETErlFun1")) _ _) = Arity 1
+internalArity (CCon (NS ["ErlangPrelude"] (UN "ETErlFun2")) _ _) = Arity 2
+internalArity (CCon (NS ["ErlangPrelude"] (UN "ETErlFun3")) _ _) = Arity 3
+internalArity (CCon (NS ["ErlangPrelude"] (UN "ETErlFun4")) _ _) = Arity 4
+internalArity (CCon (NS ["ErlangPrelude"] (UN "ETErlFun5")) _ _) = Arity 5
+internalArity (CCon (NS ["ErlangPrelude"] (UN "ETErlIO0")) _ _) = Arity 0
+internalArity (CCon (NS ["ErlangPrelude"] (UN "ETErlIO1")) _ _) = Arity 1
+internalArity (CCon (NS ["ErlangPrelude"] (UN "ETErlIO2")) _ _) = Arity 2
+internalArity (CCon (NS ["ErlangPrelude"] (UN "ETErlIO3")) _ _) = Arity 3
+internalArity (CCon (NS ["ErlangPrelude"] (UN "ETErlIO4")) _ _) = Arity 4
+internalArity (CCon (NS ["ErlangPrelude"] (UN "ETErlIO5")) _ _) = Arity 5
+internalArity _ = Value
+
+externalArity : InternalArity -> Nat
+externalArity Value = 0
+externalArity (Arity arity) = arity
+
+genExports : Int -> SVars vars -> CExp vars -> Core annot (List (String, Nat, String))
+genExports i vs (CCon (NS ["IO", "ErlangPrelude"] (UN "Fun")) _ [_, exprTy, name, expr]) = do
+  let intArity = internalArity exprTy
+  let extArity = externalArity intArity
+  let funcName = stripErlangString !(genExp i vs name)
+  let vars = take extArity $ zipWith (\name, idx => name ++ show idx) (repeat "E_") [0..]
+  let invocation =
+    case intArity of
+      Value => ""
+      Arity => "(" ++ showSep ", " vars ++ ")"
+  let funcDecl = funcName ++ "(" ++ showSep ", " vars ++ ") -> " ++ !(genExp i vs expr) ++ invocation ++ "."
+  pure $ [(funcName, extArity, funcDecl)]
+genExports i vs (CCon (NS ["IO", "ErlangPrelude"] (UN "Combine")) _ [exports1, exports2]) =
   pure $ !(genExports i vs exports1) ++ !(genExports i vs exports2)
 genExports i vs tm = throw (InternalError ("Invalid export: " ++ show tm))
 
@@ -779,8 +809,8 @@ genErlangExports : Defs -> Name -> Core annot (String, String)
 genErlangExports defs name = do
   MkFun args expr <- getCompileExpr defs name
     | throw (InternalError ("Expected function definition for " ++ show name)) 
-  -- TODO: Implement exportDirectives and exportFuncs
-  let exportDirectives = "-export([foo/1]).\n"
   let vs = initSVars args
-  exportFuncs <- genExports 0 vs expr
+  exports <- genExports 0 vs expr
+  let exportDirectives = "-export([" ++ showSep ", " (map (\(name, arity, _) => name ++ "/" ++ show arity) exports) ++ "]).\n"
+  let exportFuncs = showSep "\n" (map (\(_, _, funcDef) => funcDef) exports)
   pure (exportDirectives, exportFuncs)

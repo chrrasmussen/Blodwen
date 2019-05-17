@@ -60,13 +60,14 @@ compileToErlangLibrary (MkOpts moduleName) c tm libEntrypoint outfile = do
     ds <- getDirectives Erlang
     (names, tags) <- findUsedNames tm
     defs <- get Ctxt
-    -- TODO: Need to find module name automatically
-    let exportsFuncName = NS ["Main"] (UN libEntrypoint)
+    let exportsFuncName = NS (currentNS defs) (UN libEntrypoint)
     compdefs <- traverse (genErlang defs) (filter (/= exportsFuncName) names)
     let code = concat compdefs
     (exportDirectives, exportFuncs) <- genErlangExports defs exportsFuncName
+    -- NOTE: The main function is not used, but (for some reason) it is referenced by the generated code.
+    main <- genErlang defs exportsFuncName
     support <- readDataFile "erlang/support.erl"
-    let scm = header ++ exportDirectives ++ unlines ds ++ support ++ code ++ exportFuncs ++ "\n"
+    let scm = header ++ exportDirectives ++ unlines ds ++ support ++ code ++ main ++ exportFuncs ++ "\n"
     Right () <- coreLift $ writeFile outfile scm
       | Left err => throw (FileErr outfile err)
     coreLift $ chmod outfile 0o755

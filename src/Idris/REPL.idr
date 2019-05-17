@@ -235,7 +235,12 @@ genLib : {auto c : Ref Ctxt Defs} ->
           String -> String -> Core FC ()
 genLib libEntrypoint outfile = do
   i <- newRef ImpST (initImpState {annot = FC})
-  ttimp <- desugar AnyExpr [] (PRef (MkFC "(script)" (0, 0) (0, 0)) (UN libEntrypoint))
+  let fc = MkFC "(script)" (0, 0) (0, 0)
+  let entrypointTerm = PRef fc (UN libEntrypoint)
+  -- NOTE: Make sure `unsafePerformIO` is generated.
+  -- It may be inserted by the codegen and may not be referenced from the user's code.
+  let unsafePerformIOWorkaroundTerm = Syntax.PLet fc Rig0 (PImplicit fc) (PImplicit fc) (PRef fc (UN "unsafePerformIO")) entrypointTerm []
+  ttimp <- desugar AnyExpr [] unsafePerformIOWorkaroundTerm
   (_, tm, ty) <- inferTerm elabTop False (UN "[input]") [] (MkNested []) NONE InExpr ttimp
   ok <- compile !findCG tm (Just libEntrypoint) outfile
   pure ()
