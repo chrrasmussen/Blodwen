@@ -388,11 +388,6 @@ mutual
     let body = transformer (applyToArgs func tempCRefs)
     pure $ mkUncurriedFun tempVars !(genExp i vs body)
 
-  readExports : Int -> SVars vars -> CExp vars -> Core annot (List String)
-  readExports i vs (CCon (NS ["Prelude"] (UN "Nil")) _ _) = pure []
-  readExports i vs (CCon (NS ["Prelude"] (UN "::")) _ [_, funcExport, xs]) = pure $ !(genExp i vs funcExport) :: !(readExports i vs xs)
-  readExports i vs tm = throw (InternalError ("Unknown argument to export definition: " ++ show tm))
-
   genCon : Int -> SVars vars -> CExp vars -> Core annot String
   -- Unit
   genCon i vs (CCon (NS ["Builtin"] (UN "MkUnit")) _ _) = pure mkUnit
@@ -436,14 +431,6 @@ mutual
   genCon i vs (CCon (NS ["Functions", "ErlangPrelude"] (UN "MkErlIO3")) _ args) = genConFun i vs 3 !(expectArgAtIndex 4 args) applyUnsafePerformIO
   genCon i vs (CCon (NS ["Functions", "ErlangPrelude"] (UN "MkErlIO4")) _ args) = genConFun i vs 4 !(expectArgAtIndex 5 args) applyUnsafePerformIO
   genCon i vs (CCon (NS ["Functions", "ErlangPrelude"] (UN "MkErlIO5")) _ args) = genConFun i vs 5 !(expectArgAtIndex 6 args) applyUnsafePerformIO
-  -- Unit
-  -- TODO: Fix namespace
-  genCon i vs (CCon (NS _ (UN "Exports")) _ [exports]) = do
-    funcExports <- readExports i vs exports
-    pure $ showSep "\n" funcExports ++ "\n"
-  genCon i vs (CCon (NS _ (UN "Fun")) _ [_, name, expr]) = do
-    --coreLift $ printLn args
-    pure $ stripErlangString !(genExp i vs name) ++ "() -> " ++ !(genExp i vs expr) ++ "."
   -- Other
   genCon i vs (CCon x tag args) = pure $ genConstructor tag !(traverse (genExp i vs) args)
   genCon i vs tm = throw (InternalError ("Invalid constructor: " ++ show tm))
@@ -763,6 +750,14 @@ genDef n (MkError exp) =
 genDef n (MkCon t a) =
   pure "" -- Nothing to compile here
 
+-- TODO: Fix namespace
+genExports : Int -> SVars vars -> CExp vars -> Core annot String
+genExports i vs (CCon (NS _ (UN "Fun")) _ [_, exprTy, name, expr]) =
+  pure $ stripErlangString !(genExp i vs name) ++ "() -> " ++ !(genExp i vs expr) ++ ".\n"
+genExports i vs (CCon (NS _ (UN "Combine")) _ [exports1, exports2]) =
+  pure $ !(genExports i vs exports1) ++ !(genExports i vs exports2)
+genExports i vs tm = throw (InternalError ("Invalid export: " ++ show tm))
+
 getCompileExpr : Defs -> Name -> Core annot CDef
 getCompileExpr defs name = do
   let Just globalDef = lookupGlobalExact name (gamma defs)
@@ -782,8 +777,10 @@ genErlang defs name = do
 export
 genErlangExports : Defs -> Name -> Core annot (String, String)
 genErlangExports defs name = do
-  expr <- getCompileExpr defs name
+  MkFun args expr <- getCompileExpr defs name
+    | throw (InternalError ("Expected function definition for " ++ show name)) 
   -- TODO: Implement exportDirectives and exportFuncs
   let exportDirectives = "-export([foo/1]).\n"
-  exportFuncs <- genDef name expr
+  let vs = initSVars args
+  exportFuncs <- genExports 0 vs expr
   pure (exportDirectives, exportFuncs)
