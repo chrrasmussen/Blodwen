@@ -4,13 +4,13 @@ module ErlangPrelude.Debug
 import ErlangPrelude
 
 export
-erlPrintLn : ErlType a => a -> IO ()
+erlPrintLn : a -> IO ()
 erlPrintLn x = do
-  erlCall "io" "format" ["~p~n", the (List _) [x]]
+  erlCall "io" "format" ["~p~n", the (List _) [MkRaw x]]
   pure ()
 
 export
-erlInspect : ErlType a => a -> a
+erlInspect : a -> a
 erlInspect x = unsafePerformIO $ do
   erlPrintLn x
   pure x
