@@ -318,6 +318,10 @@ mutual
   genConAlt i vs (MkConAlt (NS ["Prelude"] (UN "::")) tag args sc) = do
     let vs' = extendSVars args vs
     pure $ "([" ++ showSep " | " (drop 1 $ bindArgs 1 args vs') ++ "]) -> " ++ !(genExp i vs' sc)
+  -- Raw
+  genConAlt i vs (MkConAlt (NS ["Idris", "ErlangPrelude"] (UN "MkRaw")) tag args sc) = do
+    let vs' = extendSVars args vs
+    pure $ "(" ++ !(expectArgAtIndex 1 (bindArgs 1 args vs')) ++ ") -> " ++ !(genExp i vs' sc)
   -- ErlAtom
   genConAlt i vs (MkConAlt (NS ["Atoms", "ErlangPrelude"] (UN "MkErlAtom")) tag args sc) = do
     let vs' = extendSVars args vs
@@ -397,6 +401,8 @@ mutual
   -- List
   genCon i vs (CCon (NS ["Prelude"] (UN "Nil")) _ _) = pure "[]"
   genCon i vs (CCon (NS ["Prelude"] (UN "::")) _ [_, x, xs]) = pure $ "[" ++ !(genExp i vs x) ++ " | " ++ !(genExp i vs xs) ++ "]"
+  -- Raw
+  genCon i vs (CCon (NS ["Idris", "ErlangPrelude"] (UN "MkRaw")) _ [_, x]) = pure $ !(genExp i vs x)
   -- ErlAtom
   genCon i vs (CCon (NS ["Atoms", "ErlangPrelude"] (UN "MkErlAtom")) _ [x]) = pure $ mkStringToAtom !(genExp i vs x)
   -- ErlBinary
