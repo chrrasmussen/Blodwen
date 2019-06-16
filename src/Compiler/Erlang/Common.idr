@@ -482,9 +482,15 @@ mutual
     defc <- maybe (pure Nothing) (\v => pure (Just !(genExp i vs v))) def
     tcode <- genExp i vs sc
     constAlts <- traverse (genConstAlt i vs) alts
+    let isMatchingOnString = case head' alts of
+      Just (MkConstAlt (Str _) _) => True
+      _ => False
+    let matchOnValue = if isMatchingOnString
+      then "unicode:characters_to_binary(" ++ tcode ++ ", utf8)"
+      else tcode
     pure $ "(fun " ++
       showSep "; " (constAlts ++ genCaseDef defc) ++
-      " end(blodwen_normalize_value(" ++ tcode ++ ")))"
+      " end(" ++ matchOnValue ++ "))"
   genExp i vs (CPrimVal c) =
     pure $ genConstant c
   genExp i vs CErased =
