@@ -61,8 +61,8 @@ lookupSVar Here (n :: ns) = n
 lookupSVar (There p) (n :: ns) = lookupSVar p ns
 
 export
-genConstructor : Int -> List String -> String
-genConstructor t args = "{" ++ showSep ", " (show t :: args) ++ "}"
+genConstructor : Name -> List String -> String
+genConstructor name args = "{" ++ showSep ", " (genName name :: args) ++ "}"
 
 op : String -> List String -> String
 op o args = o ++ "(" ++ showSep ", " args ++ ")"
@@ -193,14 +193,15 @@ mkUnit = "{}"
 -- PrimIO.MkIORes : {0 a : Type} -> a -> (1 x : %World) -> IORes a
 export
 mkWorld : String -> String
-mkWorld res = genConstructor 0 [mkErased, res, "false"]
+mkWorld res = genConstructor (NS ["PrimIO"] (UN "MkIORes")) [mkErased, res, "false"]
 
 -- io_pure : {0 a : Type} -> a -> IO a
 -- io_pure {a} x = MkIO {a} (\1 w : %World => (MkIORes {a} x w))
 --
 -- ns_PrimIO_un_io_pure(V_0, V_1) -> {0, erased, fun(V_2) -> {0, erased, V_1, V_2} end}.
 mkIOPure : String -> String
-mkIOPure val = "{0, " ++ mkErased ++ ", fun(World) -> {0, " ++ mkErased ++ ", " ++ val ++ ", World} end}"
+mkIOPure val =
+  genConstructor (NS ["PrimIO"] (UN "MkIO")) [mkErased, "fun(World) -> " ++ genConstructor (NS ["PrimIO"] (UN "MkIORes")) [mkErased, val, "World"] ++ " end"]
 
 
 mkCurriedFun : List String -> String -> String
@@ -371,9 +372,9 @@ mutual
   genConAlt i vs (MkConAlt (NS ["Functions", "ErlangPrelude"] (UN "MkErlIO4")) tag args sc) = genConAltFun i vs args sc 4 mkIOPure
   genConAlt i vs (MkConAlt (NS ["Functions", "ErlangPrelude"] (UN "MkErlIO5")) tag args sc) = genConAltFun i vs args sc 5 mkIOPure
   -- Other
-  genConAlt i vs (MkConAlt n tag args sc) = do
+  genConAlt i vs (MkConAlt name tag args sc) = do
     let vs' = extendSVars args vs
-    pure $ "({" ++ showSep ", " (show tag :: bindArgs 1 args vs') ++ "}) -> " ++ !(genExp i vs' sc)
+    pure $ "({" ++ showSep ", " (genName name :: bindArgs 1 args vs') ++ "}) -> " ++ !(genExp i vs' sc)
 
   genConstAlt : Int -> SVars vars -> CConstAlt vars -> Core annot String
   genConstAlt i vs (MkConstAlt c exp) = pure $ "(" ++ genConstant c ++ ") -> " ++ !(genExp i vs exp)
@@ -438,7 +439,7 @@ mutual
   genCon i vs (CCon (NS ["Functions", "ErlangPrelude"] (UN "MkErlIO4")) _ args) = genConFun i vs 4 !(expectArgAtIndex 5 args) applyUnsafePerformIO
   genCon i vs (CCon (NS ["Functions", "ErlangPrelude"] (UN "MkErlIO5")) _ args) = genConFun i vs 5 !(expectArgAtIndex 6 args) applyUnsafePerformIO
   -- Other
-  genCon i vs (CCon x tag args) = pure $ genConstructor tag !(traverse (genExp i vs) args)
+  genCon i vs (CCon name tag args) = pure $ genConstructor name !(traverse (genExp i vs) args)
   genCon i vs tm = throw (InternalError ("Invalid constructor: " ++ show tm))
 
   -- oops, no traverse for Vect in Core

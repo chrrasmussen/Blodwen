@@ -26,14 +26,16 @@ blodwen_bool_to_int(_) -> ?TRUE.
 
 
 % Either
+% TODO: Hard-coded data constructor
+% Must match the behavior of `Compiler.Erlang.Common.genConstructor` and `Compiler.Erlang.Common.genName`
 
--type idr_either(Left, Right) :: {0, false, false, Left} | {1, false, false, Right}.
+-type idr_either(Left, Right) :: {ns_Prelude_un_Left, erased, erased, Left} | {ns_Prelude_un_Right, erased, erased, Right}.
 
 -spec either_left(any()) -> idr_either(any(), any()).
-either_left(X) -> {0, false, false, X}.
+either_left(X) -> {ns_Prelude_un_Left, erased, erased, X}.
 
 -spec either_right(any()) -> idr_either(any(), any()).
-either_right(X) -> {1, false, false, X}.
+either_right(X) -> {ns_Prelude_un_Right, erased, erased, X}.
 
 
 % List
