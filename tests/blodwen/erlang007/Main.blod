@@ -1,6 +1,6 @@
 module Main
 
-import ErlangPrelude
+import Erlang.Prelude
 
 %cg erlang """
 create_curried_fun1() -> fun(X) -> X + 10 end.

@@ -1,7 +1,6 @@
-module ErlangPrelude.Debug
+module Erlang.Debug
 
--- TODO: Is this okay? Should ErlangPrelude be moved into modules in this folder?
-import ErlangPrelude
+import Erlang.Prelude
 
 export
 erlPrintLn : a -> IO ()

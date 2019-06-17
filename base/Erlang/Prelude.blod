@@ -1,4 +1,4 @@
-module ErlangPrelude
+module Erlang.Prelude
 
 
 namespace Idris

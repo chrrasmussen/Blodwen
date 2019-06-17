@@ -1,6 +1,6 @@
 module Main
 
-import ErlangPrelude
+import Erlang.Prelude
 
 %cg erlang """
 run_curried1(Func) -> Func(42).
