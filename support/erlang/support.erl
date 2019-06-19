@@ -164,50 +164,59 @@ io_unicode_get_str(Prompt) ->
 
 % Files
 
+% Relevant docs: http://erlang.org/doc/man/file.html
+
 -type handle() :: file:io_device() | undefined.
--type error_code() :: integer().
 
-% NOTE: Available for foreign function calls
--spec blodwen_read_file(file:name_all()) -> binary().
-blodwen_read_file(File) ->
-  case file:read_file(File) of
-    {ok, Contents} -> Contents;
-    _ -> throw("I haven't worked that one out yet, sorry...")
-  end.
+% TODO: Support more error codes
+-define(ERROR_CODE_UNKNOWN, -1).
+-type error_code() :: ?ERROR_CODE_UNKNOWN.
 
-% TODO: Return error number instead (in all cases)?
--spec blodwen_open(file:name_all(), iolist(), idr_bool()) -> idr_either(error_code(), handle()).
-blodwen_open(File, Mode, Bin) ->
-  Flags = case unicode:characters_to_binary(Mode) of
+
+-spec mode_flags(iolist()) -> [file:mode()].
+mode_flags(Mode) ->
+  ModesFlags = case unicode:characters_to_binary(Mode) of
     <<"r">> -> [read];
     <<"w">> -> [write];
-    _ -> throw("I haven't worked that one out yet, sorry...")
-  end,
-  {ok, Pid} = file:open(File, Flags),
-  either_right(Pid).
+    <<"a">> -> [append];
+    <<"r+">> -> [read, write];
+    _ -> []
+  end.
 
-% TODO: Return error number instead?
+-spec bin_flags(idr_bool()) -> [file:mode()].
+bin_flags(Bin) ->
+  case Bin of
+    ?TRUE -> [binary];
+    _ -> []
+  end.
+
+-spec blodwen_open(file:name_all(), iolist(), idr_bool()) -> idr_either(error_code(), handle()).
+blodwen_open(File, Mode, Bin) ->
+  Flags = mode_flags(Mode) ++ bin_flags(Bin),
+  case file:open(File, Flags) of
+    {ok, Pid} -> either_right(Pid);
+    _ -> either_left(?ERROR_CODE_UNKNOWN)
+  end.
+
 -spec blodwen_close(handle()) -> idr_unit().
 blodwen_close(Pid) ->
   case file:close(Pid) of
-    ok -> ?UNIT;
-    _ -> throw("I haven't worked that one out yet, sorry...")
+    _ -> ?UNIT
   end.
 
-% TODO: Return error number instead?
 -spec blodwen_read_line(handle()) -> idr_either(error_code(), binary()).
 blodwen_read_line(Pid) ->
   case file:read_line(Pid) of
     {ok, Line} -> either_right(Line);
     eof -> either_right(<<>>);
-    _ -> throw("I haven't worked that one out yet, sorry...")
+    _ -> either_left(?ERROR_CODE_UNKNOWN)
   end.
 
 -spec blodwen_write_line(handle(), binary()) -> idr_either(error_code(), idr_unit()).
 blodwen_write_line(Pid, Bytes) ->
   case file:write(Pid, Bytes) of
-    ok -> either_right(?TRUE);
-    _ -> either_right(?FALSE)
+    ok -> either_right(?UNIT);
+    _ -> either_left(?ERROR_CODE_UNKNOWN)
   end.
 
 % COPIED FROM: https://github.com/lenary/idris-erlang/blob/master/irts/idris_erlang_rts.erl
