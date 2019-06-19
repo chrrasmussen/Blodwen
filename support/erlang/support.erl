@@ -19,7 +19,6 @@ debug_inspect(Val) ->
 
 -type idr_bool() :: ?TRUE | ?FALSE.
 
-% TODO: Not in use by code generator
 -spec blodwen_bool_to_int(boolean()) -> idr_bool().
 blodwen_bool_to_int(false) -> ?FALSE;
 blodwen_bool_to_int(_) -> ?TRUE.
