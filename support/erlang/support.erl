@@ -73,7 +73,7 @@ unicode_string_gt(X, Y) -> blodwen_bool_to_int(unicode:characters_to_binary(X) >
 
 % Strings
 
-% -type idr_char() :: integer(). % TODO: Use for anything?
+% -type idr_char() :: integer() | [integer()]. % TODO: Use for anything?
 
 
 % NOTE: Must be total
@@ -124,8 +124,9 @@ blodwen_double_to_integer(Double) -> floor(Double). % NOTE: Solved similar to Ch
 blodwen_double_to_int(Double) -> floor(Double). % NOTE: Solved similar to Chez
 blodwen_double_to_string(Double) -> float_to_binary(Double, [{decimals, 10}, compact]).
 
-blodwen_char_to_integer(Char) -> Char. % NOTE: Char is already an integer
-blodwen_char_to_int(Char) -> Char. % NOTE: Char is already an integer
+blodwen_char_to_integer(Char) when is_integer(Char) -> Char;
+blodwen_char_to_integer(_) -> 0. % NOTE: Cast will fail on unicode characters that require more than 1 codepoint.
+blodwen_char_to_int(Char) -> blodwen_char_to_integer(Char).
 blodwen_char_to_string(Char) -> [Char].
 
 blodwen_string_to_integer(Str) ->
