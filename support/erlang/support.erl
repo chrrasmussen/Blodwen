@@ -120,8 +120,8 @@ blodwen_int_to_double(Int) -> float(Int).
 blodwen_int_to_char(Char) -> Char. % NOTE: Char is an integer
 blodwen_int_to_string(Int) -> integer_to_binary(Int).
 
-blodwen_double_to_integer(Double) -> floor(Double). % NOTE: Solved similar to Chez
-blodwen_double_to_int(Double) -> floor(Double). % NOTE: Solved similar to Chez
+blodwen_double_to_integer(Double) -> trunc(Double).
+blodwen_double_to_int(Double) -> trunc(Double).
 blodwen_double_to_string(Double) -> float_to_binary(Double, [{decimals, 10}, compact]).
 
 blodwen_char_to_integer(Char) when is_integer(Char) -> Char;
