@@ -111,14 +111,23 @@ unicode_string_substr(Start, Len, Str) -> string:substr(Str, Start, Len).
 
 % Casts
 
-blodwen_int_to_string(Int) -> integer_to_binary(Int).
+blodwen_integer_to_int(Integer) -> Integer.
+blodwen_integer_to_double(Integer) -> float(Integer).
 blodwen_integer_to_string(Integer) -> integer_to_binary(Integer).
-blodwen_double_to_string(Double) -> float_to_binary(Double, [{decimals, 10}, compact]).
-blodwen_char_to_string(Char) -> [Char].
 
 blodwen_int_to_integer(Int) -> Int.
+blodwen_int_to_double(Int) -> float(Int).
+blodwen_int_to_char(Char) -> Char. % NOTE: Char is an integer
+blodwen_int_to_string(Int) -> integer_to_binary(Int).
+
 blodwen_double_to_integer(Double) -> floor(Double). % NOTE: Solved similar to Chez
+blodwen_double_to_int(Double) -> floor(Double). % NOTE: Solved similar to Chez
+blodwen_double_to_string(Double) -> float_to_binary(Double, [{decimals, 10}, compact]).
+
 blodwen_char_to_integer(Char) -> Char. % NOTE: Char is already an integer
+blodwen_char_to_int(Char) -> Char. % NOTE: Char is already an integer
+blodwen_char_to_string(Char) -> [Char].
+
 blodwen_string_to_integer(Str) ->
   case string:to_integer(Str) of
     {error, no_integer} ->
@@ -129,14 +138,7 @@ blodwen_string_to_integer(Str) ->
         _ -> 0
       end
   end.
-
-blodwen_integer_to_int(Integer) -> Integer.
-blodwen_double_to_int(Double) -> floor(Double).
-blodwen_char_to_int(Char) -> Char. % NOTE: Char is already an integer
 blodwen_string_to_int(Str) -> blodwen_string_to_integer(Str). % TODO: Should `Int` be capped at a certain precision?
-
-blodwen_int_to_double(Int) -> float(Int).
-blodwen_integer_to_double(Integer) -> float(Integer).
 blodwen_string_to_double(Str) ->
   case string:to_float(Str) of
     {error, no_float} ->
@@ -148,8 +150,6 @@ blodwen_string_to_double(Str) ->
         _ -> 0.0
       end
   end.
-
-blodwen_int_to_char(Char) -> Char. % NOTE: Char is an integer
 
 
 % IO

@@ -104,26 +104,26 @@ genOp StrAppend [x, y] = op "unicode_string_append" [x, y]
 genOp StrReverse [x] = op "unicode_string_reverse" [x]
 genOp StrSubstr [x, y, z] = op "unicode_string_substr" [x, y, z]
 
-genOp (Cast IntType StringType) [x] = op "blodwen_int_to_string" [x]
+genOp (Cast IntegerType IntType) [x] = op "blodwen_integer_to_int" [x]
+genOp (Cast IntegerType DoubleType) [x] = op "blodwen_integer_to_double" [x]
 genOp (Cast IntegerType StringType) [x] = op "blodwen_integer_to_string" [x]
-genOp (Cast DoubleType StringType) [x] = op "blodwen_double_to_string" [x]
-genOp (Cast CharType StringType) [x] = op "blodwen_char_to_string" [x]
 
 genOp (Cast IntType IntegerType) [x] = op "blodwen_int_to_integer" [x]
-genOp (Cast DoubleType IntegerType) [x] = op "blodwen_double_to_integer" [x]
-genOp (Cast CharType IntegerType) [x] = op "blodwen_char_to_integer" [x]
-genOp (Cast StringType IntegerType) [x] = op "blodwen_string_to_integer" [x]
-
-genOp (Cast IntegerType IntType) [x] = op "blodwen_integer_to_int" [x]
-genOp (Cast DoubleType IntType) [x] = op "blodwen_double_to_int" [x]
-genOp (Cast CharType IntType) [x] = op "blodwen_char_to_int" [x]
-genOp (Cast StringType IntType) [x] = op "blodwen_string_to_int" [x]
-
 genOp (Cast IntType DoubleType) [x] = op "blodwen_int_to_double" [x]
-genOp (Cast IntegerType DoubleType) [x] = op "blodwen_integer_to_double" [x]
-genOp (Cast StringType DoubleType) [x] = op "blodwen_string_to_double" [x]
-
 genOp (Cast IntType CharType) [x] = op "blodwen_int_to_char" [x]
+genOp (Cast IntType StringType) [x] = op "blodwen_int_to_string" [x]
+
+genOp (Cast DoubleType IntegerType) [x] = op "blodwen_double_to_integer" [x]
+genOp (Cast DoubleType IntType) [x] = op "blodwen_double_to_int" [x]
+genOp (Cast DoubleType StringType) [x] = op "blodwen_double_to_string" [x]
+
+genOp (Cast CharType IntegerType) [x] = op "blodwen_char_to_integer" [x]
+genOp (Cast CharType IntType) [x] = op "blodwen_char_to_int" [x]
+genOp (Cast CharType StringType) [x] = op "blodwen_char_to_string" [x]
+
+genOp (Cast StringType IntegerType) [x] = op "blodwen_string_to_integer" [x]
+genOp (Cast StringType IntType) [x] = op "blodwen_string_to_int" [x]
+genOp (Cast StringType DoubleType) [x] = op "blodwen_string_to_double" [x]
 
 genOp (Cast from to) [x] = "throw(\"Invalid cast " ++ show from ++ "->" ++ show to ++ "\")"
 
