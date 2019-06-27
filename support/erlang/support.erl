@@ -174,39 +174,39 @@ idris_rts_bin_flags(Bin) ->
     _ -> []
   end.
 
--spec idris_rts_open(file:name_all(), iolist(), idris_rts_bool()) -> idris_rts_either(idris_rts_error_code(), idris_rts_handle()).
-idris_rts_open(File, Mode, Bin) ->
+-spec idris_rts_file_open(file:name_all(), iolist(), idris_rts_bool()) -> idris_rts_either(idris_rts_error_code(), idris_rts_handle()).
+idris_rts_file_open(File, Mode, Bin) ->
   Flags = idris_rts_mode_flags(Mode) ++ idris_rts_bin_flags(Bin),
   case file:open(File, Flags) of
     {ok, Pid} -> idris_rts_either_right(Pid);
     _ -> idris_rts_either_left(?ERROR_CODE_UNKNOWN)
   end.
 
--spec idris_rts_close(idris_rts_handle()) -> idris_rts_unit().
-idris_rts_close(Pid) ->
+-spec idris_rts_file_close(idris_rts_handle()) -> idris_rts_unit().
+idris_rts_file_close(Pid) ->
   file:close(Pid),
   ?UNIT.
 
--spec idris_rts_read_line(idris_rts_handle()) -> idris_rts_either(idris_rts_error_code(), binary()).
-idris_rts_read_line(Pid) ->
+-spec idris_rts_file_read_line(idris_rts_handle()) -> idris_rts_either(idris_rts_error_code(), binary()).
+idris_rts_file_read_line(Pid) ->
   case file:read_line(Pid) of
     {ok, Line} -> idris_rts_either_right(Line);
     eof -> idris_rts_either_right(<<>>);
     _ -> idris_rts_either_left(?ERROR_CODE_UNKNOWN)
   end.
 
--spec idris_rts_write_line(idris_rts_handle(), binary()) -> idris_rts_either(idris_rts_error_code(), idris_rts_unit()).
-idris_rts_write_line(Pid, Bytes) ->
+-spec idris_rts_file_write_line(idris_rts_handle(), binary()) -> idris_rts_either(idris_rts_error_code(), idris_rts_unit()).
+idris_rts_file_write_line(Pid, Bytes) ->
   case file:write(Pid, Bytes) of
     ok -> idris_rts_either_right(?UNIT);
     _ -> idris_rts_either_left(?ERROR_CODE_UNKNOWN)
   end.
 
 % COPIED FROM: https://github.com/lenary/idris-erlang/blob/master/irts/idris_erlang_rts.erl
--spec idris_rts_eof(idris_rts_handle()) -> idris_rts_bool().
-idris_rts_eof(undefined) ->
+-spec idris_rts_file_eof(idris_rts_handle()) -> idris_rts_bool().
+idris_rts_file_eof(undefined) ->
   ?TRUE; % Null is at EOF
-idris_rts_eof(Handle) ->
+idris_rts_file_eof(Handle) ->
   case file:read(Handle, 1) of
     eof -> ?TRUE; % At EOF
     {ok, _} ->

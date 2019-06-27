@@ -516,15 +516,15 @@ mutual
   genExtPrim i vs GetStr [world] =
     pure $ mkWorld "idris_rts_io_unicode_get_str(\"\")"
   genExtPrim i vs FileOpen [file, mode, bin, world] =
-    pure $ mkWorld $ "idris_rts_open(" ++ !(genExp i vs file) ++ ", " ++ !(genExp i vs mode) ++ ", " ++ !(genExp i vs bin) ++ ")"
+    pure $ mkWorld $ "idris_rts_file_open(" ++ !(genExp i vs file) ++ ", " ++ !(genExp i vs mode) ++ ", " ++ !(genExp i vs bin) ++ ")"
   genExtPrim i vs FileClose [file, world] =
-    pure $ "(fun() -> idris_rts_close(" ++ !(genExp i vs file) ++ "), " ++ mkWorld mkUnit ++ " end())"
+    pure $ "(fun() -> idris_rts_file_close(" ++ !(genExp i vs file) ++ "), " ++ mkWorld mkUnit ++ " end())"
   genExtPrim i vs FileReadLine [file, world] =
-    pure $ mkWorld $ "idris_rts_read_line(" ++ !(genExp i vs file) ++ ")"
+    pure $ mkWorld $ "idris_rts_file_read_line(" ++ !(genExp i vs file) ++ ")"
   genExtPrim i vs FileWriteLine [file, str, world] =
-    pure $ mkWorld $ "idris_rts_write_line(" ++ !(genExp i vs file) ++ ", " ++ !(genExp i vs str) ++ ")"
+    pure $ mkWorld $ "idris_rts_file_write_line(" ++ !(genExp i vs file) ++ ", " ++ !(genExp i vs str) ++ ")"
   genExtPrim i vs FileEOF [file, world] =
-    pure $ mkWorld $ "idris_rts_eof(" ++ !(genExp i vs file) ++ ")"
+    pure $ mkWorld $ "idris_rts_file_eof(" ++ !(genExp i vs file) ++ ")"
   genExtPrim i vs NewIORef [_, val, world] =
     pure $ mkWorld $ "(box " ++ !(genExp i vs val) ++ ")"
   genExtPrim i vs ReadIORef [_, ref, world] =
