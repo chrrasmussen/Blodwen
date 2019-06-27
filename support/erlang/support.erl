@@ -1,20 +1,20 @@
 % Unit
 
--define(UNIT, {}).
+-define(IDRIS_RTS_UNIT, {}).
 
--type idris_rts_unit() :: ?UNIT.
+-type idris_rts_unit() :: ?IDRIS_RTS_UNIT.
 
 
 % Booleans
 
--define(TRUE, 1).
--define(FALSE, 0).
+-define(IDRIS_RTS_TRUE, 1).
+-define(IDRIS_RTS_FALSE, 0).
 
--type idris_rts_bool() :: ?TRUE | ?FALSE.
+-type idris_rts_bool() :: ?IDRIS_RTS_TRUE | ?IDRIS_RTS_FALSE.
 
 -spec idris_rts_bool_to_int(boolean()) -> idris_rts_bool().
-idris_rts_bool_to_int(false) -> ?FALSE;
-idris_rts_bool_to_int(_) -> ?TRUE.
+idris_rts_bool_to_int(false) -> ?IDRIS_RTS_FALSE;
+idris_rts_bool_to_int(_) -> ?IDRIS_RTS_TRUE.
 
 
 % Either
@@ -153,12 +153,12 @@ idris_rts_io_unicode_get_str(Prompt) ->
 -type idris_rts_handle() :: file:io_device() | undefined.
 
 % TODO: Support more error codes
--define(ERROR_CODE_UNKNOWN, -1).
--type idris_rts_error_code() :: ?ERROR_CODE_UNKNOWN.
+-define(IDRIS_RTS_ERROR_CODE_UNKNOWN, -1).
+-type idris_rts_error_code() :: ?IDRIS_RTS_ERROR_CODE_UNKNOWN.
 
 
--spec idris_rts_mode_flags(iolist()) -> [file:mode()].
-idris_rts_mode_flags(Mode) ->
+-spec idris_rts_file_mode_flags(iolist()) -> [file:mode()].
+idris_rts_file_mode_flags(Mode) ->
   ModesFlags = case unicode:characters_to_binary(Mode) of
     <<"r">> -> [read];
     <<"w">> -> [write];
@@ -167,52 +167,52 @@ idris_rts_mode_flags(Mode) ->
     _ -> []
   end.
 
--spec idris_rts_bin_flags(idris_rts_bool()) -> [file:mode()].
-idris_rts_bin_flags(Bin) ->
+-spec idris_rts_file_bin_flags(idris_rts_bool()) -> [file:mode()].
+idris_rts_file_bin_flags(Bin) ->
   case Bin of
-    ?TRUE -> [binary];
+    ?IDRIS_RTS_TRUE -> [binary];
     _ -> []
   end.
 
 -spec idris_rts_file_open(file:name_all(), iolist(), idris_rts_bool()) -> idris_rts_either(idris_rts_error_code(), idris_rts_handle()).
 idris_rts_file_open(File, Mode, Bin) ->
-  Flags = idris_rts_mode_flags(Mode) ++ idris_rts_bin_flags(Bin),
+  Flags = idris_rts_file_mode_flags(Mode) ++ idris_rts_file_bin_flags(Bin),
   case file:open(File, Flags) of
     {ok, Pid} -> idris_rts_either_right(Pid);
-    _ -> idris_rts_either_left(?ERROR_CODE_UNKNOWN)
+    _ -> idris_rts_either_left(?IDRIS_RTS_ERROR_CODE_UNKNOWN)
   end.
 
 -spec idris_rts_file_close(idris_rts_handle()) -> idris_rts_unit().
 idris_rts_file_close(Pid) ->
   file:close(Pid),
-  ?UNIT.
+  ?IDRIS_RTS_UNIT.
 
 -spec idris_rts_file_read_line(idris_rts_handle()) -> idris_rts_either(idris_rts_error_code(), binary()).
 idris_rts_file_read_line(Pid) ->
   case file:read_line(Pid) of
     {ok, Line} -> idris_rts_either_right(Line);
     eof -> idris_rts_either_right(<<>>);
-    _ -> idris_rts_either_left(?ERROR_CODE_UNKNOWN)
+    _ -> idris_rts_either_left(?IDRIS_RTS_ERROR_CODE_UNKNOWN)
   end.
 
 -spec idris_rts_file_write_line(idris_rts_handle(), binary()) -> idris_rts_either(idris_rts_error_code(), idris_rts_unit()).
 idris_rts_file_write_line(Pid, Bytes) ->
   case file:write(Pid, Bytes) of
-    ok -> idris_rts_either_right(?UNIT);
-    _ -> idris_rts_either_left(?ERROR_CODE_UNKNOWN)
+    ok -> idris_rts_either_right(?IDRIS_RTS_UNIT);
+    _ -> idris_rts_either_left(?IDRIS_RTS_ERROR_CODE_UNKNOWN)
   end.
 
 % COPIED FROM: https://github.com/lenary/idris-erlang/blob/master/irts/idris_erlang_rts.erl
 -spec idris_rts_file_eof(idris_rts_handle()) -> idris_rts_bool().
 idris_rts_file_eof(undefined) ->
-  ?TRUE; % Null is at EOF
+  ?IDRIS_RTS_TRUE; % Null is at EOF
 idris_rts_file_eof(Handle) ->
   case file:read(Handle, 1) of
-    eof -> ?TRUE; % At EOF
+    eof -> ?IDRIS_RTS_TRUE; % At EOF
     {ok, _} ->
       case file:position(Handle, {cur, -1}) of
-        {ok, _} -> ?FALSE; % Not at EOF
-        {error, _} -> ?TRUE % Error Scanning Back => EOF
+        {ok, _} -> ?IDRIS_RTS_FALSE; % Not at EOF
+        {error, _} -> ?IDRIS_RTS_TRUE % Error Scanning Back => EOF
       end;
-    {error, _} -> ?TRUE % Error => EOF
+    {error, _} -> ?IDRIS_RTS_TRUE % Error => EOF
   end.
