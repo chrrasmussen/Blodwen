@@ -23,35 +23,35 @@ idris_rts_bool_to_int(_) -> ?TRUE.
 
 -type idris_rts_either(Left, Right) :: {ns_Prelude_un_Left, erased, erased, Left} | {ns_Prelude_un_Right, erased, erased, Right}.
 
--spec either_left(any()) -> idris_rts_either(any(), any()).
-either_left(X) -> {ns_Prelude_un_Left, erased, erased, X}.
+-spec idris_rts_either_left(any()) -> idris_rts_either(any(), any()).
+idris_rts_either_left(X) -> {ns_Prelude_un_Left, erased, erased, X}.
 
--spec either_right(any()) -> idris_rts_either(any(), any()).
-either_right(X) -> {ns_Prelude_un_Right, erased, erased, X}.
+-spec idris_rts_either_right(any()) -> idris_rts_either(any(), any()).
+idris_rts_either_right(X) -> {ns_Prelude_un_Right, erased, erased, X}.
 
 
 % Arithmetic
 
--spec int_pow(integer(), integer()) -> integer().
-int_pow(N, M) -> int_pow(N, M, 1).
+-spec idris_rts_int_pow(integer(), integer()) -> integer().
+idris_rts_int_pow(N, M) -> idris_rts_int_pow(N, M, 1).
 
--spec int_pow(integer(), integer(), integer()) -> integer().
-int_pow(_, 0, R) -> R;
-int_pow(N, M, R) -> int_pow(N, M - 1, R * N).
+-spec idris_rts_int_pow(integer(), integer(), integer()) -> integer().
+idris_rts_int_pow(_, 0, R) -> R;
+idris_rts_int_pow(N, M, R) -> idris_rts_int_pow(N, M - 1, R * N).
 
-int_add(X, Y, Bits) -> (X + Y) rem int_pow(2, Bits).
-int_sub(X, Y, Bits) -> (X - Y) rem int_pow(2, Bits).
-int_mult(X, Y, Bits) -> (X * Y) rem int_pow(2, Bits).
-int_div(X, Y, Bits) -> (X div Y) rem int_pow(2, Bits).
+idris_rts_int_add(X, Y, Bits) -> (X + Y) rem idris_rts_int_pow(2, Bits).
+idris_rts_int_sub(X, Y, Bits) -> (X - Y) rem idris_rts_int_pow(2, Bits).
+idris_rts_int_mult(X, Y, Bits) -> (X * Y) rem idris_rts_int_pow(2, Bits).
+idris_rts_int_div(X, Y, Bits) -> (X div Y) rem idris_rts_int_pow(2, Bits).
 
 
 % Comparisons
 
-unicode_string_lt(X, Y) -> idris_rts_bool_to_int(unicode:characters_to_binary(X) < unicode:characters_to_binary(Y)).
-unicode_string_lte(X, Y) -> idris_rts_bool_to_int(unicode:characters_to_binary(X) =< unicode:characters_to_binary(Y)).
-unicode_string_eq(X, Y) -> idris_rts_bool_to_int(unicode:characters_to_binary(X) =:= unicode:characters_to_binary(Y)).
-unicode_string_gte(X, Y) -> idris_rts_bool_to_int(unicode:characters_to_binary(X) >= unicode:characters_to_binary(Y)).
-unicode_string_gt(X, Y) -> idris_rts_bool_to_int(unicode:characters_to_binary(X) > unicode:characters_to_binary(Y)).
+idris_rts_unicode_string_lt(X, Y) -> idris_rts_bool_to_int(unicode:characters_to_binary(X) < unicode:characters_to_binary(Y)).
+idris_rts_unicode_string_lte(X, Y) -> idris_rts_bool_to_int(unicode:characters_to_binary(X) =< unicode:characters_to_binary(Y)).
+idris_rts_unicode_string_eq(X, Y) -> idris_rts_bool_to_int(unicode:characters_to_binary(X) =:= unicode:characters_to_binary(Y)).
+idris_rts_unicode_string_gte(X, Y) -> idris_rts_bool_to_int(unicode:characters_to_binary(X) >= unicode:characters_to_binary(Y)).
+idris_rts_unicode_string_gt(X, Y) -> idris_rts_bool_to_int(unicode:characters_to_binary(X) > unicode:characters_to_binary(Y)).
 
 
 % Strings
@@ -60,36 +60,36 @@ unicode_string_gt(X, Y) -> idris_rts_bool_to_int(unicode:characters_to_binary(X)
 
 
 % NOTE: Must be total
-unicode_string_length(Str) -> string:length(Str).
+idris_rts_unicode_string_length(Str) -> string:length(Str).
 
 % NOTE: Is allowed to be partial
-unicode_string_head(Str) ->
+idris_rts_unicode_string_head(Str) ->
   [Hd | _] = string:next_grapheme(Str),
   Hd.
 
 % NOTE: Is allowed to be partial
-unicode_string_tail(Str) ->
+idris_rts_unicode_string_tail(Str) ->
   [_ | Tl] = string:next_grapheme(Str),
   Tl.
 
 % NOTE: Is allowed to be partial
-unicode_string_index(Str, Index) ->
+idris_rts_unicode_string_index(Str, Index) ->
   CharStr = string:slice(Str, Index, 1),
   [Hd | _] = string:next_grapheme(CharStr),
   Hd.
 
 
 % NOTE: Must be total
-unicode_string_cons(Char, Str) -> [Char | Str].
+idris_rts_unicode_string_cons(Char, Str) -> [Char | Str].
 
 % NOTE: Must be total
-unicode_string_append(Str1, Str2) -> [Str1 | Str2].
+idris_rts_unicode_string_append(Str1, Str2) -> [Str1 | Str2].
 
 % NOTE: Must be total
-unicode_string_reverse(Str) -> string:reverse(Str).
+idris_rts_unicode_string_reverse(Str) -> string:reverse(Str).
 
 % NOTE: Must be total
-unicode_string_substr(Start, Len, Str) -> string:substr(Str, Start, Len).
+idris_rts_unicode_string_substr(Start, Len, Str) -> string:substr(Str, Start, Len).
 
 
 % Casts
@@ -138,10 +138,10 @@ idris_rts_string_to_double(Str) ->
 
 % IO
 
-io_unicode_put_str(Str) ->
+idris_rts_io_unicode_put_str(Str) ->
   io:format("~ts", [Str]).
 
-io_unicode_get_str(Prompt) ->
+idris_rts_io_unicode_get_str(Prompt) ->
   Line = io:get_line(Prompt),
   string:trim(Line, trailing, "\n").
 
@@ -157,8 +157,8 @@ io_unicode_get_str(Prompt) ->
 -type idris_rts_error_code() :: ?ERROR_CODE_UNKNOWN.
 
 
--spec mode_flags(iolist()) -> [file:mode()].
-mode_flags(Mode) ->
+-spec idris_rts_mode_flags(iolist()) -> [file:mode()].
+idris_rts_mode_flags(Mode) ->
   ModesFlags = case unicode:characters_to_binary(Mode) of
     <<"r">> -> [read];
     <<"w">> -> [write];
@@ -167,8 +167,8 @@ mode_flags(Mode) ->
     _ -> []
   end.
 
--spec bin_flags(idris_rts_bool()) -> [file:mode()].
-bin_flags(Bin) ->
+-spec idris_rts_bin_flags(idris_rts_bool()) -> [file:mode()].
+idris_rts_bin_flags(Bin) ->
   case Bin of
     ?TRUE -> [binary];
     _ -> []
@@ -176,10 +176,10 @@ bin_flags(Bin) ->
 
 -spec idris_rts_open(file:name_all(), iolist(), idris_rts_bool()) -> idris_rts_either(idris_rts_error_code(), idris_rts_handle()).
 idris_rts_open(File, Mode, Bin) ->
-  Flags = mode_flags(Mode) ++ bin_flags(Bin),
+  Flags = idris_rts_mode_flags(Mode) ++ idris_rts_bin_flags(Bin),
   case file:open(File, Flags) of
-    {ok, Pid} -> either_right(Pid);
-    _ -> either_left(?ERROR_CODE_UNKNOWN)
+    {ok, Pid} -> idris_rts_either_right(Pid);
+    _ -> idris_rts_either_left(?ERROR_CODE_UNKNOWN)
   end.
 
 -spec idris_rts_close(idris_rts_handle()) -> idris_rts_unit().
@@ -190,16 +190,16 @@ idris_rts_close(Pid) ->
 -spec idris_rts_read_line(idris_rts_handle()) -> idris_rts_either(idris_rts_error_code(), binary()).
 idris_rts_read_line(Pid) ->
   case file:read_line(Pid) of
-    {ok, Line} -> either_right(Line);
-    eof -> either_right(<<>>);
-    _ -> either_left(?ERROR_CODE_UNKNOWN)
+    {ok, Line} -> idris_rts_either_right(Line);
+    eof -> idris_rts_either_right(<<>>);
+    _ -> idris_rts_either_left(?ERROR_CODE_UNKNOWN)
   end.
 
 -spec idris_rts_write_line(idris_rts_handle(), binary()) -> idris_rts_either(idris_rts_error_code(), idris_rts_unit()).
 idris_rts_write_line(Pid, Bytes) ->
   case file:write(Pid, Bytes) of
-    ok -> either_right(?UNIT);
-    _ -> either_left(?ERROR_CODE_UNKNOWN)
+    ok -> idris_rts_either_right(?UNIT);
+    _ -> idris_rts_either_left(?ERROR_CODE_UNKNOWN)
   end.
 
 % COPIED FROM: https://github.com/lenary/idris-erlang/blob/master/irts/idris_erlang_rts.erl

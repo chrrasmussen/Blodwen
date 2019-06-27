@@ -74,10 +74,10 @@ boolToInt : String -> String
 boolToInt condition = "case " ++ condition ++ " of false -> 0; _ -> 1 end"
 
 genOp : PrimFn arity -> Vect arity String -> String
-genOp (Add IntType) [x, y] = op "int_add" [x, y, "63"]
-genOp (Sub IntType) [x, y] = op "int_sub" [x, y, "63"]
-genOp (Mul IntType) [x, y] = op "int_mult" [x, y, "63"]
-genOp (Div IntType) [x, y] = op "int_div" [x, y, "63"]
+genOp (Add IntType) [x, y] = op "idris_rts_int_add" [x, y, "63"]
+genOp (Sub IntType) [x, y] = op "idris_rts_int_sub" [x, y, "63"]
+genOp (Mul IntType) [x, y] = op "idris_rts_int_mult" [x, y, "63"]
+genOp (Div IntType) [x, y] = op "idris_rts_int_div" [x, y, "63"]
 genOp (Add ty) [x, y] = infixop "+" x y
 genOp (Sub ty) [x, y] = infixop "-" x y
 genOp (Mul ty) [x, y] = infixop "*" x y
@@ -85,24 +85,24 @@ genOp (Div IntegerType) [x, y] = infixop "div" x y -- NOTE: Is allowed to be par
 genOp (Div ty) [x, y] = infixop "/" x y -- NOTE: Is allowed to be partial
 genOp (Mod ty) [x, y] = infixop "rem" x y -- NOTE: Is allowed to be partial -- TODO: Can `x` and `y` be floating point? `rem` does not work on floating points
 genOp (Neg ty) [x] = op "-" [x]
-genOp (LT StringType) [x, y] = op "unicode_string_lt" [x, y]
-genOp (LTE StringType) [x, y] = op "unicode_string_lte" [x, y]
-genOp (EQ StringType) [x, y] = op "unicode_string_eq" [x, y]
-genOp (GTE StringType) [x, y] = op "unicode_string_gte" [x, y]
-genOp (GT StringType) [x, y] = op "unicode_string_gt" [x, y]
+genOp (LT StringType) [x, y] = op "idris_rts_unicode_string_lt" [x, y]
+genOp (LTE StringType) [x, y] = op "idris_rts_unicode_string_lte" [x, y]
+genOp (EQ StringType) [x, y] = op "idris_rts_unicode_string_eq" [x, y]
+genOp (GTE StringType) [x, y] = op "idris_rts_unicode_string_gte" [x, y]
+genOp (GT StringType) [x, y] = op "idris_rts_unicode_string_gt" [x, y]
 genOp (LT ty) [x, y] = boolToInt (infixop "<" x y)
 genOp (LTE ty) [x, y] = boolToInt (infixop "=<" x y)
 genOp (EQ ty) [x, y] = boolToInt (infixop "=:=" x y)
 genOp (GTE ty) [x, y] = boolToInt (infixop ">=" x y)
 genOp (GT ty) [x, y] = boolToInt (infixop ">" x y)
-genOp StrLength [x] = op "unicode_string_length" [x]
-genOp StrHead [x] = op "unicode_string_head" [x]
-genOp StrTail [x] = op "unicode_string_tail" [x]
-genOp StrIndex [x, i] = op "unicode_string_index" [x, i]
-genOp StrCons [x, y] = op "unicode_string_cons" [x, y]
-genOp StrAppend [x, y] = op "unicode_string_append" [x, y]
-genOp StrReverse [x] = op "unicode_string_reverse" [x]
-genOp StrSubstr [x, y, z] = op "unicode_string_substr" [x, y, z]
+genOp StrLength [x] = op "idris_rts_unicode_string_length" [x]
+genOp StrHead [x] = op "idris_rts_unicode_string_head" [x]
+genOp StrTail [x] = op "idris_rts_unicode_string_tail" [x]
+genOp StrIndex [x, i] = op "idris_rts_unicode_string_index" [x, i]
+genOp StrCons [x, y] = op "idris_rts_unicode_string_cons" [x, y]
+genOp StrAppend [x, y] = op "idris_rts_unicode_string_append" [x, y]
+genOp StrReverse [x] = op "idris_rts_unicode_string_reverse" [x]
+genOp StrSubstr [x, y, z] = op "idris_rts_unicode_string_substr" [x, y, z]
 
 genOp (Cast IntegerType IntType) [x] = op "idris_rts_integer_to_int" [x]
 genOp (Cast IntegerType DoubleType) [x] = op "idris_rts_integer_to_double" [x]
@@ -512,9 +512,9 @@ mutual
   genExtPrim i vs CCall [ret, fn, args, world] =
     throw (InternalError ("Can't compile C FFI calls to Erlang yet"))
   genExtPrim i vs PutStr [arg, world] =
-    pure $ "(fun() -> io_unicode_put_str(" ++ !(genExp i vs arg) ++ "), " ++ mkWorld mkUnit ++ " end())"
+    pure $ "(fun() -> idris_rts_io_unicode_put_str(" ++ !(genExp i vs arg) ++ "), " ++ mkWorld mkUnit ++ " end())"
   genExtPrim i vs GetStr [world] =
-    pure $ mkWorld "io_unicode_get_str(\"\")"
+    pure $ mkWorld "idris_rts_io_unicode_get_str(\"\")"
   genExtPrim i vs FileOpen [file, mode, bin, world] =
     pure $ mkWorld $ "idris_rts_open(" ++ !(genExp i vs file) ++ ", " ++ !(genExp i vs mode) ++ ", " ++ !(genExp i vs bin) ++ ")"
   genExtPrim i vs FileClose [file, world] =
