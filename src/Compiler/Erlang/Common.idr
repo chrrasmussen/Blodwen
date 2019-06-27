@@ -104,26 +104,26 @@ genOp StrAppend [x, y] = op "unicode_string_append" [x, y]
 genOp StrReverse [x] = op "unicode_string_reverse" [x]
 genOp StrSubstr [x, y, z] = op "unicode_string_substr" [x, y, z]
 
-genOp (Cast IntegerType IntType) [x] = op "blodwen_integer_to_int" [x]
-genOp (Cast IntegerType DoubleType) [x] = op "blodwen_integer_to_double" [x]
-genOp (Cast IntegerType StringType) [x] = op "blodwen_integer_to_string" [x]
+genOp (Cast IntegerType IntType) [x] = op "idris_rts_integer_to_int" [x]
+genOp (Cast IntegerType DoubleType) [x] = op "idris_rts_integer_to_double" [x]
+genOp (Cast IntegerType StringType) [x] = op "idris_rts_integer_to_string" [x]
 
-genOp (Cast IntType IntegerType) [x] = op "blodwen_int_to_integer" [x]
-genOp (Cast IntType DoubleType) [x] = op "blodwen_int_to_double" [x]
-genOp (Cast IntType CharType) [x] = op "blodwen_int_to_char" [x]
-genOp (Cast IntType StringType) [x] = op "blodwen_int_to_string" [x]
+genOp (Cast IntType IntegerType) [x] = op "idris_rts_int_to_integer" [x]
+genOp (Cast IntType DoubleType) [x] = op "idris_rts_int_to_double" [x]
+genOp (Cast IntType CharType) [x] = op "idris_rts_int_to_char" [x]
+genOp (Cast IntType StringType) [x] = op "idris_rts_int_to_string" [x]
 
-genOp (Cast DoubleType IntegerType) [x] = op "blodwen_double_to_integer" [x]
-genOp (Cast DoubleType IntType) [x] = op "blodwen_double_to_int" [x]
-genOp (Cast DoubleType StringType) [x] = op "blodwen_double_to_string" [x]
+genOp (Cast DoubleType IntegerType) [x] = op "idris_rts_double_to_integer" [x]
+genOp (Cast DoubleType IntType) [x] = op "idris_rts_double_to_int" [x]
+genOp (Cast DoubleType StringType) [x] = op "idris_rts_double_to_string" [x]
 
-genOp (Cast CharType IntegerType) [x] = op "blodwen_char_to_integer" [x]
-genOp (Cast CharType IntType) [x] = op "blodwen_char_to_int" [x]
-genOp (Cast CharType StringType) [x] = op "blodwen_char_to_string" [x]
+genOp (Cast CharType IntegerType) [x] = op "idris_rts_char_to_integer" [x]
+genOp (Cast CharType IntType) [x] = op "idris_rts_char_to_int" [x]
+genOp (Cast CharType StringType) [x] = op "idris_rts_char_to_string" [x]
 
-genOp (Cast StringType IntegerType) [x] = op "blodwen_string_to_integer" [x]
-genOp (Cast StringType IntType) [x] = op "blodwen_string_to_int" [x]
-genOp (Cast StringType DoubleType) [x] = op "blodwen_string_to_double" [x]
+genOp (Cast StringType IntegerType) [x] = op "idris_rts_string_to_integer" [x]
+genOp (Cast StringType IntType) [x] = op "idris_rts_string_to_int" [x]
+genOp (Cast StringType DoubleType) [x] = op "idris_rts_string_to_double" [x]
 
 genOp (Cast from to) [x] = "throw(\"Invalid cast " ++ show from ++ "->" ++ show to ++ "\")"
 
@@ -516,15 +516,15 @@ mutual
   genExtPrim i vs GetStr [world] =
     pure $ mkWorld "io_unicode_get_str(\"\")"
   genExtPrim i vs FileOpen [file, mode, bin, world] =
-    pure $ mkWorld $ "blodwen_open(" ++ !(genExp i vs file) ++ ", " ++ !(genExp i vs mode) ++ ", " ++ !(genExp i vs bin) ++ ")"
+    pure $ mkWorld $ "idris_rts_open(" ++ !(genExp i vs file) ++ ", " ++ !(genExp i vs mode) ++ ", " ++ !(genExp i vs bin) ++ ")"
   genExtPrim i vs FileClose [file, world] =
-    pure $ "(fun() -> blodwen_close(" ++ !(genExp i vs file) ++ "), " ++ mkWorld mkUnit ++ " end())"
+    pure $ "(fun() -> idris_rts_close(" ++ !(genExp i vs file) ++ "), " ++ mkWorld mkUnit ++ " end())"
   genExtPrim i vs FileReadLine [file, world] =
-    pure $ mkWorld $ "blodwen_read_line(" ++ !(genExp i vs file) ++ ")"
+    pure $ mkWorld $ "idris_rts_read_line(" ++ !(genExp i vs file) ++ ")"
   genExtPrim i vs FileWriteLine [file, str, world] =
-    pure $ mkWorld $ "blodwen_write_line(" ++ !(genExp i vs file) ++ ", " ++ !(genExp i vs str) ++ ")"
+    pure $ mkWorld $ "idris_rts_write_line(" ++ !(genExp i vs file) ++ ", " ++ !(genExp i vs str) ++ ")"
   genExtPrim i vs FileEOF [file, world] =
-    pure $ mkWorld $ "blodwen_eof(" ++ !(genExp i vs file) ++ ")"
+    pure $ mkWorld $ "idris_rts_eof(" ++ !(genExp i vs file) ++ ")"
   genExtPrim i vs NewIORef [_, val, world] =
     pure $ mkWorld $ "(box " ++ !(genExp i vs val) ++ ")"
   genExtPrim i vs ReadIORef [_, ref, world] =

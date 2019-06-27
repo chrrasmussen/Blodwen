@@ -12,9 +12,9 @@
 
 -type idris_rts_bool() :: ?TRUE | ?FALSE.
 
--spec blodwen_bool_to_int(boolean()) -> idris_rts_bool().
-blodwen_bool_to_int(false) -> ?FALSE;
-blodwen_bool_to_int(_) -> ?TRUE.
+-spec idris_rts_bool_to_int(boolean()) -> idris_rts_bool().
+idris_rts_bool_to_int(false) -> ?FALSE;
+idris_rts_bool_to_int(_) -> ?TRUE.
 
 
 % Either
@@ -47,11 +47,11 @@ int_div(X, Y, Bits) -> (X div Y) rem int_pow(2, Bits).
 
 % Comparisons
 
-unicode_string_lt(X, Y) -> blodwen_bool_to_int(unicode:characters_to_binary(X) < unicode:characters_to_binary(Y)).
-unicode_string_lte(X, Y) -> blodwen_bool_to_int(unicode:characters_to_binary(X) =< unicode:characters_to_binary(Y)).
-unicode_string_eq(X, Y) -> blodwen_bool_to_int(unicode:characters_to_binary(X) =:= unicode:characters_to_binary(Y)).
-unicode_string_gte(X, Y) -> blodwen_bool_to_int(unicode:characters_to_binary(X) >= unicode:characters_to_binary(Y)).
-unicode_string_gt(X, Y) -> blodwen_bool_to_int(unicode:characters_to_binary(X) > unicode:characters_to_binary(Y)).
+unicode_string_lt(X, Y) -> idris_rts_bool_to_int(unicode:characters_to_binary(X) < unicode:characters_to_binary(Y)).
+unicode_string_lte(X, Y) -> idris_rts_bool_to_int(unicode:characters_to_binary(X) =< unicode:characters_to_binary(Y)).
+unicode_string_eq(X, Y) -> idris_rts_bool_to_int(unicode:characters_to_binary(X) =:= unicode:characters_to_binary(Y)).
+unicode_string_gte(X, Y) -> idris_rts_bool_to_int(unicode:characters_to_binary(X) >= unicode:characters_to_binary(Y)).
+unicode_string_gt(X, Y) -> idris_rts_bool_to_int(unicode:characters_to_binary(X) > unicode:characters_to_binary(Y)).
 
 
 % Strings
@@ -94,25 +94,25 @@ unicode_string_substr(Start, Len, Str) -> string:substr(Str, Start, Len).
 
 % Casts
 
-blodwen_integer_to_int(Integer) -> Integer.
-blodwen_integer_to_double(Integer) -> float(Integer).
-blodwen_integer_to_string(Integer) -> integer_to_binary(Integer).
+idris_rts_integer_to_int(Integer) -> Integer.
+idris_rts_integer_to_double(Integer) -> float(Integer).
+idris_rts_integer_to_string(Integer) -> integer_to_binary(Integer).
 
-blodwen_int_to_integer(Int) -> Int.
-blodwen_int_to_double(Int) -> float(Int).
-blodwen_int_to_char(Char) -> Char. % NOTE: Char is an integer
-blodwen_int_to_string(Int) -> integer_to_binary(Int).
+idris_rts_int_to_integer(Int) -> Int.
+idris_rts_int_to_double(Int) -> float(Int).
+idris_rts_int_to_char(Char) -> Char. % NOTE: Char is an integer
+idris_rts_int_to_string(Int) -> integer_to_binary(Int).
 
-blodwen_double_to_integer(Double) -> trunc(Double).
-blodwen_double_to_int(Double) -> trunc(Double).
-blodwen_double_to_string(Double) -> float_to_binary(Double, [{decimals, 10}, compact]).
+idris_rts_double_to_integer(Double) -> trunc(Double).
+idris_rts_double_to_int(Double) -> trunc(Double).
+idris_rts_double_to_string(Double) -> float_to_binary(Double, [{decimals, 10}, compact]).
 
-blodwen_char_to_integer(Char) when is_integer(Char) -> Char;
-blodwen_char_to_integer(_) -> 0. % NOTE: Cast will fail on unicode characters that require more than 1 codepoint.
-blodwen_char_to_int(Char) -> blodwen_char_to_integer(Char).
-blodwen_char_to_string(Char) -> [Char].
+idris_rts_char_to_integer(Char) when is_integer(Char) -> Char;
+idris_rts_char_to_integer(_) -> 0. % NOTE: Cast will fail on unicode characters that require more than 1 codepoint.
+idris_rts_char_to_int(Char) -> idris_rts_char_to_integer(Char).
+idris_rts_char_to_string(Char) -> [Char].
 
-blodwen_string_to_integer(Str) ->
+idris_rts_string_to_integer(Str) ->
   case string:to_integer(Str) of
     {error, no_integer} ->
       0;
@@ -122,11 +122,11 @@ blodwen_string_to_integer(Str) ->
         _ -> 0
       end
   end.
-blodwen_string_to_int(Str) -> blodwen_string_to_integer(Str). % TODO: Should `Int` be capped at a certain precision?
-blodwen_string_to_double(Str) ->
+idris_rts_string_to_int(Str) -> idris_rts_string_to_integer(Str). % TODO: Should `Int` be capped at a certain precision?
+idris_rts_string_to_double(Str) ->
   case string:to_float(Str) of
     {error, no_float} ->
-      Integer = blodwen_string_to_integer(Str),
+      Integer = idris_rts_string_to_integer(Str),
       float(Integer);
     {Num, StrRest} ->
       case string:next_grapheme(StrRest) of
@@ -174,39 +174,39 @@ bin_flags(Bin) ->
     _ -> []
   end.
 
--spec blodwen_open(file:name_all(), iolist(), idris_rts_bool()) -> idris_rts_either(idris_rts_error_code(), idris_rts_handle()).
-blodwen_open(File, Mode, Bin) ->
+-spec idris_rts_open(file:name_all(), iolist(), idris_rts_bool()) -> idris_rts_either(idris_rts_error_code(), idris_rts_handle()).
+idris_rts_open(File, Mode, Bin) ->
   Flags = mode_flags(Mode) ++ bin_flags(Bin),
   case file:open(File, Flags) of
     {ok, Pid} -> either_right(Pid);
     _ -> either_left(?ERROR_CODE_UNKNOWN)
   end.
 
--spec blodwen_close(idris_rts_handle()) -> idris_rts_unit().
-blodwen_close(Pid) ->
+-spec idris_rts_close(idris_rts_handle()) -> idris_rts_unit().
+idris_rts_close(Pid) ->
   file:close(Pid),
   ?UNIT.
 
--spec blodwen_read_line(idris_rts_handle()) -> idris_rts_either(idris_rts_error_code(), binary()).
-blodwen_read_line(Pid) ->
+-spec idris_rts_read_line(idris_rts_handle()) -> idris_rts_either(idris_rts_error_code(), binary()).
+idris_rts_read_line(Pid) ->
   case file:read_line(Pid) of
     {ok, Line} -> either_right(Line);
     eof -> either_right(<<>>);
     _ -> either_left(?ERROR_CODE_UNKNOWN)
   end.
 
--spec blodwen_write_line(idris_rts_handle(), binary()) -> idris_rts_either(idris_rts_error_code(), idris_rts_unit()).
-blodwen_write_line(Pid, Bytes) ->
+-spec idris_rts_write_line(idris_rts_handle(), binary()) -> idris_rts_either(idris_rts_error_code(), idris_rts_unit()).
+idris_rts_write_line(Pid, Bytes) ->
   case file:write(Pid, Bytes) of
     ok -> either_right(?UNIT);
     _ -> either_left(?ERROR_CODE_UNKNOWN)
   end.
 
 % COPIED FROM: https://github.com/lenary/idris-erlang/blob/master/irts/idris_erlang_rts.erl
--spec blodwen_eof(idris_rts_handle()) -> idris_rts_bool().
-blodwen_eof(undefined) ->
+-spec idris_rts_eof(idris_rts_handle()) -> idris_rts_bool().
+idris_rts_eof(undefined) ->
   ?TRUE; % Null is at EOF
-blodwen_eof(Handle) ->
+idris_rts_eof(Handle) ->
   case file:read(Handle, 1) of
     eof -> ?TRUE; % At EOF
     {ok, _} ->
