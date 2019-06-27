@@ -30,15 +30,6 @@ either_left(X) -> {ns_Prelude_un_Left, erased, erased, X}.
 either_right(X) -> {ns_Prelude_un_Right, erased, erased, X}.
 
 
-% List
-
--type idr_list(A) :: {0, {}} | {1, {}, A, idr_list(A)}.
-
--spec list_to_idr_list(list(any())) -> idr_list(any()).
-list_to_idr_list([]) -> {0, {}};
-list_to_idr_list([Hd | Tl]) -> {1, {}, Hd, list_to_idr_list(Tl)}.
-
-
 % Arithmetic
 
 -spec int_pow(integer(), integer()) -> integer().
