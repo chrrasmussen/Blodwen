@@ -181,8 +181,8 @@ toPrim pn@(NS _ n) = cond [
 toPrim pn = Unknown pn
 
 
-mkBlodwenRtsAtom : String
-mkBlodwenRtsAtom = "'$blodwen_rts'"
+mkIdrisRtsExceptionAtom : String
+mkIdrisRtsExceptionAtom = "'$idris_rts_exception'"
 
 mkErased : String
 mkErased = "erased"
@@ -215,7 +215,7 @@ mkStringToAtom : String -> String
 mkStringToAtom str = "(binary_to_atom(unicode:characters_to_binary(" ++ str ++ "), utf8))"
 
 mkTryCatch : String -> String
-mkTryCatch str = "(fun() -> try " ++ str ++ " of Result -> Result catch Class:Reason:Stacktrace -> {" ++ mkBlodwenRtsAtom ++ ", {Class, Reason, Stacktrace}} end end())"
+mkTryCatch str = "(fun() -> try " ++ str ++ " of Result -> Result catch Class:Reason:Stacktrace -> {" ++ mkIdrisRtsExceptionAtom ++ ", {Class, Reason, Stacktrace}} end end())"
 
 -- TODO: Not a great workaround :-/
 -- Will fail if the input string is not a string literal
@@ -684,7 +684,7 @@ mutual
   -- MError
   readClause i local global vs (CCon (NS ["CaseExpr", "Prelude", "Erlang"] (UN "MError")) _ [_, matcher]) = do
     clause <- readClause i local global vs matcher
-    pure $ MkErlClause (nextLocal clause) (globals clause) ("{" ++ mkBlodwenRtsAtom ++ ", " ++ pattern clause ++ "}") (guard clause) (body clause)
+    pure $ MkErlClause (nextLocal clause) (globals clause) ("{" ++ mkIdrisRtsExceptionAtom ++ ", " ++ pattern clause ++ "}") (guard clause) (body clause)
   -- MMapper
   readClause i local global vs (CCon (NS ["CaseExpr", "Prelude", "Erlang"] (UN "MMapper")) _ [_, _, matcher, mapper]) = do
     clause <- readClause i local global vs matcher

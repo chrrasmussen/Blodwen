@@ -245,7 +245,7 @@ testMIO = do
 testMError : IO ()
 testMError = do
   putStrLn "testMError"
-  putStrLn (erlCase "not found" [map (const "matched on error") (MError MAny)] (cast (MkErlTuple2 (MkErlAtom "$blodwen_rts") "error")))
+  putStrLn (erlCase "not found" [map (const "matched on error") (MError MAny)] (cast (MkErlTuple2 (MkErlAtom "$idris_rts_exception") "error")))
   putStrLn (erlCase "not found" [map (const "matched on error") (MError MAny)] (cast "something else"))
   case erlCase Nothing [map Just (MIO [Double])] funDivEx of
     Nothing => putStrLn "not found"
