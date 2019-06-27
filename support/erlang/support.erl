@@ -200,9 +200,8 @@ blodwen_open(File, Mode, Bin) ->
 
 -spec blodwen_close(handle()) -> idr_unit().
 blodwen_close(Pid) ->
-  case file:close(Pid) of
-    _ -> ?UNIT
-  end.
+  file:close(Pid),
+  ?UNIT.
 
 -spec blodwen_read_line(handle()) -> idr_either(error_code(), binary()).
 blodwen_read_line(Pid) ->
