@@ -1,10 +1,3 @@
-% Debugging
-
-debug_inspect(Val) ->
-  io:format("~p~n", [Val]),
-  Val.
-
-
 % Unit
 
 -define(UNIT, {}).
