@@ -2,7 +2,7 @@
 
 -define(UNIT, {}).
 
--type idr_unit() :: ?UNIT.
+-type idris_rts_unit() :: ?UNIT.
 
 
 % Booleans
@@ -10,9 +10,9 @@
 -define(TRUE, 1).
 -define(FALSE, 0).
 
--type idr_bool() :: ?TRUE | ?FALSE.
+-type idris_rts_bool() :: ?TRUE | ?FALSE.
 
--spec blodwen_bool_to_int(boolean()) -> idr_bool().
+-spec blodwen_bool_to_int(boolean()) -> idris_rts_bool().
 blodwen_bool_to_int(false) -> ?FALSE;
 blodwen_bool_to_int(_) -> ?TRUE.
 
@@ -21,12 +21,12 @@ blodwen_bool_to_int(_) -> ?TRUE.
 % TODO: Hard-coded data constructor
 % Must match the behavior of `Compiler.Erlang.Common.genConstructor` and `Compiler.Erlang.Common.genName`
 
--type idr_either(Left, Right) :: {ns_Prelude_un_Left, erased, erased, Left} | {ns_Prelude_un_Right, erased, erased, Right}.
+-type idris_rts_either(Left, Right) :: {ns_Prelude_un_Left, erased, erased, Left} | {ns_Prelude_un_Right, erased, erased, Right}.
 
--spec either_left(any()) -> idr_either(any(), any()).
+-spec either_left(any()) -> idris_rts_either(any(), any()).
 either_left(X) -> {ns_Prelude_un_Left, erased, erased, X}.
 
--spec either_right(any()) -> idr_either(any(), any()).
+-spec either_right(any()) -> idris_rts_either(any(), any()).
 either_right(X) -> {ns_Prelude_un_Right, erased, erased, X}.
 
 
@@ -56,7 +56,7 @@ unicode_string_gt(X, Y) -> blodwen_bool_to_int(unicode:characters_to_binary(X) >
 
 % Strings
 
-% -type idr_char() :: integer() | [integer()]. % TODO: Use for anything?
+% -type idris_rts_char() :: integer() | [integer()]. % TODO: Use for anything?
 
 
 % NOTE: Must be total
@@ -150,11 +150,11 @@ io_unicode_get_str(Prompt) ->
 
 % Relevant docs: http://erlang.org/doc/man/file.html
 
--type handle() :: file:io_device() | undefined.
+-type idris_rts_handle() :: file:io_device() | undefined.
 
 % TODO: Support more error codes
 -define(ERROR_CODE_UNKNOWN, -1).
--type error_code() :: ?ERROR_CODE_UNKNOWN.
+-type idris_rts_error_code() :: ?ERROR_CODE_UNKNOWN.
 
 
 -spec mode_flags(iolist()) -> [file:mode()].
@@ -167,14 +167,14 @@ mode_flags(Mode) ->
     _ -> []
   end.
 
--spec bin_flags(idr_bool()) -> [file:mode()].
+-spec bin_flags(idris_rts_bool()) -> [file:mode()].
 bin_flags(Bin) ->
   case Bin of
     ?TRUE -> [binary];
     _ -> []
   end.
 
--spec blodwen_open(file:name_all(), iolist(), idr_bool()) -> idr_either(error_code(), handle()).
+-spec blodwen_open(file:name_all(), iolist(), idris_rts_bool()) -> idris_rts_either(idris_rts_error_code(), idris_rts_handle()).
 blodwen_open(File, Mode, Bin) ->
   Flags = mode_flags(Mode) ++ bin_flags(Bin),
   case file:open(File, Flags) of
@@ -182,12 +182,12 @@ blodwen_open(File, Mode, Bin) ->
     _ -> either_left(?ERROR_CODE_UNKNOWN)
   end.
 
--spec blodwen_close(handle()) -> idr_unit().
+-spec blodwen_close(idris_rts_handle()) -> idris_rts_unit().
 blodwen_close(Pid) ->
   file:close(Pid),
   ?UNIT.
 
--spec blodwen_read_line(handle()) -> idr_either(error_code(), binary()).
+-spec blodwen_read_line(idris_rts_handle()) -> idris_rts_either(idris_rts_error_code(), binary()).
 blodwen_read_line(Pid) ->
   case file:read_line(Pid) of
     {ok, Line} -> either_right(Line);
@@ -195,7 +195,7 @@ blodwen_read_line(Pid) ->
     _ -> either_left(?ERROR_CODE_UNKNOWN)
   end.
 
--spec blodwen_write_line(handle(), binary()) -> idr_either(error_code(), idr_unit()).
+-spec blodwen_write_line(idris_rts_handle(), binary()) -> idris_rts_either(idris_rts_error_code(), idris_rts_unit()).
 blodwen_write_line(Pid, Bytes) ->
   case file:write(Pid, Bytes) of
     ok -> either_right(?UNIT);
@@ -203,7 +203,7 @@ blodwen_write_line(Pid, Bytes) ->
   end.
 
 % COPIED FROM: https://github.com/lenary/idris-erlang/blob/master/irts/idris_erlang_rts.erl
--spec blodwen_eof(handle()) -> idr_bool().
+-spec blodwen_eof(idris_rts_handle()) -> idris_rts_bool().
 blodwen_eof(undefined) ->
   ?TRUE; % Null is at EOF
 blodwen_eof(Handle) ->
