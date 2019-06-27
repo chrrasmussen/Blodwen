@@ -45,18 +45,13 @@ idris_rts_int_mult(X, Y, Bits) -> (X * Y) rem idris_rts_int_pow(2, Bits).
 idris_rts_int_div(X, Y, Bits) -> (X div Y) rem idris_rts_int_pow(2, Bits).
 
 
-% Comparisons
+% Strings
 
 idris_rts_unicode_string_lt(X, Y) -> idris_rts_bool_to_int(unicode:characters_to_binary(X) < unicode:characters_to_binary(Y)).
 idris_rts_unicode_string_lte(X, Y) -> idris_rts_bool_to_int(unicode:characters_to_binary(X) =< unicode:characters_to_binary(Y)).
 idris_rts_unicode_string_eq(X, Y) -> idris_rts_bool_to_int(unicode:characters_to_binary(X) =:= unicode:characters_to_binary(Y)).
 idris_rts_unicode_string_gte(X, Y) -> idris_rts_bool_to_int(unicode:characters_to_binary(X) >= unicode:characters_to_binary(Y)).
 idris_rts_unicode_string_gt(X, Y) -> idris_rts_bool_to_int(unicode:characters_to_binary(X) > unicode:characters_to_binary(Y)).
-
-
-% Strings
-
-% -type idris_rts_char() :: integer() | [integer()]. % TODO: Use for anything?
 
 
 % NOTE: Must be total
@@ -77,7 +72,6 @@ idris_rts_unicode_string_index(Str, Index) ->
   CharStr = string:slice(Str, Index, 1),
   [Hd | _] = string:next_grapheme(CharStr),
   Hd.
-
 
 % NOTE: Must be total
 idris_rts_unicode_string_cons(Char, Str) -> [Char | Str].
@@ -205,13 +199,13 @@ idris_rts_file_write_line(Pid, Bytes) ->
 % COPIED FROM: https://github.com/lenary/idris-erlang/blob/master/irts/idris_erlang_rts.erl
 -spec idris_rts_file_eof(idris_rts_handle()) -> idris_rts_bool().
 idris_rts_file_eof(undefined) ->
-  ?IDRIS_RTS_TRUE; % Null is at EOF
+  ?IDRIS_RTS_TRUE;
 idris_rts_file_eof(Handle) ->
   case file:read(Handle, 1) of
-    eof -> ?IDRIS_RTS_TRUE; % At EOF
+    eof -> ?IDRIS_RTS_TRUE;
     {ok, _} ->
       case file:position(Handle, {cur, -1}) of
-        {ok, _} -> ?IDRIS_RTS_FALSE; % Not at EOF
+        {ok, _} -> ?IDRIS_RTS_FALSE;
         {error, _} -> ?IDRIS_RTS_TRUE % Error Scanning Back => EOF
       end;
     {error, _} -> ?IDRIS_RTS_TRUE % Error => EOF
