@@ -270,8 +270,8 @@ namespace Concurrency
   erlSelf = erlUnsafeCall ErlPid "erlang:self" []
 
   export
-  erlSpawn : IO () -> IO ErlPid
-  erlSpawn action = erlUnsafeCall ErlPid "erlang:spawn_link" [MkErlIO0 action]
+  erlSpawnLink : IO () -> IO ErlPid
+  erlSpawnLink action = erlUnsafeCall ErlPid "erlang:spawn_link" [MkErlIO0 action]
 
   -- TODO: Support more receivers than just `ErlPid`
   export
