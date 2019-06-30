@@ -61,7 +61,7 @@ compileToErlangExecutable (MkOpts moduleName) c tm outfile = do
     pure ()
   where
     mainInit : String
-    mainInit = "io:setopts([{encoding, unicode}])"
+    mainInit = "persistent_term:put('$idris_rts_args', Args), io:setopts([{encoding, unicode}])"
 
 compileToErlangLibrary : Opts -> Ref Ctxt Defs -> ClosedTerm -> (libEntrypoint : String) -> (outfile : String) -> Core annot ()
 compileToErlangLibrary (MkOpts moduleName) c tm libEntrypoint outfile = do

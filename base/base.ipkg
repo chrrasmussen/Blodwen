@@ -13,5 +13,6 @@ modules = Control.WellFounded,
           System.File,
 
           Erlang.Prelude,
+          Erlang.System,
           Erlang.Debug
 
