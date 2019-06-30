@@ -59,6 +59,10 @@ not found
 testMPort
 #Port<0.4>
 not found
+testMAnyList
+found list
+found list
+not found
 testMNil
 found nil
 not found

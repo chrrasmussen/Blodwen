@@ -163,6 +163,13 @@ testMPort = do
   putStrLn (erlCase "not found" [map show MPort] (cast portEx))
   putStrLn (erlCase "not found" [map show MPort] (cast "not a port"))
 
+testMAnyList : IO ()
+testMAnyList = do
+  putStrLn "testMAnyList"
+  putStrLn (erlCase "not found" [map (const "found list") MAnyList] (cast (the ErlNil [])))
+  putStrLn (erlCase "not found" [map (const "found list") MAnyList] (cast (the (ErlCons _ _) (MkErlAtom "ok" :: 42))))
+  putStrLn (erlCase "not found" [map (const "found list") MAnyList] (cast "not a list"))
+
 testMNil : IO ()
 testMNil = do
   putStrLn "testMNil"
@@ -269,6 +276,7 @@ main = do
   testMPid
   testMRef
   testMPort
+  testMAnyList
   testMNil
   testMCons
   testMList
