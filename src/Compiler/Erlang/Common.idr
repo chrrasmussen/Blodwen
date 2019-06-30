@@ -636,6 +636,7 @@ mutual
   readClause i local global vs (CCon (NS ["CaseExpr", "Prelude", "Erlang"] (UN "MPid")) _ []) = createGuardClause i local global vs IsPid
   readClause i local global vs (CCon (NS ["CaseExpr", "Prelude", "Erlang"] (UN "MRef")) _ []) = createGuardClause i local global vs IsRef
   readClause i local global vs (CCon (NS ["CaseExpr", "Prelude", "Erlang"] (UN "MPort")) _ []) = createGuardClause i local global vs IsPort
+  readClause i local global vs (CCon (NS ["CaseExpr", "Prelude", "Erlang"] (UN "MAnyList")) _ []) = createGuardClause i local global vs IsList
   -- MNil
   readClause i local global vs (CCon (NS ["CaseExpr", "Prelude", "Erlang"] (UN "MNil")) _ []) =
     pure $ MkErlClause local [] "[]" IsAny unitCExp
